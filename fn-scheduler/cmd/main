@@ -15,7 +15,7 @@ PYTHON_BIN="python3"
 #     # deactivate                                       # deactivate virtual environment
 # fi
 
-CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/scheduler_service.py\" --host \"0.0.0.0\" --port \"28256\" --db \"${TRIM_PKGVAR}/scheduler.db\""
+CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/scheduler_service.py\" \$(cat \"${TRIM_APPDEST}/server/fn.args\")"
 
 log_msg() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> ${LOG_FILE}

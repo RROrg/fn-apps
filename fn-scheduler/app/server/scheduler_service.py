@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import getpass
 import json
 import logging
 import os
+import hashlib
+import hmac
 import signal
+import socket
 import sqlite3
+import ssl
 import threading
+import shutil
+import tempfile
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -23,15 +30,17 @@ try:
 except ImportError:  # pragma: no cover - non-POSIX systems
     grp = None  # type: ignore
     pwd = None  # type: ignore
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, urlsplit, urlunsplit
 
 ###############################################################################
 # Helpers and configuration
 ###############################################################################
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-STATIC_ROOT = os.path.join(ROOT_DIR, "www")
-DEFAULT_DB_PATH = os.path.join(os.environ.get("TRIM_PKGVAR", ROOT_DIR), "scheduler.db")
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+PARD_DIR = os.path.abspath(os.path.join(ROOT_DIR, os.pardir))
+STATIC_ROOT = os.path.join(PARD_DIR, "www")
+DEFAULT_DB_PATH = os.path.join(ROOT_DIR, "scheduler.db")
+DEFAULT_AUTH_PATH = os.path.join(ROOT_DIR, "auth.json")
 IS_WINDOWS = os.name == "nt"
 DB_LATEST_VERSION = 2
 def _detect_default_account() -> str:
@@ -56,6 +65,116 @@ EVENT_TYPE_SHUTDOWN = "system_shutdown"
 EVENT_TYPES = {EVENT_TYPE_SCRIPT, EVENT_TYPE_BOOT, EVENT_TYPE_SHUTDOWN}
 ALLOWED_ACCOUNT_GIDS = (0, 1000, 1001)
 POSIX_ACCOUNT_SUPPORT = os.name == "posix" and pwd is not None and grp is not None
+
+
+class AuthConfig:
+    def __init__(self, username: str, password_hash: str, realm: str = "Scheduler"):
+        self.username = username
+        self.password_hash = password_hash.lower()
+        self.realm = realm or "Scheduler"
+
+    def verify(self, username: str, password: str) -> bool:
+        if username != self.username:
+            return False
+        hashed = hashlib.sha256(password.encode("utf-8")).hexdigest().lower()
+        return hmac.compare_digest(hashed, self.password_hash)
+
+
+def load_auth_config(path: Optional[str]) -> Optional[AuthConfig]:
+    if not path:
+        return None
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as fp:
+        raw = json.load(fp)
+    enabled = raw.get("enabled", True)
+    if not enabled:
+        return None
+    username = (raw.get("username") or "").strip()
+    if not username:
+        raise ValueError("auth 配置缺少 username")
+    realm = (raw.get("realm") or "Scheduler").strip()
+    password_hash = (raw.get("password_sha256") or "").strip()
+    password_plain = raw.get("password")
+    if password_hash and password_plain:
+        raise ValueError("auth 配置请仅保留 password 或 password_sha256 之一")
+    if password_plain:
+        password_hash = hashlib.sha256(password_plain.encode("utf-8")).hexdigest()
+    if not password_hash:
+        raise ValueError("auth 配置缺少 password/password_sha256")
+    return AuthConfig(username=username, password_hash=password_hash, realm=realm)
+
+
+def _env_truthy(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def normalize_base_path(raw: Optional[str]) -> str:
+    base = (raw or "/").strip()
+    if not base:
+        base = "/"
+    if not base.startswith("/"):
+        base = f"/{base}"
+    if len(base) > 1 and base.endswith("/"):
+        base = base.rstrip("/")
+    return base or "/"
+
+
+def strip_wrapping_quotes(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    trimmed = value.strip()
+    if len(trimmed) >= 2 and trimmed[0] == trimmed[-1] and trimmed[0] in {'"', "'"}:
+        return trimmed[1:-1]
+    return trimmed
+
+
+def resolve_listen_host(host: str, prefer_ipv6: bool) -> str:
+    if not prefer_ipv6:
+        return host
+    if ":" in host:
+        return host
+    normalized = host.strip()
+    if not normalized or normalized == "0.0.0.0":
+        return "::"
+    if normalized in {"127.0.0.1", "localhost"}:
+        return "::1"
+    raise ValueError("IPv6 模式下请提供合法的 IPv6 地址 (例如 ::)")
+
+
+def generate_self_signed_cert(days: int, subject: str, openssl_bin: Optional[str] = None) -> tuple[str, str, str]:
+    temp_dir = tempfile.mkdtemp(prefix="fn-scheduler-ssl-")
+    cert_path = os.path.join(temp_dir, "cert.pem")
+    key_path = os.path.join(temp_dir, "key.pem")
+    cmd = [
+        openssl_bin or os.environ.get("SCHEDULER_OPENSSL_BIN", "openssl"),
+        "req",
+        "-x509",
+        "-nodes",
+        "-newkey",
+        "rsa:2048",
+        "-days",
+        str(days),
+        "-subj",
+        subject or "/CN=localhost",
+        "-keyout",
+        key_path,
+        "-out",
+        cert_path,
+    ]
+    try:
+        completed = run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError as exc:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise RuntimeError("系统未安装 openssl，无法自动生成证书，请手动提供 --ssl-cert/--ssl-key") from exc
+    if completed.returncode != 0:
+        error_text = completed.stderr or completed.stdout or "openssl 执行失败"
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise RuntimeError(f"生成自签名证书失败: {error_text}")
+    return cert_path, key_path, temp_dir
+
 
 logger = logging.getLogger("fn_scheduler")
 logging.basicConfig(
@@ -841,29 +960,87 @@ class SchedulerContext:
         self.engine = engine
 
 
+class SchedulerHTTPServer(ThreadingHTTPServer):
+    def __init__(
+        self,
+        server_address,
+        handler_class,
+        *,
+        base_path: str = "/",
+        prefer_ipv6: bool = False,
+        auth_config: Optional[AuthConfig] = None,
+    ):
+        host = server_address[0] if server_address else ""
+        port = server_address[1] if len(server_address) > 1 else 0
+        use_ipv6 = False
+        if (prefer_ipv6 or (host and ":" in host)) and socket.has_ipv6:
+            use_ipv6 = True
+        elif (prefer_ipv6 or (host and ":" in host)) and not socket.has_ipv6:
+            raise RuntimeError("当前系统不支持 IPv6 监听")
+
+        self.base_path = base_path or "/"
+        if use_ipv6:
+            self.address_family = socket.AF_INET6
+            if len(server_address) == 2:
+                server_address = (host, port, 0, 0)
+        super().__init__(server_address, handler_class)
+        if use_ipv6:
+            try:
+                self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except OSError:
+                pass
+        self.auth_config = auth_config
+
+
 class SchedulerRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, directory: str | None = None, **kwargs):  # type: ignore[override]
         super().__init__(*args, directory=directory or STATIC_ROOT, **kwargs)
 
     def do_GET(self) -> None:  # noqa: N802
+        if not self._require_auth():
+            return
+        if not self._ensure_base_path():
+            return
         if self.path.startswith("/api/"):
             self._handle_api("GET")
             return
         self._serve_static()
 
+    def do_HEAD(self) -> None:  # noqa: N802
+        if not self._require_auth():
+            return
+        if not self._ensure_base_path():
+            return
+        if self.path.startswith("/api/"):
+            self.send_error(HTTPStatus.METHOD_NOT_ALLOWED, "HEAD not supported for API")
+            return
+        super().do_HEAD()
+
     def do_POST(self) -> None:  # noqa: N802
+        if not self._require_auth():
+            return
+        if not self._ensure_base_path():
+            return
         if self.path.startswith("/api/"):
             self._handle_api("POST")
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Unsupported path")
 
     def do_PUT(self) -> None:  # noqa: N802
+        if not self._require_auth():
+            return
+        if not self._ensure_base_path():
+            return
         if self.path.startswith("/api/"):
             self._handle_api("PUT")
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Unsupported path")
 
     def do_DELETE(self) -> None:  # noqa: N802
+        if not self._require_auth():
+            return
+        if not self._ensure_base_path():
+            return
         if self.path.startswith("/api/"):
             self._handle_api("DELETE")
             return
@@ -1118,18 +1295,122 @@ class SchedulerRequestHandler(SimpleHTTPRequestHandler):
     def log_message(self, format_: str, *args: Any) -> None:  # noqa: D401
         logger.info("%s - - %s", self.address_string(), format_ % args)
 
+    def _require_auth(self) -> bool:
+        auth_config: Optional[AuthConfig] = getattr(self.server, "auth_config", None)  # type: ignore[attr-defined]
+        if not auth_config:
+            return True
+        header = self.headers.get("Authorization")
+        username, password = self._parse_basic_header(header)
+        if username and password and auth_config.verify(username, password):
+            return True
+        self._send_auth_challenge(auth_config.realm)
+        return False
+
+    def _send_auth_challenge(self, realm: str) -> None:
+        self.send_response(HTTPStatus.UNAUTHORIZED)
+        self.send_header("WWW-Authenticate", f'Basic realm="{realm}", charset="UTF-8"')
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"Authentication required")
+
+    @staticmethod
+    def _parse_basic_header(header: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+        if not header or not header.startswith("Basic "):
+            return (None, None)
+        token = header.split(" ", 1)[1].strip()
+        try:
+            decoded = base64.b64decode(token).decode("utf-8")
+        except Exception:  # pylint: disable=broad-except
+            return (None, None)
+        if ":" not in decoded:
+            return (None, None)
+        username, password = decoded.split(":", 1)
+        return (username, password)
+
+    def _ensure_base_path(self) -> bool:
+        base_path = getattr(self.server, "base_path", "/")  # type: ignore[attr-defined]
+        if base_path in ("", "/"):
+            return True
+        parsed = urlsplit(self.path)
+        if not parsed.path.startswith(base_path):
+            self.send_error(HTTPStatus.NOT_FOUND, "Base path mismatch")
+            return False
+        stripped_path = parsed.path[len(base_path) :] or "/"
+        if not stripped_path.startswith("/"):
+            stripped_path = f"/{stripped_path}"
+        rebuilt = parsed._replace(path=stripped_path)
+        self.path = urlunsplit(rebuilt)
+        return True
+
 
 ###############################################################################
 # Entrypoint
 ###############################################################################
 
-def run_server(host: str, port: int, db_path: str) -> None:
+def run_server(
+    host: str,
+    port: int,
+    db_path: str,
+    ssl_cert: Optional[str] = None,
+    ssl_key: Optional[str] = None,
+    base_path: str = "/",
+    prefer_ipv6: bool = False,
+    enable_ssl: bool = False,
+    auth_path: Optional[str] = None,
+) -> None:
+    db_path = strip_wrapping_quotes(db_path) or DEFAULT_DB_PATH
+    ssl_cert = strip_wrapping_quotes(ssl_cert)
+    ssl_key = strip_wrapping_quotes(ssl_key)
+    base_path = strip_wrapping_quotes(base_path) or "/"
+    auth_path = strip_wrapping_quotes(auth_path)
+
     database = Database(db_path)
     engine = SchedulerEngine(database)
     ctx = SchedulerContext(database, engine)
     handler_class = partial(SchedulerRequestHandler, directory=STATIC_ROOT)
-    httpd = ThreadingHTTPServer((host, port), handler_class)
+    normalized_base = normalize_base_path(base_path)
+    auth_config_path = auth_path or DEFAULT_AUTH_PATH
+    auth_config = None
+    if auth_config_path and os.path.exists(auth_config_path):
+        auth_config = load_auth_config(auth_config_path)
+    elif auth_path:
+        logger.warning("auth 配置文件不存在: %s，Basic Auth 未启用", auth_config_path)
+    if auth_config:
+        logger.info("Basic Auth enabled for Web UI (realm=%s, user=%s)", auth_config.realm, auth_config.username)
+    httpd = SchedulerHTTPServer(
+        (host, port),
+        handler_class,
+        base_path=normalized_base,
+        prefer_ipv6=prefer_ipv6,
+        auth_config=auth_config,
+    )
     httpd.app_context = ctx  # type: ignore[attr-defined]
+
+    generated_cert_dir: Optional[str] = None
+    if enable_ssl and not (ssl_cert and ssl_key):
+        cert_days = int(os.environ.get("SCHEDULER_SSL_DAYS", "365"))
+        cert_subject = os.environ.get("SCHEDULER_SSL_SUBJECT", "/CN=localhost")
+        try:
+            ssl_cert, ssl_key, generated_cert_dir = generate_self_signed_cert(cert_days, cert_subject)
+            logger.info("Generated self-signed certificate (subject=%s, days=%s)", cert_subject, cert_days)
+        except Exception as exc:  # pylint: disable=broad-except
+            raise RuntimeError("启用 --ssl 失败：无法生成自签名证书，请确认 openssl 可用或手动提供证书") from exc
+
+    scheme = "http"
+    if ssl_cert or ssl_key:
+        if not ssl_cert or not ssl_key:
+            raise ValueError("启用 HTTPS 需要同时提供证书和私钥路径")
+        if not os.path.exists(ssl_cert):
+            raise FileNotFoundError(f"SSL 证书不存在: {ssl_cert}")
+        if not os.path.exists(ssl_key):
+            raise FileNotFoundError(f"SSL 私钥不存在: {ssl_key}")
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        if hasattr(context, "minimum_version") and hasattr(ssl, "TLSVersion"):
+            context.minimum_version = ssl.TLSVersion.TLSv1_2  # type: ignore[attr-defined]
+        context.load_cert_chain(certfile=ssl_cert, keyfile=ssl_key)
+        httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+        scheme = "https"
+        logger.info("HTTPS enabled using cert=%s key=%s", ssl_cert, ssl_key)
 
     shutdown_event = threading.Event()
 
@@ -1144,7 +1425,14 @@ def run_server(host: str, port: int, db_path: str) -> None:
         if hasattr(signal, sig_name):
             signal.signal(getattr(signal, sig_name), _handle_signal)
 
-    logger.info("Starting scheduler on %s:%s (db=%s)", host, port, db_path)
+    logger.info(
+        "Starting scheduler on %s://%s:%s%s (db=%s)",
+        scheme,
+        host,
+        port,
+        normalized_base,
+        db_path,
+    )
     engine.start()
     try:
         httpd.serve_forever()
@@ -1154,14 +1442,16 @@ def run_server(host: str, port: int, db_path: str) -> None:
         engine.stop()
         database.close()
         httpd.server_close()
+        if generated_cert_dir:
+            shutil.rmtree(generated_cert_dir, ignore_errors=True)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Fn Scheduler Service")
+    parser = argparse.ArgumentParser(description="Scheduler Service")
     parser.add_argument(
         "--host",
-        default=os.environ.get("SCHEDULER_HOST", DEFAULT_HOST)
-        )
+        default=os.environ.get("SCHEDULER_HOST", DEFAULT_HOST),
+    )
     parser.add_argument(
         "--port",
         default=int(os.environ.get("SCHEDULER_PORT", DEFAULT_PORT)),
@@ -1172,9 +1462,67 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("SCHEDULER_DB_PATH", DEFAULT_DB_PATH),
         help="Path to SQLite database file",
     )
+    parser.add_argument(
+        "--ssl-cert",
+        default=os.environ.get("SCHEDULER_SSL_CERT"),
+        help="PEM certificate file for enabling HTTPS",
+    )
+    parser.add_argument(
+        "--ssl-key",
+        default=os.environ.get("SCHEDULER_SSL_KEY"),
+        help="PEM private key file for enabling HTTPS",
+    )
+    ssl_default = _env_truthy(os.environ.get("SCHEDULER_ENABLE_SSL"))
+    parser.add_argument(
+        "--ssl",
+        dest="ssl",
+        action="store_true",
+        help="Enable HTTPS even when no cert/key provided (auto self-signed)",
+    )
+    parser.add_argument(
+        "--no-ssl",
+        dest="ssl",
+        action="store_false",
+        help="Disable HTTPS auto mode even if env is set",
+    )
+    parser.add_argument(
+        "--auth",
+        default=os.environ.get("SCHEDULER_AUTH"),
+        help="Path to Basic Auth JSON config (default auth.json if present)",
+    )
+    parser.add_argument(
+        "--base-path",
+        default=os.environ.get("SCHEDULER_BASE_PATH", "/"),
+        help="Base URL path to mount the scheduler under (default '/')",
+    )
+    ipv6_default = _env_truthy(os.environ.get("SCHEDULER_ENABLE_IPV6"))
+    parser.add_argument(
+        "--ipv6",
+        dest="ipv6",
+        action="store_true",
+        help="Prefer IPv6 sockets (or set SCHEDULER_ENABLE_IPV6=1)",
+    )
+    parser.add_argument(
+        "--no-ipv6",
+        dest="ipv6",
+        action="store_false",
+        help="Force IPv4 sockets even if IPv6 env var is set",
+    )
+    parser.set_defaults(ipv6=ipv6_default, ssl=ssl_default)
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    run_server(args.host, args.port, args.db)
+    listen_host = resolve_listen_host(args.host, args.ipv6)
+    run_server(
+        listen_host,
+        args.port,
+        args.db,
+        ssl_cert=args.ssl_cert,
+        ssl_key=args.ssl_key,
+        base_path=args.base_path,
+        prefer_ipv6=args.ipv6,
+        enable_ssl=args.ssl,
+        auth_path=args.auth,
+    )

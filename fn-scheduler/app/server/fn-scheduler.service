@@ -1,5 +1,5 @@
 [Unit]
-Description=Fn Scheduler Service
+Description=Scheduler Service
 After=network.target
 DefaultDependencies=no
 Before=shutdown.target

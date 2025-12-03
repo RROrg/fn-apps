@@ -2,4 +2,22 @@
 
 ### This script is called after the user installs the application.
 
+echo "{
+  \"enabled\": true,
+  \"realm\": \"Scheduler\",
+  \"username\": \"${wizard_username:-admin}\",
+  \"password_sha256\": \"$(echo -n "${wizard_password:-admin}" | sha256sum | awk '{print $1}')\"
+}" > ${TRIM_APPDEST}/server/auth.json
+
+ARGS="--host ${wizard_host:-0.0.0.0} --port ${wizard_port:-28256} --db \"${TRIM_PKGVAR}/scheduler.db\" --auth \"${TRIM_APPDEST}/server/auth.json\" --ipv6 ${wizard_base_path:+--base-path \"${wizard_base_path}\"}  ${wizard_ssl_cert:+--ssl-cert \"${wizard_ssl_cert}\"} ${wizard_ssl_cert_key:+--ssl-cert-key \"${wizard_ssl_cert_key}\"}"
+echo "${ARGS}" > ${TRIM_APPDEST}/server/fn.args
+
+if [ -n "${wizard_ssl_cert:-}" ] || [ -n "${wizard_ssl_cert_key:-}" ]; then
+	sed -i "s|\"protocol\":.*,$|\"protocol\": \"https\",|g" ${TRIM_APPDEST}/ui/config
+else
+	sed -i "s|\"protocol\":.*,$|\"protocol\": \"http\",|g" ${TRIM_APPDEST}/ui/config
+fi
+sed -i "s|\"port\":.*,$|\"port\": \"${wizard_port:-28256}\",|g" ${TRIM_APPDEST}/ui/config
+sed -i "s|\"url\":.*,$|\"url\": \"${wizard_base_path:-/}\",|g" ${TRIM_APPDEST}/ui/config
+
 exit 0
