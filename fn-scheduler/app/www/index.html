@@ -57,12 +57,12 @@
                         <input type="text" name="name" required maxlength="64" />
                     </label>
                     <label>
-                        <span>账号</span>
+                        <span>用户账号</span>
                         <div class="account-wrapper">
                             <select name="account" id="accountSelect" required></select>
                             <button type="button" id="btnReloadAccounts" class="ghost small">刷新</button>
                         </div>
-                        <small id="accountStatus" class="muted account-status-text">Linux 环境仅可选择系统组 0 / 1000 / 1001 的账号；Windows 环境默认使用当前登录账号</small>
+                        <small id="accountStatus" class="muted account-status-text">Linux 环境仅可选择系统组的账号；Windows 环境默认使用当前登录账号</small>
                     </label>
                     <label>
                         <span>是否启动</span>
@@ -83,8 +83,11 @@
                 <div class="form-section" data-section="schedule">
                     <label>
                         <span>Cron 表达式</span>
-                        <input type="text" name="schedule_expression" placeholder="例如：*/5 * * * *" />
-                        <small>标准 5 字段 Cron，分钟 小时 日 月 周</small>
+                        <div class="cron-input-wrapper">
+                            <input type="text" name="schedule_expression" placeholder="例如：*/5 * * * *" />
+                            <button type="button" id="btnCronGenerator" class="ghost small">生成器</button>
+                        </div>
+                        <small>标准 5 字段 Cron，分钟 小时 日 月 周（周字段 0=周一）</small>
                     </label>
                 </div>
 
@@ -120,7 +123,7 @@
                 </label>
 
                 <label>
-                    <span>任务内容（脚本）</span>
+                    <span>任务内容</span>
                     <textarea name="script_body" rows="6" placeholder="#!/bin/bash&#10;echo hello" required></textarea>
                 </label>
 
@@ -140,11 +143,107 @@
                     <p id="resultSubtitle" class="subtitle"></p>
                 </div>
                 <div class="modal-header-actions">
-                    <button id="btnClearResults" class="ghost">清空</button>
+                    <button id="btnClearResults" class="ghost">无前置</button>
                     <button class="ghost" data-close>&times;</button>
                 </div>
             </div>
             <div class="result-list" id="resultList"></div>
+        </div>
+    </div>
+
+    <div id="cronModal" class="modal hidden" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2>Cron 生成器</h2>
+                    <p class="subtitle">通过选择常见规则快速生成 Cron 表达式</p>
+                </div>
+                <button class="ghost" data-close>&times;</button>
+            </div>
+            <form id="cronForm">
+                <div class="cron-field-list">
+                    <div class="cron-field">
+                        <label>
+                            <span>分钟</span>
+                            <select data-cron-field="minute">
+                                <option value="*">每分钟 *</option>
+                                <option value="0">整点 0</option>
+                                <option value="*/5">每 5 分钟 */5</option>
+                                <option value="*/10">每 10 分钟 */10</option>
+                                <option value="*/15">每 15 分钟 */15</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </label>
+                        <input type="text" class="cron-custom-input hidden" data-cron-custom="minute" placeholder="例如 0,15,30,45" />
+                    </div>
+                    <div class="cron-field">
+                        <label>
+                            <span>小时</span>
+                            <select data-cron-field="hour">
+                                <option value="*">每小时 *</option>
+                                <option value="*/2">每 2 小时 */2</option>
+                                <option value="*/6">每 6 小时 */6</option>
+                                <option value="*/12">每 12 小时 */12</option>
+                                <option value="0">每天 0 点</option>
+                                <option value="12">每天 12 点</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </label>
+                        <input type="text" class="cron-custom-input hidden" data-cron-custom="hour" placeholder="例如 0,6,12,18" />
+                    </div>
+                    <div class="cron-field">
+                        <label>
+                            <span>日期（天）</span>
+                            <select data-cron-field="day">
+                                <option value="*">每天 *</option>
+                                <option value="1">每月 1 日</option>
+                                <option value="15">每月 15 日</option>
+                                <option value="1-5">每月 1-5 日</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </label>
+                        <input type="text" class="cron-custom-input hidden" data-cron-custom="day" placeholder="例如 1-5 或 1,15" />
+                    </div>
+                    <div class="cron-field">
+                        <label>
+                            <span>月份</span>
+                            <select data-cron-field="month">
+                                <option value="*">每月 *</option>
+                                <option value="*/3">每季度 */3</option>
+                                <option value="1">1 月</option>
+                                <option value="6">6 月</option>
+                                <option value="12">12 月</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </label>
+                        <input type="text" class="cron-custom-input hidden" data-cron-custom="month" placeholder="例如 3,6,9,12" />
+                    </div>
+                    <div class="cron-field">
+                        <label>
+                            <span>星期（0=周一，6=周日）</span>
+                            <select data-cron-field="weekday">
+                                <option value="*">每周 *</option>
+                                <option value="0-4">工作日 0-4</option>
+                                <option value="0">周一 0</option>
+                                <option value="4">周五 4</option>
+                                <option value="5">周六 5</option>
+                                <option value="6">周日 6</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </label>
+                        <input type="text" class="cron-custom-input hidden" data-cron-custom="weekday" placeholder="例如 0,2,4" />
+                    </div>
+                </div>
+                <div class="cron-preview">
+                    <span>当前表达式：</span>
+                    <code id="cronPreview">* * * * *</code>
+                </div>
+                <small class="muted">顺序：分钟 小时 日 月 周；自定义字段可使用数字、*、/、,、-，为空时默认 *</small>
+                <div class="modal-actions">
+                    <button type="button" class="ghost" data-close>取消</button>
+                    <button type="button" id="btnApplyCron" class="primary">填入 Cron</button>
+                </div>
+            </form>
         </div>
     </div>
 

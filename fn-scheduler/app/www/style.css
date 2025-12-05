@@ -349,6 +349,16 @@ small {
     flex: 1;
 }
 
+.cron-input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cron-input-wrapper input {
+    flex: 1;
+}
+
 .account-status-text {
     display: block;
     margin-top: 4px;
@@ -362,6 +372,39 @@ small {
 
 .pretask-wrapper select {
     flex: 1;
+}
+
+.cron-field-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.cron-field {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.cron-custom-input {
+    margin-top: 8px;
+}
+
+.cron-preview {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 14px;
+}
+
+.cron-preview code {
+    font-family: inherit;
+    font-weight: 600;
 }
 
 .result-list {

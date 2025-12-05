@@ -32,6 +32,10 @@ const elements = {
     resultSubtitle: document.getElementById('resultSubtitle'),
     resultList: document.getElementById('resultList'),
     toast: document.getElementById('toast'),
+    cronModal: document.getElementById('cronModal'),
+    cronForm: document.getElementById('cronForm'),
+    cronPreview: document.getElementById('cronPreview'),
+    scheduleInput: document.querySelector('input[name="schedule_expression"]'),
 };
 
 const buttons = {
@@ -43,7 +47,18 @@ const buttons = {
     results: document.getElementById('btnResults'),
     refresh: document.getElementById('btnRefresh'),
     clearResults: document.getElementById('btnClearResults'),
+    cronGenerator: document.getElementById('btnCronGenerator'),
+    applyCron: document.getElementById('btnApplyCron'),
 };
+
+const CRON_FIELDS = ['minute', 'hour', 'day', 'month', 'weekday'];
+const cronSelects = {};
+const cronCustomInputs = {};
+
+CRON_FIELDS.forEach((field) => {
+    cronSelects[field] = document.querySelector(`[data-cron-field="${field}"]`);
+    cronCustomInputs[field] = document.querySelector(`[data-cron-custom="${field}"]`);
+});
 
 const statusMap = {
     success: { label: '成功', className: 'status-success' },
@@ -387,7 +402,9 @@ function openTaskModal(task = null) {
         elements.triggerTypeSelect.value = task.trigger_type;
         elements.eventTypeSelect.value = task.event_type || 'script';
         elements.taskForm.is_active.checked = Boolean(task.is_active);
-        elements.taskForm.schedule_expression.value = task.schedule_expression || '';
+        if (elements.scheduleInput) {
+            elements.scheduleInput.value = task.schedule_expression || '';
+        }
         elements.taskForm.condition_script.value = task.condition_script || '';
         elements.taskForm.condition_interval.value = task.condition_interval || 60;
         elements.taskForm.script_body.value = task.script_body || '';
@@ -395,6 +412,9 @@ function openTaskModal(task = null) {
         elements.taskModalTitle.textContent = '新建任务';
         elements.eventTypeSelect.value = 'script';
         elements.taskForm.condition_interval.value = 60;
+        if (elements.scheduleInput) {
+            elements.scheduleInput.value = '';
+        }
     }
     toggleSections();
     openModal(elements.taskModal);
@@ -410,7 +430,8 @@ function collectFormData() {
         script_body: elements.taskForm.script_body.value.trim(),
     };
     if (data.trigger_type === 'schedule') {
-        data.schedule_expression = elements.taskForm.schedule_expression.value.trim();
+        const scheduleField = elements.scheduleInput;
+        data.schedule_expression = scheduleField ? scheduleField.value.trim() : '';
     } else {
         data.event_type = elements.eventTypeSelect.value;
         if (data.event_type === 'script') {
@@ -419,6 +440,60 @@ function collectFormData() {
         }
     }
     return data;
+}
+
+function sanitizeCronValue(value = '') {
+    return value.replace(/[^0-9*\/,\-]/g, '').replace(/,{2,}/g, ',');
+}
+
+function getCronFieldValue(field) {
+    const select = cronSelects[field];
+    if (!select) {
+        return '*';
+    }
+    if (select.value === 'custom') {
+        const input = cronCustomInputs[field];
+        const sanitized = sanitizeCronValue(input?.value || '');
+        return sanitized || '*';
+    }
+    return select.value || '*';
+}
+
+function updateCronPreview() {
+    const expression = CRON_FIELDS.map((field) => getCronFieldValue(field)).join(' ');
+    if (elements.cronPreview) {
+        elements.cronPreview.textContent = expression;
+    }
+    return expression;
+}
+
+function prefillCronGenerator(expression = '') {
+    const normalized = expression.trim();
+    const tokens = normalized ? normalized.split(/\s+/) : [];
+    CRON_FIELDS.forEach((field, index) => {
+        const select = cronSelects[field];
+        const input = cronCustomInputs[field];
+        if (!select) {
+            return;
+        }
+        const rawPart = tokens[index] || '*';
+        const normalizedPart = rawPart === '*' ? '*' : sanitizeCronValue(rawPart) || '*';
+        const hasOption = Array.from(select.options).some((option) => option.value === normalizedPart);
+        if (hasOption) {
+            select.value = normalizedPart;
+            if (input) {
+                input.classList.add('hidden');
+                input.value = '';
+            }
+        } else {
+            select.value = 'custom';
+            if (input) {
+                input.classList.remove('hidden');
+                input.value = normalizedPart;
+            }
+        }
+    });
+    updateCronPreview();
 }
 
 async function handleFormSubmit(event) {
@@ -726,6 +801,57 @@ function attachEventListeners() {
 
     elements.triggerTypeSelect.addEventListener('change', toggleSections);
     elements.eventTypeSelect.addEventListener('change', toggleEventInputs);
+
+    CRON_FIELDS.forEach((field) => {
+        const select = cronSelects[field];
+        const input = cronCustomInputs[field];
+        if (select) {
+            select.addEventListener('change', () => {
+                const useCustom = select.value === 'custom';
+                if (input) {
+                    input.classList.toggle('hidden', !useCustom);
+                    if (useCustom && !input.value.trim()) {
+                        input.value = '*';
+                    }
+                    if (!useCustom) {
+                        input.value = '';
+                    }
+                }
+                updateCronPreview();
+            });
+        }
+        if (input) {
+            input.addEventListener('input', () => {
+                const sanitized = sanitizeCronValue(input.value);
+                if (sanitized !== input.value) {
+                    input.value = sanitized;
+                }
+                updateCronPreview();
+            });
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+        if (target.closest('#btnCronGenerator') && elements.cronModal) {
+            event.preventDefault();
+            const current = elements.scheduleInput?.value || '';
+            prefillCronGenerator(current);
+            openModal(elements.cronModal);
+            return;
+        }
+        if (target.closest('#btnApplyCron') && elements.cronModal) {
+            event.preventDefault();
+            const expression = updateCronPreview();
+            if (elements.scheduleInput) {
+                elements.scheduleInput.value = expression;
+            }
+            closeModal(elements.cronModal);
+        }
+    });
 }
 
 (async function init() {
