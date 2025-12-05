@@ -1,0 +1,112 @@
+[
+    {
+        "stepTitle": "配置向导",
+        "items": [
+            {
+                "type": "tips",
+                "helpText": "修改 SSHD 配置。"
+            }
+        ]
+    },
+    {
+        "stepTitle": "用户配置",
+        "items": [
+            {
+                "type": "radio",
+                "field": "wizard_PermitRootLogin",
+                "label": "是否允许 root 用户登录 SSH",
+                "initValue": "yes",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "yes"
+                    },
+                    {
+                        "label": "否",
+                        "value": "no"
+                    }
+                ]
+            },
+            {
+                "type": "radio",
+                "field": "wizard_PasswordAuthentication",
+                "label": "是否允许 root 用户通过密码登录 SSH",
+                "initValue": "yes",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "yes"
+                    },
+                    {
+                        "label": "否",
+                        "value": "no"
+                    }
+                ]
+            },
+            {
+                "type": "radio",
+                "field": "wizard_PubkeyAuthentication",
+                "label": "是否允许 root 用户通过公钥登录 SSH",
+                "initValue": "yes",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "yes"
+                    },
+                    {
+                        "label": "否",
+                        "value": "no"
+                    }
+                ]
+            },
+            {
+                "type": "radio",
+                "field": "wizard_PermitEmptyPasswords",
+                "label": "是否允许通过空密码登录 SSH",
+                "initValue": "no",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "yes"
+                    },
+                    {
+                        "label": "否",
+                        "value": "no"
+                    }
+                ]
+            },
+            {
+                "type": "radio",
+                "field": "wizard_GatewayPorts",
+                "label": "是否允许 SSH 端口转发",
+                "initValue": "yes",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "yes"
+                    },
+                    {
+                        "label": "否",
+                        "value": "no"
+                    }
+                ]
+            },
+            {
+                "type": "radio",
+                "field": "wizard_X11Forwarding",
+                "label": "是否允许 X11 转发",
+                "initValue": "yes",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "yes"
+                    },
+                    {
+                        "label": "否",
+                        "value": "no"
+                    }
+                ]
+            }
+        ]
+    }
+]

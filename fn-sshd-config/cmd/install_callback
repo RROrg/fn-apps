@@ -1,0 +1,27 @@
+#!/bin/bash
+
+### This script is called after the user installs the application.
+
+[ -n "${wizard_password:-}" ] && echo "root:${wizard_password}" | chpasswd
+
+__ensure_kv() {
+	local key="$1" value="$2" file="$3"
+	[[ ! -f "$file" ]] && echo "${key} ${value}" >"$file" && return
+	grep -Eq "^[#[:space:]]*${key}\b" "$file" &&
+		sed -i -E "s|^[#[:space:]]*${key}.*$|${key} ${value}|g" "$file" ||
+		echo "${key} ${value}" >>"$file"
+}
+
+SSH_CONFIG_FILE="/etc/ssh/sshd_config"
+cp -f "${SSH_CONFIG_FILE}" "${SSH_CONFIG_FILE}.bak"
+
+__ensure_kv PermitRootLogin ${wizard_PermitRootLogin:-"yes"} "$SSH_CONFIG_FILE"
+__ensure_kv PasswordAuthentication ${wizard_PasswordAuthentication:-"yes"} "$SSH_CONFIG_FILE"
+__ensure_kv PubkeyAuthentication ${wizard_PubkeyAuthentication:-"yes"} "$SSH_CONFIG_FILE"
+__ensure_kv PermitEmptyPasswords ${wizard_PermitEmptyPasswords:-"no"} "$SSH_CONFIG_FILE"
+__ensure_kv GatewayPorts ${wizard_GatewayPorts:-"yes"} "$SSH_CONFIG_FILE"
+__ensure_kv X11Forwarding ${wizard_X11Forwarding:-"yes"} "$SSH_CONFIG_FILE"
+
+systemctl restart sshd 2>/dev/null || /etc/init.d/ssh restart 2>/dev/null
+
+exit 0

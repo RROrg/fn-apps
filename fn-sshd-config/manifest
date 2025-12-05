@@ -1,0 +1,11 @@
+appname               = fn-sshd-config
+version               = 1.0.0
+display_name          = sshd-config
+desc                  = 设置 root 用户密码，修改 SSHD 配置，卸载时还原配置.
+arch                  = x86_64
+source                = thirdparty
+maintainer            = Ing
+maintainer_url        = https://github.com/RROrg
+distributor           = RROrg
+distributor_url       = https://github.com/RROrg/fn-apps
+install_type          = root
