@@ -1,0 +1,32 @@
+services:
+  kodi:
+    image: wjz304/kodi:latest
+    container_name: kodi
+    restart: unless-stopped
+    # privileged: true             # 启用特权模式（可选, 注意安全风险）
+    # tty: true                    # 分配伪终端
+    # stdin_open: true             # 允许交互式终端
+    environment:
+      - TZ=Asia/Shanghai
+      - LANG=zh_CN.UTF-8
+      # - LIBGL_ALWAYS_SOFTWARE=1            # 强制使用软件渲染（可选）
+      # - MESA_LOADER_DRIVER_OVERRIDE=swrast # 强制使用软件渲染（可选）
+      # - XDG_RUNTIME_DIR=/run/user/0        # PulseAudio/PipeWire 支持，需额外配置（可选）
+    devices:
+      - /dev/dri:/dev/dri          # 显卡直通 （必须）
+      - /dev/snd:/dev/snd          # 声卡直通
+      - /dev/input:/dev/input      # 输入设备直通（键盘、鼠标、遥控器等）
+    volumes:
+      - /run/udev:/run/udev:ro     # 使容器能读取设备信息（设备热插拔、输入设备、GPU/DRM 等元数据）
+      - /var/apps/fn-kodi/shares/kodi/config:/root/.kodi         # Kodi 配置文件
+      # - /run/user/1000/pulse/native:/run/user/1000/pulse/native # PulseAudio 支持，需额外配置（可选）
+      # - /run/user/1000/pipewire-0:/run/user/1000/pipewire-0     # PipeWire 支持，需额外配置（可选）
+    cap_add:
+      - SYS_ADMIN                  # 允许使用 ioctl 等操作 DRM 设备
+      - SYS_RAWIO                  # 允许直接访问硬件设备
+    network_mode: ${wizard_airplay_support:-bridge}   # 使用宿主网络模式 （可选，UPnP/DLNA 及 AirPlay 需要）
+    ports:
+      - 8080:8080                  # Web 远程控制端口
+      - 9090:9090                  # JSON-RPC 远程控制端口
+      - 9777:9777/udp              # Zeroconf/avahi 服务发现端口
+    shm_size: "1gb"

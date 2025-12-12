@@ -1,0 +1,32 @@
+[
+    {
+        "stepTitle": "配置向导",
+        "items": [
+            {
+                "type": "tips",
+                "helpText": "Kodi 是一个免费且开源的媒体播放器软件，用于播放视频、音频和图像。"
+            }
+        ]
+    },
+    {
+        "stepTitle": "用户配置",
+        "items": [
+            {
+                "type": "radio",
+                "field": "wizard_airplay_support",
+                "label": "是否需要支持 UPnP/DLNA 及 AirPlay",
+                "initValue": "bridge",
+                "options": [
+                    {
+                        "label": "是",
+                        "value": "host"
+                    },
+                    {
+                        "label": "否",
+                        "value": "bridge"
+                    }
+                ]
+            }
+        ]
+    }
+]

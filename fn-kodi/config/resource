@@ -1,0 +1,28 @@
+{
+    "docker-project":
+    {
+        "projects":
+        [
+            {
+                "name": "fn-kodi",
+                "path": "docker"
+            }
+        ]
+    },
+    "data-share":
+    {
+        "shares":
+        [
+            {
+                "name": "kodi",
+                "permission":
+                {
+                    "rw":
+                    [
+                        "docker-fn-kodi"
+                    ]
+                }
+            }
+        ]
+    }
+}
