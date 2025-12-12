@@ -559,9 +559,55 @@ function updateCronPreview() {
   const expression = CRON_FIELDS.map((field) => getCronFieldValue(field)).join(
     " ",
   );
+  
+  // 新的验证逻辑：如果分钟是*，检查后面四位是否都是*
+  const parts = expression.split(/\s+/);
+  if (parts.length === 5 && parts[0] === "*") {
+    const [minute, hour, day, month, weekday] = parts;
+    
+    // 只有当小时、日、月、星期几都是*时，分钟才可以是*
+    // 否则自动将分钟纠正为0
+    if (hour !== "*" || day !== "*" || month !== "*" || weekday !== "*") {
+      // 自动纠正分钟为0
+      parts[0] = "0";
+      const correctedExpression = parts.join(" ");
+      
+      // 更新界面显示
+      if (cronSelects.minute) {
+        const minuteSelect = cronSelects.minute;
+        const minuteCustomInput = cronCustomInputs.minute;
+        
+        // 查找是否有值为"0"的选项
+        const hasZeroOption = Array.from(minuteSelect.options).some(
+          (option) => option.value === "0"
+        );
+        
+        if (hasZeroOption) {
+          minuteSelect.value = "0";
+          if (minuteCustomInput) {
+            minuteCustomInput.classList.add("hidden");
+            minuteCustomInput.value = "";
+          }
+        } else {
+          // 如果没有"0"选项，设置为custom并填入0
+          minuteSelect.value = "custom";
+          if (minuteCustomInput) {
+            minuteCustomInput.classList.remove("hidden");
+            minuteCustomInput.value = "0";
+          }
+        }
+      }
+      
+      // 使用纠正后的表达式
+      return updateCronPreview(); // 递归调用以使用纠正后的值更新预览
+    }
+  }
+  
+  // 原来的显示逻辑
   if (elements.cronPreview) {
     elements.cronPreview.textContent = expression;
   }
+  
   // 计算2次执行时间并显示有效性
   if (elements.cronNextTimes) {
     const result = getNextCronTimes(expression, 2);
@@ -598,6 +644,7 @@ function updateCronPreview() {
       }
     }
   }
+  
   return expression;
 }
 
@@ -721,6 +768,15 @@ function formatCronDate(dt) {
 function prefillCronGenerator(expression = "") {
   const normalized = expression.trim();
   const tokens = normalized ? normalized.split(/\s+/) : [];
+  
+  // 在加载时也应用相同的验证规则
+  if (tokens.length === 5 && tokens[0] === "*") {
+    const [minute, hour, day, month, weekday] = tokens;
+    if (hour !== "*" || day !== "*" || month !== "*" || weekday !== "*") {
+      tokens[0] = "0"; // 自动纠正
+    }
+  }
+  
   CRON_FIELDS.forEach((field, index) => {
     const select = cronSelects[field];
     const input = cronCustomInputs[field];

@@ -1,13 +1,8 @@
-#
-# Copyright (C) 2022 Ing <https://github.com/wjz304>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
-
 name: Build
 
 on:
+  push:
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -15,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Init Env
         run: |
@@ -25,45 +22,64 @@ jobs:
 
       - name: Build
         run: |
-          TAG=$(date +"%Y.%m.%d-%H%M")
+          # 获取最新的标签或使用日期作为版本
+          if git describe --tags --abbrev=0 2>/dev/null; then
+            LATEST_TAG=$(git describe --tags --abbrev=0)
+            TAG="${LATEST_TAG}-$(date +%Y%m%d-%H%M)"
+          else
+            TAG=$(date +"%Y.%m.%d-%H%M")
+          fi
           echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
+          # 下载并设置 fnpack
           curl -sSL https://static2.fnnas.com/fnpack/fnpack-1.0.4-linux-amd64 -o fnpack
           sudo chmod +x fnpack
 
+          # 创建应用列表文档
           echo "| 应用名称 | 版本 | 描述 |" > apps-list.md
           echo "|----------|------|------|" >> apps-list.md
 
+          # 构建所有 fn-* 应用
           for APP in fn-*; do
             [ -f "${APP}/manifest" ] || continue
             echo "Building ${APP} ..."
 
-            # ./fnpack create ${APP} --without-ui true  # 如果不需要 UI, 可以启用此行
+            # 构建应用
             ./fnpack build --directory ${APP}
 
+            # 读取应用信息
             APPNAME=$(grep '^appname' "$APP/manifest" | awk -F= '{print $2}' | xargs)
             VERSION=$(grep '^version' "$APP/manifest" | awk -F= '{print $2}' | xargs)
             DESC=$(grep '^desc' "$APP/manifest" | awk -F= '{print $2}' | xargs)
             echo "| ${APPNAME} | v${VERSION} | ${DESC} |" >> apps-list.md
 
+            # 重命名文件
             mv -f "${APPNAME}.fpk" "${APPNAME}_v${VERSION}.fpk"
           done
 
+          # 添加构建信息
           echo "" >> apps-list.md
-          echo "![](https://img.shields.io/github/downloads/rrorg/fn-apps/${TAG}/total)" >> apps-list.md
+          echo "### 构建信息" >> apps-list.md
+          echo "- 构建时间: $(date '+%Y-%m-%d %H:%M:%S')" >> apps-list.md
+          echo "- 构建版本: ${TAG}" >> apps-list.md
+          echo "- 提交哈希: $(git rev-parse --short HEAD)" >> apps-list.md
+          echo "" >> apps-list.md
+          echo "![](https://img.shields.io/github/downloads/${{ github.repository }}/latest/total)" >> apps-list.md
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fn-apps
-          path: "*.fpk"
-          retention-days: 5
+          name: fn-apps-${{ env.TAG }}
+          path: |
+            *.fpk
+            apps-list.md
+          retention-days: 30
 
-      - name: Release
-        if: success() && !cancelled()
-        uses: ncipollo/release-action@v1
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: ${{ secrets.RRORG }}
-          tag: ${{ env.TAG }}
-          artifacts: "*.fpk"
-          bodyFile: "apps-list.md"
+          files: "*.fpk"
+          body_path: "apps-list.md"
+          generate_release_notes: true

@@ -12,20 +12,6 @@
                 "accessPerm": "readonly",
                 "pathPerm": "readonly"
             }
-        },
-        "fn-scheduler.ApplicationWeb": {
-            "title": "任务计划 Web",
-            "desc": "任务计划 Web",
-            "icon": "images/icon_{0}.png",
-            "type": "url",
-            "protocol": "http",
-            "port": "28256",
-            "url": "/",
-            "allUsers": false,
-            "control": {
-                "accessPerm": "readonly",
-                "pathPerm": "readonly"
-            }
         }
     }
 }
