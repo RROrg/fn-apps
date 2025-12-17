@@ -1,6 +1,5 @@
 {
-    "defaults":
-    {
+    "defaults": {
         "run-as": "root"
     }
 }

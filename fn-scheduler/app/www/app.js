@@ -137,6 +137,22 @@ const eventTypeMap = {
   system_shutdown: "系统关机",
 };
 
+// 响应式短标签（用于窄屏显示）
+const eventTypeShortMap = {
+  script: "脚本",
+  system_boot: "开机",
+  system_shutdown: "关机",
+};
+
+function isNarrow() {
+  return window.innerWidth <= 480;
+}
+
+function getEventLabel(key) {
+  if (isNarrow()) return eventTypeShortMap[key] || eventTypeMap[key] || key;
+  return eventTypeMap[key] || key;
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -246,8 +262,13 @@ function renderTasks() {
     const safeAccount = escapeHtml(task.account);
     let triggerLabel = triggerMap[task.trigger_type] || task.trigger_type;
     if (task.trigger_type === "event") {
-      const subtype = eventTypeMap[task.event_type] || "事件";
-      triggerLabel = `${triggerLabel} · ${subtype}`;
+      const subtype = getEventLabel(task.event_type) || "事件";
+      // 窄屏上省略主标签“事件”，仅显示子类型（如“开机/关机/脚本”）
+      if (isNarrow()) {
+        triggerLabel = subtype;
+      } else {
+        triggerLabel = `${triggerLabel} · ${subtype}`;
+      }
     }
     tr.innerHTML = `
             <td><span class="badge ${task.is_active ? "badge-active" : "badge-paused"}">${task.is_active ? "已启动" : "已停用"}</span></td>
@@ -399,6 +420,32 @@ function renderAccountOptions(selectedAccount = "") {
     select.appendChild(option);
   });
 
+
+// 更新事件类型下拉选项的显示文本（响应式）
+function updateEventOptionLabels() {
+  const el = elements.eventTypeSelect;
+  if (!el) return;
+  const useShort = isNarrow();
+  // 保留选项顺序及 value，仅调整显示文本
+  for (const opt of el.options) {
+    const v = opt.value;
+    if (v === 'script' || v === 'system_boot' || v === 'system_shutdown') {
+      opt.textContent = useShort ? (eventTypeShortMap[v] || eventTypeMap[v]) : (eventTypeMap[v] || eventTypeShortMap[v]);
+    }
+  }
+}
+
+// 在窗口尺寸变化时更新 event 下拉与任务列表显示
+window.addEventListener('resize', () => {
+  updateEventOptionLabels();
+  // 重新渲染任务以更新在表格中显示的事件简称/全称
+  renderTasks();
+});
+
+// 初始化时也更新一下
+document.addEventListener('DOMContentLoaded', () => {
+  updateEventOptionLabels();
+});
   if (!hasSelected && !legacyAccount && select.options.length) {
     select.options[0].selected = true;
   }

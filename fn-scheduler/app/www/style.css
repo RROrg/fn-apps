@@ -160,7 +160,7 @@ button:disabled {
     border: 1px solid var(--border);
     /* allow scroll when task list grows */
     overflow: auto;
-    max-height: calc(100vh - 240px);
+    max-height: calc(100vh - 220px);
     box-shadow: var(--shadow);
     margin-top: 12px;
 }
