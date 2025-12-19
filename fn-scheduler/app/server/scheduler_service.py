@@ -1014,8 +1014,12 @@ class SchedulerEngine:
         self.db = db
         self.stop_event = threading.Event()
         self.thread = threading.Thread(target=self._loop, daemon=True)
+        # 记录服务启动时间，用于跳过重启前已过期的定时任务
+        self.started_at: Optional[datetime] = None
 
     def start(self) -> None:
+        # 标记启动时刻，之后复核过期任务时会基于此时间跳过历史遗留的执行
+        self.started_at = time_now()
         self.thread.start()
         self._trigger_system_event(EVENT_TYPE_BOOT)
 
@@ -1037,6 +1041,24 @@ class SchedulerEngine:
 
     def _process_due_tasks(self, moment: datetime) -> None:
         for task in self.db.fetch_due_tasks(moment):
+            # 跳过那些在服务启动之前就已经过期的任务（避免重启后回放执行）
+            try:
+                next_run_dt = parse_iso(task.get("next_run_at"))
+            except Exception:
+                next_run_dt = None
+            if self.started_at and next_run_dt and next_run_dt < self.started_at:
+                logger.info(
+                    "Skipping expired task %s scheduled at %s (service started at %s)",
+                    task.get("id"),
+                    task.get("next_run_at"),
+                    isoformat(self.started_at),
+                )
+                # 重新安排到下一个可用时间，但不执行错过的运行
+                try:
+                    self.db.schedule_next_run(task["id"], task["schedule_expression"], self.started_at)
+                except Exception:
+                    logger.exception("Failed to reschedule expired task %s", task.get("id"))
+                continue
             if self.db.has_running_instance(task["id"]):
                 logger.info("Task %s still running, skip", task["id"])
                 continue

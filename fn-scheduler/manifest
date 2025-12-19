@@ -1,5 +1,5 @@
 appname               = fn-scheduler
-version               = 1.0.8
+version               = 1.0.9
 display_name          = 任务计划
 desc                  = 轻量级的任务计划应用，支持定时和条件触发任务执行。
 arch                  = x86_64
