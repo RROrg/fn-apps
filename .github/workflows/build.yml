@@ -25,6 +25,7 @@ jobs:
 
       - name: Build
         run: |
+          REPO="${{ github.repository }}"
           TAG=$(date +"%Y.%m.%d-%H%M")
           echo "TAG=${TAG}" >> $GITHUB_ENV
 
@@ -34,6 +35,7 @@ jobs:
           echo "| 应用名称 | 版本 | 描述 |" > apps-list.md
           echo "|----------|------|------|" >> apps-list.md
 
+          APPS=()
           for APP in fn-*; do
             [ -f "${APP}/manifest" ] || continue
             echo "Building ${APP} ..."
@@ -47,10 +49,33 @@ jobs:
             echo "| ${APPNAME} | v${VERSION} | ${DESC} |" >> apps-list.md
 
             mv -f "${APPNAME}.fpk" "${APPNAME}_v${VERSION}.fpk"
+
+            SIZE=$(stat -c%s "${APPNAME}_v${VERSION}.fpk" 2>/dev/null | awk '{printf "%10.3f",$1/1024/1024}')
+            NAME=$(grep '^display_name' "$APP/manifest" | awk -F= '{print $2}' | xargs)
+            TYPE=$(grep '^install_type' "$APP/manifest" | awk -F= '{print $2}' | xargs)
+            APPS+=("\"${APP}\": {\"display_name\": \"${NAME}\", \"desc\": \"${DESC}\", \"labels\": \"工具\", \"version\": \"${VERSION}\", \"download_url\": \"https://github.com/${REPO}/releases/download/${TAG}/${APPNAME}_v${VERSION}.fpk\", \"author\": \"Ing\", \"author_url\": \"https://github.com/${REPO}\", \"bug_report_url\": \"https://github.com/${REPO}/issues\", \"install_type\": \"${TYPE}\", \"size\": \"${SIZE}\", \"history\": {\"v${VERSION}\": \"Initial release of ${APPNAME} package.\"}}")
           done
 
           echo "" >> apps-list.md
-          echo "![](https://img.shields.io/github/downloads/rrorg/fn-apps/${TAG}/total)" >> apps-list.md
+          echo "![](https://img.shields.io/github/downloads/${REPO}/${TAG}/total)" >> apps-list.md
+
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt update >/dev/null 2>&1 && sudo apt install -y jq >/dev/null 2>&1
+          fi
+          echo {$(IFS=,; echo "${APPS[*]}")} | jq . >fnpack.json
+
+      - name: Check and Push
+        if: success()
+        run: |
+          echo "Git push ..."
+          # git checkout main
+          git pull
+          status=$(git status -s | grep -E "fnpack.json" | awk '{printf " %s", $2}')
+          if [ -n "${status}" ]; then
+            git add ${status}
+            git commit -m "update $(date +%Y-%m-%d" "%H:%M:%S)"
+            git push -f
+          fi
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
