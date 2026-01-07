@@ -2,4 +2,7 @@
 
 ### This script is called after the user uninstalls the application.
 
-exit 0
+apt remove -y iw
+apt autoremove -y
+
+exit $?
