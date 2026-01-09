@@ -1,5 +1,5 @@
 appname               = fn-qemu-ga
-version               = 1.0.4
+version               = 1.0.5
 display_name          = qemu-ga
 desc                  = QEMU Guest Agent 是一个运行在虚拟机内部的守护进程，旨在通过与虚拟化主机的交互，执行一系列操作以增强虚拟机的管理能力。
 platform              = all

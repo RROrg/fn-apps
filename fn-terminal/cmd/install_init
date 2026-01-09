@@ -7,6 +7,6 @@ chmod +x /usr/bin/ttyd 2>/dev/null
 [ ! -x /usr/bin/ttyd ] && exit 1
 
 apt update
-apt install -y tmux
+apt install -y --no-install-recommends tmux
 
 exit $?

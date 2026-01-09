@@ -4,7 +4,7 @@
 
 rm -f /usr/bin/ttyd
 
-apt remove -y tmux
+apt purge -y tmux
 apt autoremove -y
 
 exit $?

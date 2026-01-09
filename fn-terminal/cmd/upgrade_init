@@ -7,6 +7,6 @@ chmod +x /usr/bin/ttyd 2>/dev/null
 [ ! -x /usr/bin/ttyd ] && exit 1
 
 apt update
-apt install -y tmux
+apt upgrade -y tmux
 
 exit $?

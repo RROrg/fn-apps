@@ -2,7 +2,7 @@
 
 ### This script is called after the user uninstalls the application.
 
-apt remove -y qemu-guest-agent
+apt purge -y qemu-guest-agent
 apt autoremove -y
 
 exit $?

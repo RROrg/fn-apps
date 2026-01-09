@@ -1,5 +1,5 @@
 appname               = fn-open-vm-tools
-version               = 1.0.4
+version               = 1.0.5
 display_name          = open-vm-tools
 desc                  = Open-VM-Tools 是 VMware Tools 的开源替代品，旨在为运行在 VMware 环境中的虚拟机提供更好的性能和用户体验。
 platform              = all

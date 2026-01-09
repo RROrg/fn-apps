@@ -2,7 +2,7 @@
 
 ### This script is called after the user uninstalls the application.
 
-apt remove -y open-vm-tools
+apt purge -y open-vm-tools
 apt autoremove -y
 
 exit $?
