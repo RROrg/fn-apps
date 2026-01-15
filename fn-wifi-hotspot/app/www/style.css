@@ -1,0 +1,462 @@
+:root {
+  --bg: #f3f4f6;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --surface: #ffffff;
+  --surface2: #f9fafb;
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* Dark theme: override color tokens so native controls (select/options)
+   render correctly in dropdowns and system UI. This avoids using a
+   global invert filter which breaks form control backgrounds. */
+html[data-theme="dark"] {
+  /* Visual Studio Dark inspired palette */
+  --bg: #1E1E1E;
+  /* editor.background */
+  --text: #D4D4D4;
+  /* editor.foreground */
+  --muted: #9AA7B0;
+  /* subdued text */
+  --border: #3C3C3C;
+  /* dividers */
+  --surface: #252526;
+  /* sidebar/panel */
+  --surface2: #2D2D30;
+  /* slightly lighter surface */
+  --primary: #007ACC;
+  /* primary / link color */
+  --accent: #3794FF;
+  /* accent */
+  --selection: #264F78;
+  /* selection highlight */
+  --success: #81B88B;
+  --warning: #D7BA7D;
+  --error: #F48771;
+
+  /* Semantic/token colors (for code-like displays) */
+  --token-comment: #6A9955;
+  --token-string: #CE9178;
+  --token-keyword: #569CD6;
+  --token-number: #B5CEA8;
+  --token-function: #DCDCAA;
+  --token-variable: #9CDCFE;
+  --token-type: #4EC9B0;
+
+  color-scheme: dark;
+}
+
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.msg {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  opacity: .92;
+  color: var(--text);
+  display: none;
+  pointer-events: none;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.msg.show {
+  display: block;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.config-card {
+  min-width: 0;
+}
+
+@media (max-width:860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.card h2 {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.card .body {
+  padding: 12px 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions .spacer {
+  flex: 1 1 auto;
+}
+
+.actions select {
+  width: auto;
+  padding: 6px 30px 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background-color: var(--surface2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Custom chevron + divider using existing theme tokens. */
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+    linear-gradient(to right, var(--border), var(--border));
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%,
+    calc(100% - 28px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px,
+    1px 16px;
+  background-repeat: no-repeat;
+}
+
+.actions select:hover {
+  background-color: var(--surface);
+}
+
+.actions select:focus-visible {
+  outline: 2px solid var(--border);
+  outline-offset: 2px;
+}
+
+button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--surface);
+}
+
+form.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width:680px) {
+  form.grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.section-title {
+  grid-column: 1/-1;
+  margin-top: 4px;
+  padding-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid var(--surface2);
+  outline-offset: 1px;
+}
+
+pre {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#clients {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.clients-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 2px;
+}
+
+table.clients {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface2);
+  font-size: 12px;
+}
+
+table.clients th,
+table.clients td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+table.clients th {
+  color: var(--muted);
+  font-weight: 700;
+  background: var(--surface);
+}
+
+table.clients tr:last-child td {
+  border-bottom: none;
+}
+
+.clients-actions button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+button.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+}
+
+button.toggle .switch {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+}
+
+button.toggle .switch .knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+button.toggle[aria-pressed="true"] .switch {
+  background: var(--primary);
+  justify-content: flex-end;
+}
+
+.pw-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pw-wrap input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pw-toggle:hover {
+  background: var(--surface2);
+}
+
+.pw-toggle:focus-visible {
+  outline: 2px solid var(--border);
+  outline-offset: 2px;
+}
+
+.pw-toggle svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal .backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--text);
+  opacity: .35;
+}
+
+.modal .panel {
+  position: relative;
+  margin: 18vh auto 0;
+  max-width: min(560px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.modal .panel h3 {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.modal .panel .content {
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.modal .panel .actions {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  justify-content: flex-end;
+}
+
+/* Specific adjustments previously inline */
+.config-card .body .actions {
+  margin-top: 12px;
+}
+
+.icon-eye-off {
+  display: none;
+}

@@ -1,15 +1,17 @@
 #!/bin/bash
 
-# 脚本名称: index.cgi
-# 　　版本: 1.0.0
-# 　　作者: FNOSP/xieguanru
-# 　协作者: FNOSP/MR_XIAOBO
-# 创建日期: 2025-11-18
-# 最后修改: 2025-11-19
-# 　　描述: 这个脚本用于演示Shell脚本的各种注释方式
-# 使用方式: 文件重命名，从linux_shell_cgi_index.sh改成index.cgi,
-# 　　　　　放置应用包/ui路径下，记得 chmod +x index.cgi 赋权
-# 　许可证: MIT
+# ============================================================================
+# File Name       : index.cgi
+# Version         : 1.0.0
+# Author          : FNOSP/xieguanru
+# Collaborators   : FNOSP/MR_XIAOBO, RROrg/Ing
+# Created         : 2025-11-18
+# Last Modified   : 2026-01-14
+# Description     : CGI script for serving static files.
+# Usage           : Rename this file to index.cgi, place it under the application's /ui directory,
+#                   and run `chmod +x index.cgi` to grant execute permission.
+# License         : MIT
+# ============================================================================
 
 # 【注意】修改你自己的静态文件根目录，以本应用为例：
 BASE_PATH="/var/apps/fn-wifi-hotspot/target/www"
@@ -19,7 +21,7 @@ BASE_PATH="/var/apps/fn-wifi-hotspot/target/www"
 #    先去掉 ? 后面的 query string
 URI_NO_QUERY="${REQUEST_URI%%\?*}"
 
-# 默认值（如果没匹配到 index.cgi）
+# 默认值 (如果没匹配到 index.cgi)
 REL_PATH="/"
 
 # 用 index.cgi 作为切割点，取后面的部分
@@ -36,7 +38,7 @@ if [ -z "$REL_PATH" ] || [ "$REL_PATH" = "/" ]; then
   REL_PATH="/index.html"
 fi
 
-# 拼出真实文件路径：basePath + /ui + index.cgi 后面的路径
+# 拼出真实文件路径: BASE_PATH + /ui + index.cgi 后面的路径
 TARGET_FILE="${BASE_PATH}${REL_PATH}"
 
 # 简单防御：禁止 .. 越级访问
@@ -44,7 +46,7 @@ if echo "$TARGET_FILE" | grep -q '\.\.'; then
   echo "Status: 400 Bad Request"
   echo "Content-Type: text/plain; charset=utf-8"
   echo ""
-  echo "Bad Request"
+  echo "Bad Request: Path traversal detected"
   exit 0
 fi
 
@@ -59,7 +61,9 @@ fi
 
 # 3. 根据扩展名简单判断 Content-Type
 ext="${TARGET_FILE##*.}"
-case "$ext" in
+ext_lc="$(printf '%s' "$ext" | tr '[:upper:]' '[:lower:]')"
+
+case "$ext_lc" in
   html | htm)
     mime="text/html; charset=utf-8"
     ;;
@@ -87,13 +91,48 @@ case "$ext" in
   txt | log)
     mime="text/plain; charset=utf-8"
     ;;
+  json)
+    mime="application/json; charset=utf-8"
+    ;;
+  xml)
+    mime="application/xml; charset=utf-8"
+    ;;
   *)
     mime="application/octet-stream"
     ;;
 esac
 
-# 4. 输出头 + 文件内容
-echo "Content-Type: $mime"
-echo ""
+# 支持 If-Modified-Since 返回 304
+mtime=0
+if stat_cmd="$(command -v stat 2>/dev/null)" && [ -n "$stat_cmd" ]; then
+  mtime=$(stat -c %Y "$TARGET_FILE" 2>/dev/null || echo 0)
+  size=$(stat -c %s "$TARGET_FILE" 2>/dev/null || echo 0)
+else
+  # 回退：用 Python 获取
+  size=$(python -c "import os,sys;print(os.path.getsize(sys.argv[1]))" "$TARGET_FILE" 2>/dev/null || echo 0)
+  mtime=$(python -c "import os,sys;print(int(os.path.getmtime(sys.argv[1])))" "$TARGET_FILE" 2>/dev/null || echo 0)
+fi
+
+last_mod="$(date -u -d "@$mtime" +"%a, %d %b %Y %H:%M:%S GMT" 2>/dev/null || date -u -r "$TARGET_FILE" +"%a, %d %b %Y %H:%M:%S GMT" 2>/dev/null || echo "")"
+
+if [ -n "${HTTP_IF_MODIFIED_SINCE:-}" ]; then
+  ims_epoch=$(date -d "$HTTP_IF_MODIFIED_SINCE" +%s 2>/dev/null || echo 0)
+  if [ "$ims_epoch" -ge "$mtime" ] && [ "$mtime" -gt 0 ]; then
+    echo "Status: 304 Not Modified"
+    echo ""
+    exit 0
+  fi
+fi
+
+# 4. 输出头
+printf 'Content-Type: %s\r\n' "$mime"
+printf 'Content-Length: %s\r\n' "$size"
+printf 'Last-Modified: %s\r\n' "$last_mod"
+printf '\r\n'
+
+# 对于 HEAD 请求只返回头
+if [ "${REQUEST_METHOD:-GET}" = "HEAD" ]; then
+  exit 0
+fi
 
 cat "$TARGET_FILE"
