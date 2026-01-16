@@ -4,5 +4,6 @@
 
 apt update
 apt install -y --no-install-recommends open-vm-tools
+[ $? -ne 0 ] && echo "Failed to install open-vm-tools package." >$TRIM_TEMP_LOGFILE && exit 1
 
-exit $?
+exit 0

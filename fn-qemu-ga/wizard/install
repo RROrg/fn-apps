@@ -1,15 +1,19 @@
 [
-    {
-        "stepTitle": "安装向导",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "QEMU Guest Agent 是一个运行在虚拟机内部的守护进程，旨在通过与虚拟化主机的交互，执行一系列操作以增强虚拟机的管理能力。"
-            },
-            {
-                "type": "tips",
-                "helpText": "本程序将联网安装 QEMU Guest Agent，请确保虚拟机能够访问互联网。"
-            }
-        ]
-    }
+  {
+    "stepTitle": "安装向导",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "欢迎使用我们的应用！"
+      },
+      {
+        "type": "tips",
+        "helpText": "QEMU Guest Agent 是一个运行在虚拟机内部的守护进程，旨在通过与虚拟化主机的交互，执行一系列操作以增强虚拟机的管理能力。"
+      },
+      {
+        "type": "tips",
+        "helpText": "本程序将联网安装 QEMU Guest Agent，请确保虚拟机能够访问互联网。"
+      }
+    ]
+  }
 ]

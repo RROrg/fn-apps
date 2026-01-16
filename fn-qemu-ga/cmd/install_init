@@ -4,5 +4,6 @@
 
 apt update
 apt install -y --no-install-recommends qemu-guest-agent
+[ $? -ne 0 ] && echo "Failed to install qemu-guest-agent package." >$TRIM_TEMP_LOGFILE && exit 1
 
-exit $?
+exit 0

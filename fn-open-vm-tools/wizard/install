@@ -1,15 +1,19 @@
 [
-    {
-        "stepTitle": "安装向导",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "Open-VM-Tools 是 VMware Tools 的开源替代品，旨在为运行在 VMware 环境中的虚拟机提供更好的性能和用户体验。"
-            },
-            {
-                "type": "tips",
-                "helpText": "本程序将联网安装 Open-VM-Tools，请确保虚拟机能够访问互联网。"
-            }
-        ]
-    }
+  {
+    "stepTitle": "安装向导",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "欢迎使用我们的应用！"
+      },
+      {
+        "type": "tips",
+        "helpText": "Open-VM-Tools 是 VMware Tools 的开源替代品，旨在为运行在 VMware 环境中的虚拟机提供更好的性能和用户体验。"
+      },
+      {
+        "type": "tips",
+        "helpText": "本程序将联网安装 Open-VM-Tools，请确保虚拟机能够访问互联网。"
+      }
+    ]
+  }
 ]
