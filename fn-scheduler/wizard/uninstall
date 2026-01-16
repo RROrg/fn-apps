@@ -5,12 +5,7 @@
             {
                 "type": "tips",
                 "helpText": "您即将卸载此应用。请选择如何处理应用数据："
-            }
-        ]
-    },
-    {
-        "stepTitle": "数据配置",
-        "items": [
+            },
             {
                 "type": "radio",
                 "field": "wizard_data_action",
@@ -18,7 +13,7 @@
                 "initValue": "keep",
                 "options": [
                     {
-                        "label": "保留数据 - 重新安装时可恢复！（推荐）",
+                        "label": "保留数据 - 重安装时可恢复！（推荐）",
                         "value": "keep"
                     },
                     {
@@ -32,10 +27,6 @@
                         "message": "请选择数据保留选项"
                     }
                 ]
-            },
-            {
-                "type": "tips",
-                "helpText": "<strong>警告：</strong> 选择删除数据后，所有应用数据将永久丢失，无法恢复。"
             }
         ]
     }
