@@ -8,24 +8,28 @@
       },
       {
         "type": "tips",
-        "helpText": "1. Kodi web 界面的默认用户名和密码为 <strong>kodi:kodi</strong>，请在首次登录后前往设置页面修改。"
+        "helpText": "1. 启用本程序将直接接管物理设备（显示器、音频设备、键盘、鼠标），停用此程序即可释放这些设备。"
       },
       {
         "type": "tips",
-        "helpText": "2. 遥控器：<br/>  * Cast Kodi（浏览器扩展）<br/>  * Kore（Android 应用）<br/>  * SYBU for Kodi（iOS 应用）<br/>"
+        "helpText": "2. Kodi 控制 界面的默认用户名和密码为 <strong>kodi:kodi</strong>，请在首次登录后前往设置页面修改。"
+      },
+      {
+        "type": "tips",
+        "helpText": "3. 遥控器：<br/>  * Cast Kodi（浏览器扩展）<br/>  * Kore（Android 应用）<br/>  * SYBU for Kodi（iOS 应用）<br/>"
       },
       {
         "type": "radio",
         "field": "wizard_airplay_support",
-        "label": "是否需要支持 UPnP/DLNA 及 AirPlay",
+        "label": "是否需要支持 UPnP/DLNA 及 AirPlay, 以便通过局域网投屏.",
         "initValue": "bridge",
         "options": [
           {
-            "label": "是",
+            "label": "是 (host)",
             "value": "host"
           },
           {
-            "label": "否",
+            "label": "否 (bridge)",
             "value": "bridge"
           }
         ]
