@@ -4,18 +4,7 @@ LOG_FILE="${TRIM_PKGVAR}/info.log"
 PID_FILE="${TRIM_PKGVAR}/app.pid"
 
 # write the command to start your program here
-
-mkdir -p ${TRIM_PKGVAR}/.config
-{
-  echo "bind-addr: 0.0.0.0:${wizard_port:-38356}"
-  echo "auth: password"
-  echo "password: ${wizard_password:-admin}"
-  echo "cert: false"
-} >${TRIM_PKGVAR}/.config/config.yaml
-
-mkdir -p ${TRIM_PKGVAR}/.local
-
-CMD="PATH=\"${TRIM_APPDEST}/server/bin:$PATH\" code-server --config \"${TRIM_PKGVAR}/.config/config.yaml\" --user-data-dir \"${TRIM_PKGVAR}/.local\""
+CMD="${TRIM_APPDEST}/server/bin/code-server-run"
 
 log_msg() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}

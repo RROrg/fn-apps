@@ -2,8 +2,7 @@
 
 ### This script is called after the user installs the application.
 
-export HOME="${TRIM_PKGVAR}"
-curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --prefix "${TRIM_APPDEST}/server"
+curl -fsSL https://code-server.dev/install.sh | env HOME="${TRIM_PKGVAR}" sh -s -- --method standalone --prefix "${TRIM_APPDEST}/server"
 [ $? -ne 0 ] && {
   echo "code-server install failed" >$TRIM_TEMP_LOGFILE 2>&1
   exit 1
@@ -46,5 +45,39 @@ jq '
     . + {extensionsGallery: gallery}
   end
 ' "$FILE" >"$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+
+# Ensure .vscode-server lives under TRIM_PKGVAR and provide a small wrapper
+# so system/service can invoke code-server with user-data and extensions under TRIM_PKGVAR
+mkdir -p "${TRIM_PKGVAR}/.config"
+{
+  echo "bind-addr: 0.0.0.0:${wizard_port:-38356}"
+  echo "auth: password"
+  echo "password: ${wizard_password:-admin}"
+  echo "cert: false"
+} >"${TRIM_PKGVAR}/.config/config.yaml"
+
+VSCODE_SERVER_DIR="${TRIM_PKGVAR}/.local"
+mkdir -p "$VSCODE_SERVER_DIR/extensions" >/dev/null 2>&1 || true
+
+# create wrapper script that forces user-data and extensions dir to TRIM_PKGVAR
+WRAPPER="${TRIM_APPDEST}/server/bin/code-server-run"
+cat >"$WRAPPER" <<'EOF'
+#!/bin/sh
+# wrapper created by install_callback: calls bundled code-server with controlled dirs
+BASE_DIR="__TRIM_APPDEST__/server/bin"
+PKGVAR="__TRIM_PKGVAR__"
+exec env HOME="${PKGVAR}" "$BASE_DIR/code-server" --disable-telemetry --config "$PKGVAR/.config/config.yaml" --user-data-dir "$PKGVAR/.local" --extensions-dir "$PKGVAR/.local/extensions" "$@"
+EOF
+# substitute actual paths
+sed -i "s|__TRIM_APPDEST__|${TRIM_APPDEST}|g; s|__TRIM_PKGVAR__|${TRIM_PKGVAR}|g" "$WRAPPER" || true
+chmod +x "$WRAPPER" || true
+
+# # Optionally install extensions  
+# EXTS_LIST="MS-CEINTL.vscode-language-pack-zh-hans MS-CEINTL.vscode-language-pack-zh-hant"
+# for e in $EXTS_LIST; do
+#   echo "Installing extension: $e"
+#   "${WRAPPER}" --install-extension "$e" || true
+# done
+# sed -i "s|--config|--locale zh-CN --config|" "$WRAPPER" || true
 
 exit 0

@@ -2,4 +2,12 @@
 
 ### This script is called after the user change environment variables in application setting page.
 
+mkdir -p "${TRIM_PKGVAR}/.config"
+{
+  echo "bind-addr: 0.0.0.0:${wizard_port:-38356}"
+  echo "auth: password"
+  echo "password: ${wizard_password:-admin}"
+  echo "cert: false"
+} >"${TRIM_PKGVAR}/.config/config.yaml"
+
 exit 0
