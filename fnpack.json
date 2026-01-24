@@ -3,15 +3,15 @@
     "display_name": "code-server",
     "desc": "code-server 是 VS Code 的在线版本，允许您通过浏览器进行代码编辑和开发。",
     "labels": "工具",
-    "version": "1.0.3",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-codeserver_v1.0.3.fpk",
+    "version": "1.0.4",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-codeserver_all_v1.0.4.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "install_type": "root",
+    "install_type": "",
     "size": " 0.015",
     "history": {
-      "v1.0.3": "Initial release of fn-codeserver package."
+      "v1.0.4": "Initial release of fn-codeserver package."
     }
   },
   "fn-fail2ban": {
@@ -19,7 +19,7 @@
     "desc": "fail2ban 是一个开源的入侵防御工具，用于保护 Linux 服务器免受暴力破解攻击。 它通过监控日志文件，检测可疑的登录尝试，并自动封禁恶意 IP 地址，从而增强系统的安全性。",
     "labels": "工具",
     "version": "1.0.0",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-fail2ban_v1.0.0.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-fail2ban_all_v1.0.0.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
@@ -33,90 +33,90 @@
     "display_name": "kodi",
     "desc": "Kodi 是一个免费且开源的媒体播放器软件，用于播放视频、音频和图像。",
     "labels": "工具",
-    "version": "1.0.3",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-kodi_v1.0.3.fpk",
+    "version": "1.0.4",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-kodi_all_v1.0.4.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "install_type": "root",
+    "install_type": "",
     "size": " 0.048",
     "history": {
-      "v1.0.3": "Initial release of fn-kodi package."
+      "v1.0.4": "Initial release of fn-kodi package."
     }
   },
   "fn-msedge": {
     "display_name": "msedge",
     "desc": "Microsoft Edge 是一款由 Microsoft 开发、基于 Chromium 的跨平台网页浏览器。",
     "labels": "工具",
-    "version": "1.0.4",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-msedge_v1.0.4.fpk",
+    "version": "1.0.5",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-msedge_x86_v1.0.5.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "install_type": "root",
+    "install_type": "",
     "size": " 0.075",
     "history": {
-      "v1.0.4": "Initial release of fn-msedge package."
+      "v1.0.5": "Initial release of fn-msedge package."
     }
   },
   "fn-ntfs3": {
     "display_name": "ntfs3",
     "desc": "ntfs3 驱动是一个用于 Linux 内核的开源 NTFS 文件系统驱动程序，旨在提供对 NTFS 格式化分区的高性能读写支持。",
     "labels": "工具",
-    "version": "1.0.3",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-ntfs3_v1.0.3.fpk",
+    "version": "1.0.4",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-ntfs3_all_v1.0.4.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "install_type": "root",
-    "size": " 0.241",
+    "size": " 0.610",
     "history": {
-      "v1.0.3": "Initial release of fn-ntfs3 package."
+      "v1.0.4": "Initial release of fn-ntfs3 package."
     }
   },
   "fn-open-vm-tools": {
     "display_name": "open-vm-tools",
     "desc": "Open-VM-Tools 是 VMware Tools 的开源替代品，旨在为运行在 VMware 环境中的虚拟机提供更好的性能和用户体验。",
     "labels": "工具",
-    "version": "1.0.6",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-open-vm-tools_v1.0.6.fpk",
+    "version": "1.0.7",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-open-vm-tools_all_v1.0.7.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "install_type": "root",
     "size": " 0.057",
     "history": {
-      "v1.0.6": "Initial release of fn-open-vm-tools package."
+      "v1.0.7": "Initial release of fn-open-vm-tools package."
     }
   },
   "fn-qemu-ga": {
     "display_name": "qemu-ga",
     "desc": "QEMU Guest Agent 是一个运行在虚拟机内部的守护进程，旨在通过与虚拟化主机的交互，执行一系列操作以增强虚拟机的管理能力。",
     "labels": "工具",
-    "version": "1.0.6",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-qemu-ga_v1.0.6.fpk",
+    "version": "1.0.7",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-qemu-ga_all_v1.0.7.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "install_type": "root",
     "size": " 0.054",
     "history": {
-      "v1.0.6": "Initial release of fn-qemu-ga package."
+      "v1.0.7": "Initial release of fn-qemu-ga package."
     }
   },
   "fn-scheduler": {
     "display_name": "任务计划",
     "desc": "轻量级的任务计划应用，支持设置定时任务以自动执行脚本或命令，同时也支持基于条件的任务触发，例如在特定时间、特定事件或特定文件变化时执行任务。",
     "labels": "工具",
-    "version": "1.1.6",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-scheduler_v1.1.6.fpk",
+    "version": "1.1.7",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-scheduler_all_v1.1.7.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "install_type": "root",
     "size": " 0.196",
     "history": {
-      "v1.1.6": "Initial release of fn-scheduler package."
+      "v1.1.7": "Initial release of fn-scheduler package."
     }
   },
   "fn-sshd-config": {
@@ -124,7 +124,7 @@
     "desc": "设置 root 用户密码，修改 SSHD 配置.",
     "labels": "工具",
     "version": "1.0.4",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-sshd-config_v1.0.4.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-sshd-config_all_v1.0.4.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
@@ -139,7 +139,7 @@
     "desc": "terminal (ttyd + tmux) 是一个基于 Web 的终端应用程序，允许用户通过浏览器访问和管理服务器终端会话，提供便捷的远程终端操作体验。",
     "labels": "工具",
     "version": "1.0.7",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-terminal_v1.0.7.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-terminal_all_v1.0.7.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
@@ -154,7 +154,7 @@
     "desc": "无线热点创建工具，允许用户轻松地将计算机变成一个 Wi-Fi 热点，分享网络连接给其他设备。",
     "labels": "工具",
     "version": "1.0.7",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.22-1526/fn-wifi-hotspot_v1.0.7.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.01.24-2105/fn-wifi-hotspot_all_v1.0.7.fpk",
     "author": "Ing",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
