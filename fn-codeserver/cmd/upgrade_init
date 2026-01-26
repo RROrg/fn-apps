@@ -2,4 +2,10 @@
 
 ### This script is called before the user upgrades the application.
 
+# 历史版本兼容性处理
+if [ ! "$(printf '%s\n%s\n' "${TRIM_OLD_APPVER}" "1.0.4" | sort -V | head -n1)" = "1.0.4" ]; then
+  echo "由于 v1.0.4 版本修改了安装位置，旧版本无法升级，请卸载后重新安装。" >$TRIM_TEMP_LOGFILE
+  exit 1
+fi
+
 exit 0

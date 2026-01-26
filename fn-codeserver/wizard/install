@@ -7,6 +7,10 @@
         "helpText": "欢迎使用我们的应用！"
       },
       {
+        "type": "tips",
+        "helpText": "注意：为了防止未经授权的访问/修改导致系统损坏，并未开启 root 权限运行；如需开启请自行操作。"
+      },
+      {
         "type": "password",
         "field": "wizard_password",
         "label": "密码",

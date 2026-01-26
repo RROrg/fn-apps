@@ -4,7 +4,7 @@ LOG_FILE="${TRIM_PKGVAR}/info.log"
 PID_FILE="${TRIM_PKGVAR}/app.pid"
 
 # write the command to start your program here
-CMD="${TRIM_APPDEST}/server/bin/code-server-run"
+CMD="${TRIM_APPDEST}/server/bin/code-server-run --open \"$(echo "${TRIM_DATA_SHARE_PATHS}" | cut -d':' -f1)\""
 
 log_msg() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
