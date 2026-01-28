@@ -1067,6 +1067,8 @@ function getNextCronTimes(expr, count = 2) {
     const days = parseField(rawParts[2], 1, 31);
     const months = parseField(rawParts[3], 1, 12);
     const weekdays = parseField(rawParts[4], 0, 6);
+    const dayFieldIsStar = rawParts[2] === "*";
+    const weekdayFieldIsStar = rawParts[4] === "*";
     // 如果任一字段使用了非 '*' 的自定义值但解析为空，则视为无效表达式
     if (
       (rawParts[0] !== "*" && !minutes.length) ||
@@ -1100,7 +1102,19 @@ function getNextCronTimes(expr, count = 2) {
         const cronWeekday = (dtWeekJs + 6) % 7; // 转为 0=周一..6=周日
         const dayMatch = days.includes(day);
         const weekMatch = weekdays.includes(cronWeekday);
-        if (!(dayMatch || weekMatch)) continue;
+        // Cron rule: if either DOM or DOW is '*', the other field is used to determine match.
+        // If both are not '*', match when either matches.
+        let dateMatches = false;
+        if (dayFieldIsStar && weekdayFieldIsStar) {
+          dateMatches = true;
+        } else if (dayFieldIsStar) {
+          dateMatches = weekMatch;
+        } else if (weekdayFieldIsStar) {
+          dateMatches = dayMatch;
+        } else {
+          dateMatches = dayMatch || weekMatch;
+        }
+        if (!dateMatches) continue;
         // 对于匹配的日期，生成时分组合
         for (let hi = 0; hi < hours.length && results.length < count; hi++) {
           const hour = hours[hi];

@@ -1,5 +1,5 @@
 appname               = fn-scheduler
-version               = 1.1.7
+version               = 1.1.8
 display_name          = 任务计划
 desc                  = 轻量级的任务计划应用，支持设置定时任务以自动执行脚本或命令，同时也支持基于条件的任务触发，例如在特定时间、特定事件或特定文件变化时执行任务。
 platform              = all
