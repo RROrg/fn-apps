@@ -8,10 +8,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "e39e6f0003c70bb3954bcfd63ef7327a",
+    "name": "ARM UEFI ISO",
+    "url": "https://download.liveupdate.fygonas.com/arm/iso/armsr/fygoos_PE_arm_1.2.0203_armsr_2296.iso",
+    "version": "armsr"
+  },
+  {
+    "arch": "aarch64",
     "hash": "39230c0b64c8401a038aa5f2288e5967",
     "name": "FriendlyELEC CM3588 NAS",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/cm3588-nas/fygoos_PE_arm_1.2.0007_cm3588-nas_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "4eabc97cfe76fbe44841907883a4c8cd",
+    "name": "FriendlyELEC CM3588 NAS",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/cm3588-nas/fygoos_PE_arm_1.2.0203_cm3588-nas_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -22,10 +36,31 @@
   },
   {
     "arch": "aarch64",
+    "hash": "44e061d72e029305e5727b832bcee385",
+    "name": "FriendlyELEC NanoPi M6",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-m6/fygoos_PE_arm_1.2.0203_nanopi-m6_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "9ace6f380dd99ff050ad69df9fb9135e",
     "name": "FriendlyELEC NanoPi R3S",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopi-r3s/fygoos_PE_arm_1.2.0007_nanopi-r3s_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "a73c04fab51ec8f9d20a4d733a2d34db",
+    "name": "FriendlyELEC NanoPi R3S",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r3s/fygoos_PE_arm_1.2.0203_nanopi-r3s_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "fa37a375f498e48cb81a5a260e60c82e",
+    "name": "FriendlyELEC NanoPi Zero2",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-zero2/fygoos_PE_arm_1.2.0203_nanopi-zero2_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -36,10 +71,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "f39e14d7f8ce82b54346e5e1fe3e137e",
+    "name": "FriendlyELEC Nanopc T4",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopc-t4/fygoos_PE_arm_1.2.0203_nanopc-t4_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "91e84389396d2d7b34382887e277589f",
     "name": "FriendlyELEC Nanopc T6",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopc-t6/fygoos_PE_arm_1.2.0007_nanopc-t6_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "76accc126cddfd5af6910037a6426b7f",
+    "name": "FriendlyELEC Nanopc T6",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopc-t6/fygoos_PE_arm_1.2.0203_nanopc-t6_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -50,10 +99,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "93456668f00e43e745b78ea87a1055c4",
+    "name": "FriendlyELEC Nanopi M4",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-m4/fygoos_PE_arm_1.2.0203_nanopi-m4_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "b9cc8684231ba22ed2fe763e4b80226e",
     "name": "FriendlyELEC Nanopi M5",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopi-m5/fygoos_PE_arm_1.2.0007_nanopi-m5_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "ff18753e42322db9b56309c4d1b8dab0",
+    "name": "FriendlyELEC Nanopi M5",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-m5/fygoos_PE_arm_1.2.0203_nanopi-m5_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -64,10 +127,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "4379deb8ff76a186df1c19e1d8022eb3",
+    "name": "FriendlyELEC Nanopi R2S",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r2s/fygoos_PE_arm_1.2.0203_nanopi-r2s_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "2559576a836d96ddec051fe2f57d18c3",
     "name": "FriendlyELEC Nanopi R3S LTS",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopi-r3s-lts/fygoos_PE_arm_1.2.0007_nanopi-r3s-lts_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "d76ea7d0850bc43ed2a92c3888f58551",
+    "name": "FriendlyELEC Nanopi R3S LTS",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r3s-lts/fygoos_PE_arm_1.2.0203_nanopi-r3s-lts_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -78,10 +155,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "8bec3f1ae2e1375c25134454fda48217",
+    "name": "FriendlyELEC Nanopi R4S",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r4s/fygoos_PE_arm_1.2.0203_nanopi-r4s_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "f2f01ca33d622cd0562bf02a9ef988e1",
     "name": "FriendlyELEC Nanopi R4SE",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopi-r4se/fygoos_PE_arm_1.2.0007_nanopi-r4se_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "58e560cb7b1bee1c14bd321f9b189997",
+    "name": "FriendlyELEC Nanopi R4SE",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r4se/fygoos_PE_arm_1.2.0203_nanopi-r4se_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -92,10 +183,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "23f671978efe0f44c840aeb62a0158bd",
+    "name": "FriendlyELEC Nanopi R5C",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r5c/fygoos_PE_arm_1.2.0203_nanopi-r5c_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "6fa930ecd487850912d649d2bc1f13f9",
     "name": "FriendlyELEC Nanopi R5S",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopi-r5s/fygoos_PE_arm_1.2.0007_nanopi-r5s_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "0ef7f7430fec76cc81b5dee2b1e6f283",
+    "name": "FriendlyELEC Nanopi R5S",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r5s/fygoos_PE_arm_1.2.0203_nanopi-r5s_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -106,10 +211,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "45f42345680e4135d74477d215901dc0",
+    "name": "FriendlyELEC Nanopi R6C",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r6c/fygoos_PE_arm_1.2.0203_nanopi-r6c_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "9b4afd094febeab6dbd4c88139d4830c",
     "name": "FriendlyELEC Nanopi R6S",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/nanopi-r6s/fygoos_PE_arm_1.2.0007_nanopi-r6s_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "b581010794d985eec363db36f47056a2",
+    "name": "FriendlyELEC Nanopi R6S",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r6s/fygoos_PE_arm_1.2.0203_nanopi-r6s_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -120,10 +239,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "d658120bf75adeb16276f3b50add888b",
+    "name": "FriendlyELEC Nanopi R76S",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/nanopi-r76s/fygoos_PE_arm_1.2.0203_nanopi-r76s_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "ab07c50c16c99d187c31c251ae774cec",
     "name": "Radxa E20C",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/radxa-e20c/fygoos_PE_arm_1.2.0007_radxa-e20c_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "8833153428e732d17acc7db29fdfcffb",
+    "name": "Radxa E20C",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/radxa-e20c/fygoos_PE_arm_1.2.0203_radxa-e20c_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -134,10 +267,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "9fc43cfc5102722e67a8121737e255f7",
+    "name": "Radxa E52C",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/radxa-e52c/fygoos_PE_arm_1.2.0203_radxa-e52c_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "29ed13afce5811a251168f44b114ce58",
     "name": "Radxa ROCK 4D",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/rock-4d/fygoos_PE_arm_1.2.0007_rock-4d_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "cc66ac4f38fe74ade981c54627d1cf0b",
+    "name": "Radxa ROCK 4D",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-4d/fygoos_PE_arm_1.2.0203_rock-4d_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -148,10 +295,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "b8052dd36c4b7df20f23ca2e051197b5",
+    "name": "Radxa ROCK 5 ITX",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-5-itx/fygoos_PE_arm_1.2.0203_rock-5-itx_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "aed481113ef5df00a40487756f10086b",
     "name": "Radxa ROCK 5A",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/rock-5a/fygoos_PE_arm_1.2.0007_rock-5a_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "bc0752cadba143ebbd25eb91fe87b1ad",
+    "name": "Radxa ROCK 5A",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-5a/fygoos_PE_arm_1.2.0203_rock-5a_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -162,10 +323,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "4373187994329b345323f69d67f01181",
+    "name": "Radxa ROCK 5B",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-5b/fygoos_PE_arm_1.2.0203_rock-5b_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "7c30305368fd3cff14ab82b60a935ed0",
     "name": "Radxa ROCK 5B Plus",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/rock-5b-plus/fygoos_PE_arm_1.2.0007_rock-5b-plus_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "01e2ff27224480972f5e5297ffe564d3",
+    "name": "Radxa ROCK 5B Plus",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-5b-plus/fygoos_PE_arm_1.2.0203_rock-5b-plus_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
@@ -176,6 +351,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "29966b3d9725f8f5b6ed658b4800fd8b",
+    "name": "Radxa ROCK 5C / 5C Lite",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-5c/fygoos_PE_arm_1.2.0203_rock-5c_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "63308a6e0e3ace39fe6530f0c896f76d",
     "name": "Radxa ROCK 5T",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/rock-5t/fygoos_PE_arm_1.2.0007_rock-5t_1834.img.gz",
@@ -183,10 +365,31 @@
   },
   {
     "arch": "aarch64",
+    "hash": "b429fce913cace4cbf5b196b12a8c901",
+    "name": "Radxa ROCK 5T",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/rock-5t/fygoos_PE_arm_1.2.0203_rock-5t_2290.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "424a502627d632bd1d995fc3f5d1ac1d",
+    "name": "Raspberry Pi 3/4/5",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/bcm27xx/fygoos_PE_arm_1.2.0203_bcm27xx_2298.img.gz",
+    "version": "1.2.0203"
+  },
+  {
+    "arch": "aarch64",
     "hash": "9b3d65d893b65425ff2f007229a39f13",
     "name": "Sostu N990 Plus",
     "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0007/sostu-n990-plus/fygoos_PE_arm_1.2.0007_sostu-n990-plus_1834.img.gz",
     "version": "1.2.0007"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "f5c7e8554d7287d94d42b1930a027620",
+    "name": "Sostu N990 Plus",
+    "url": "https://download.liveupdate.fygonas.com/arm/image/1.2.0203/sostu-n990-plus/fygoos_PE_arm_1.2.0203_sostu-n990-plus_2290.img.gz",
+    "version": "1.2.0203"
   },
   {
     "arch": "x86_64",
