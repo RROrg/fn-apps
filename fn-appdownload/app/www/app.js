@@ -68,7 +68,8 @@ const I18N = {
     refreshed: "已刷新",
     settingsSaved: "设置已保存",
     store: "商店",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -126,7 +127,8 @@ const I18N = {
     refreshed: "Refreshed",
     settingsSaved: "Settings saved",
     store: "Store",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -169,15 +171,16 @@ function applyFileStatus(files = {}) {
     const file = files[taskKey(app)];
     if (!file) return;
     const task = taskFor(app);
-    const taskDone = [
-      "downloaded",
-      "done",
-      "success",
-      "succeed",
-      "finished",
-      "completed",
-    ].includes(normalizeStatus(task.status)) ||
-    ["已下载", "下载完成"].includes(task.status);
+    const taskDone =
+      [
+        "downloaded",
+        "done",
+        "success",
+        "succeed",
+        "finished",
+        "completed",
+      ].includes(normalizeStatus(task.status)) ||
+      ["已下载", "下载完成"].includes(task.status);
     if (file.exists) {
       app.downloaded = true;
       app.path = file.path || app.path || "";
@@ -553,7 +556,12 @@ function openFileManagerFallback(path) {
   const fmPath = toFileManagerPath(path);
   const tab = "app-share-files";
   const anchor = encodeURIComponent(
-    "trim.file-manager/" + tab + "?key=" + tab + "&path=" + fmPath.replace(/^\//, ""),
+    "trim.file-manager/" +
+      tab +
+      "?key=" +
+      tab +
+      "&path=" +
+      fmPath.replace(/^\//, ""),
   );
   const url = "/appview?anchor=" + anchor;
   window.open(url, "_blank");
@@ -570,12 +578,16 @@ async function openFileManager(path) {
       args = [fmPath];
     } else if (typeof remote.openCustomApp === "function") {
       method = "openCustomApp";
-      args = ["trim.file-manager", "app-share-files", {
-        params: {
-          key: "app-share-files",
-          path: fmPath.replace(/^\//, ""),
+      args = [
+        "trim.file-manager",
+        "app-share-files",
+        {
+          params: {
+            key: "app-share-files",
+            path: fmPath.replace(/^\//, ""),
+          },
         },
-      }];
+      ];
     } else {
       openFileManagerFallback(path);
       return;
@@ -583,7 +595,9 @@ async function openFileManager(path) {
     try {
       await Promise.race([
         remote[method](...args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000),
+        ),
       ]);
     } catch (callErr) {
       invalidateFnAppRemote();
@@ -597,19 +611,25 @@ async function openFileManager(path) {
             retryArgs = [fmPath];
           } else if (typeof retryRemote.openCustomApp === "function") {
             retryMethod = "openCustomApp";
-            retryArgs = ["trim.file-manager", "app-share-files", {
-              params: {
-                key: "app-share-files",
-                path: fmPath.replace(/^\//, ""),
+            retryArgs = [
+              "trim.file-manager",
+              "app-share-files",
+              {
+                params: {
+                  key: "app-share-files",
+                  path: fmPath.replace(/^\//, ""),
+                },
               },
-            }];
+            ];
           } else {
             openFileManagerFallback(path);
             return;
           }
           await Promise.race([
             retryRemote[retryMethod](...retryArgs),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("timeout")), 5000),
+            ),
           ]);
         } catch {
           openFileManagerFallback(path);
@@ -856,7 +876,9 @@ function renderSourceSelect() {
   if (!sourceSelect) return;
   const options = sourceOptionsForView();
   const current = state.sourceFilter;
-  const fragments = [`<option value="all">${escapeHtml(t("allSources"))}</option>`];
+  const fragments = [
+    `<option value="all">${escapeHtml(t("allSources"))}</option>`,
+  ];
   options.forEach((source) => {
     fragments.push(
       `<option value="${escapeHtml(source)}">${escapeHtml(source)}</option>`,
@@ -958,7 +980,9 @@ function bindEvents() {
   });
 
   document.getElementById("openDirBtn").addEventListener("click", () => {
-    const dir = state.settings.downloadDir || "/var/apps/fn-appdownload/shares/fn-appdownload/downloads";
+    const dir =
+      state.settings.downloadDir ||
+      "/var/apps/fn-appdownload/shares/fn-appdownload/downloads";
     openFileManager(dir);
   });
 
@@ -996,8 +1020,11 @@ function bindEvents() {
         const result = await api("save-settings", {
           downloadDir: document.getElementById("downloadDirInput").value.trim(),
           thirdPartySources: collectSources(),
-          githubProxyEnabled: document.getElementById("githubProxyToggle").checked,
-          githubProxyUrl: document.getElementById("githubProxyUrlInput").value.trim(),
+          githubProxyEnabled:
+            document.getElementById("githubProxyToggle").checked,
+          githubProxyUrl: document
+            .getElementById("githubProxyUrlInput")
+            .value.trim(),
         });
         state.settings = result.settings || state.settings;
         renderSourceList(state.settings.thirdPartySources || []);

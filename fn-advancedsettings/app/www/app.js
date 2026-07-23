@@ -19,26 +19,50 @@ const sections = [
 
 const icons = {
   boot: '<svg viewBox="0 0 24 24"><path d="M5 17h14M7 17l1.2-8h7.6L17 17"/><path d="M9 9V6h6v3M10 13h4"/></svg>',
-  power: '<svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M8 5.5a8 8 0 1 0 8 0"/></svg>',
+  power:
+    '<svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M8 5.5a8 8 0 1 0 8 0"/></svg>',
   ssh: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10l2 2-2 2M12 14h4"/></svg>',
   cpu: '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M4 9h3M4 15h3M17 9h3M17 15h3M9 4v3M15 4v3M9 17v3M15 17v3"/></svg>',
-  display: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  display:
+    '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
   dns: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="7" cy="7" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="7" cy="17" r="1"/></svg>',
-  network: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="4" y="16" width="6" height="5" rx="1"/><rect x="14" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M7 16v-4h10v4"/></svg>',
-  proxy: '<svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 0 1 12.7-4"/><path d="M19 12a7 7 0 0 1-12.7 4"/><path d="M17 4v4h-4M7 20v-4h4"/></svg>',
-  identity: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>',
-  device: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h4M9 17h2"/></svg>',
+  network:
+    '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="4" y="16" width="6" height="5" rx="1"/><rect x="14" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M7 16v-4h10v4"/></svg>',
+  proxy:
+    '<svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 0 1 12.7-4"/><path d="M19 12a7 7 0 0 1-12.7 4"/><path d="M17 4v4h-4M7 20v-4h4"/></svg>',
+  identity:
+    '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>',
+  device:
+    '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h4M9 17h2"/></svg>',
   port: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>',
   diag: '<svg viewBox="0 0 24 24"><path d="M3 21l4-4M7 17l3-3M10 14l3-6M13 8l4-2M17 6l4-1"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="6" r="1.5"/></svg>',
 };
 
 const powerFields = [
-  "HandlePowerKey", "HandlePowerKeyLongPress", "HandleRebootKey", "HandleRebootKeyLongPress",
-  "HandleSuspendKey", "HandleSuspendKeyLongPress", "HandleHibernateKey", "HandleHibernateKeyLongPress",
-  "HandleLidSwitch", "HandleLidSwitchExternalPower", "HandleLidSwitchDocked",
+  "HandlePowerKey",
+  "HandlePowerKeyLongPress",
+  "HandleRebootKey",
+  "HandleRebootKeyLongPress",
+  "HandleSuspendKey",
+  "HandleSuspendKeyLongPress",
+  "HandleHibernateKey",
+  "HandleHibernateKeyLongPress",
+  "HandleLidSwitch",
+  "HandleLidSwitchExternalPower",
+  "HandleLidSwitchDocked",
 ];
 
-const sshFields = ["PermitRootLogin", "PasswordAuthentication", "PubkeyAuthentication", "PermitEmptyPasswords", "PermitTTY", "X11Forwarding", "AllowTcpForwarding", "AllowAgentForwarding", "GatewayPorts"];
+const sshFields = [
+  "PermitRootLogin",
+  "PasswordAuthentication",
+  "PubkeyAuthentication",
+  "PermitEmptyPasswords",
+  "PermitTTY",
+  "X11Forwarding",
+  "AllowTcpForwarding",
+  "AllowAgentForwarding",
+  "GatewayPorts",
+];
 const sshOptions = {
   PermitRootLogin: ["yes", "no", "prohibit-password"],
   PasswordAuthentication: ["yes", "no"],
@@ -50,7 +74,13 @@ const sshOptions = {
   AllowAgentForwarding: ["yes", "no"],
   GatewayPorts: ["yes", "no", "clientspecified"],
 };
-const bootFields = ["GRUB_TIMEOUT", "GRUB_CMDLINE_LINUX_DEFAULT", "GRUB_DEFAULT", "GRUB_DISABLE_OS_PROBER", "GRUB_CMDLINE_LINUX"];
+const bootFields = [
+  "GRUB_TIMEOUT",
+  "GRUB_CMDLINE_LINUX_DEFAULT",
+  "GRUB_DEFAULT",
+  "GRUB_DISABLE_OS_PROBER",
+  "GRUB_CMDLINE_LINUX",
+];
 
 const kernelParams = [
   ["quiet", "quietDesc"],
@@ -84,7 +114,13 @@ const kernelParams = [
   ["audit=0", "audit0Desc"],
   ["sysrq_always_enabled", "sysrqDesc"],
 ];
-const proxyFields = ["http_proxy", "https_proxy", "ftp_proxy", "socks_proxy", "no_proxy"];
+const proxyFields = [
+  "http_proxy",
+  "https_proxy",
+  "ftp_proxy",
+  "socks_proxy",
+  "no_proxy",
+];
 const proxyTargetList = ["apt", "docker", "pip", "npm", "git"];
 
 const I18N = {
@@ -99,7 +135,8 @@ const I18N = {
     close: "关闭",
     cancel: "取消",
     confirm: "确定",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -135,7 +172,8 @@ const I18N = {
     displayForcedOff: "已关闭",
     displayPowerOn: "开启",
     displayPowerOff: "关闭",
-    displayPowerOffConfirm: "确定要关闭此屏幕吗？关闭后可能需要物理操作或重新连接来恢复。",
+    displayPowerOffConfirm:
+      "确定要关闭此屏幕吗？关闭后可能需要物理操作或重新连接来恢复。",
     displayPowerOnConfirm: "确定要开启此屏幕吗？",
     dnsSettings: "DNS 设置",
     networkSettings: "网络设置",
@@ -182,7 +220,8 @@ const I18N = {
     quietDesc: "抑制内核启动时的文本输出，仅显示关键错误",
     splashDesc: "显示启动画面的图形进度条（需配合 plymouth）",
     nomodesetDesc: "禁止内核在启动早期加载图形驱动，使用 VESA 模式",
-    consoleTtySDesc: "将内核控制台输出重定向到串口（ttyS0），波特率 115200，常用于无头服务器和 IPMI",
+    consoleTtySDesc:
+      "将内核控制台输出重定向到串口（ttyS0），波特率 115200，常用于无头服务器和 IPMI",
     netIfnames0Desc: "禁用可预测网络接口命名，恢复 eth0/eth1 传统命名方式",
     panic5Desc: "内核恐慌后 5 秒自动重启，提高系统可用性",
     nowatchdogDesc: "禁用看门狗定时器，减少中断开销",
@@ -194,12 +233,15 @@ const I18N = {
     intremapOffDesc: "禁用中断重映射，解决某些硬件上中断分配异常问题",
     amdIommuIntrLegacyDesc: "AMD IOMMU 使用传统中断模式，兼容旧硬件直通",
     nox2apicDesc: "禁用 x2APIC，回退到 xAPIC 模式，解决某些平台中断问题",
-    intelPstateDisableDesc: "禁用 Intel P-State 驱动，改用 acpi-cpufreq 频率管理",
+    intelPstateDisableDesc:
+      "禁用 Intel P-State 驱动，改用 acpi-cpufreq 频率管理",
     amdPstateDisableDesc: "禁用 AMD P-State 驱动，改用 acpi-cpufreq 频率管理",
-    splitLockDetectOffDesc: "禁用拆分锁检测，避免跨缓存行原子操作触发 #AC 异常降频",
+    splitLockDetectOffDesc:
+      "禁用拆分锁检测，避免跨缓存行原子操作触发 #AC 异常降频",
     hugepagesDesc: "预分配指定数量的 2MB 大页内存，用于数据库或虚拟化优化",
     thpNeverDesc: "禁用透明大页，避免内存分配延迟（适用于数据库等场景）",
-    mitigationsOffDesc: "关闭 CPU 安全缓解措施（如 Spectre/Meltdown），提升性能但降低安全性",
+    mitigationsOffDesc:
+      "关闭 CPU 安全缓解措施（如 Spectre/Meltdown），提升性能但降低安全性",
     nosmpDesc: "禁用多核处理器，仅使用单核运行（调试用）",
     maxcpusDesc: "限制系统最多使用的 CPU 核心数（如 maxcpus=4）",
     nohzFullDesc: "启用无滴答内核模式，减少时钟中断（如 nohz_full=1-3）",
@@ -368,7 +410,8 @@ const I18N = {
     close: "Close",
     cancel: "Cancel",
     confirm: "OK",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -404,7 +447,8 @@ const I18N = {
     displayForcedOff: "Turned Off",
     displayPowerOn: "Turn On",
     displayPowerOff: "Turn Off",
-    displayPowerOffConfirm: "Are you sure you want to turn off this display? You may need physical access or reconnection to restore it.",
+    displayPowerOffConfirm:
+      "Are you sure you want to turn off this display? You may need physical access or reconnection to restore it.",
     displayPowerOnConfirm: "Are you sure you want to turn on this display?",
     dnsSettings: "DNS Settings",
     networkSettings: "Network Settings",
@@ -450,21 +494,52 @@ const I18N = {
     paramDesc: "Description",
     quietDesc: "Suppress kernel boot text output, show only critical errors",
     splashDesc: "Show graphical boot splash progress bar (requires plymouth)",
-    nomodesetDesc: "Prevent kernel from loading graphics drivers early, use VESA mode",
-    pcieAspmOffDesc: "Disable PCIe link power management (ASPM), may fix device compatibility",
-    blacklistDesc: "Blacklist specified module to prevent auto-loading (e.g. pcspkr beeper)",
-    iommuPtDesc: "Enable IOMMU pass-through mode for better device passthrough performance",
-    intelIommuDesc: "Enable Intel IOMMU (VT-d) support for PCIe device passthrough",
-    amdIommuDesc: "Enable AMD IOMMU (AMD-Vi) support for PCIe device passthrough",
-    hugepagesDesc: "Pre-allocate specified number of 2MB huge pages for DB/virtualization",
-    thpNeverDesc: "Disable transparent huge pages to avoid allocation latency (for databases)",
-    mitigationsOffDesc: "Disable CPU security mitigations (Spectre/Meltdown), faster but less secure",
+    nomodesetDesc:
+      "Prevent kernel from loading graphics drivers early, use VESA mode",
+    consoleTtySDesc:
+      "Redirect kernel console output to serial port (ttyS0) at 115200 baud, ideal for headless servers and IPMI",
+    netIfnames0Desc:
+      "Disable predictable network interface naming, revert to traditional eth0/eth1 naming",
+    panic5Desc:
+      "Auto-reboot 5 seconds after kernel panic, improving system availability",
+    nowatchdogDesc: "Disable watchdog timers to reduce interrupt overhead",
+    pcieAspmOffDesc:
+      "Disable PCIe link power management (ASPM), may fix device compatibility",
+    blacklistDesc:
+      "Blacklist specified module to prevent auto-loading (e.g. pcspkr beeper)",
+    iommuPtDesc:
+      "Enable IOMMU pass-through mode for better device passthrough performance",
+    intelIommuDesc:
+      "Enable Intel IOMMU (VT-d) support for PCIe device passthrough",
+    amdIommuDesc:
+      "Enable AMD IOMMU (AMD-Vi) support for PCIe device passthrough",
+    intremapOffDesc:
+      "Disable interrupt remapping, fix interrupt delivery issues on certain hardware",
+    amdIommuIntrLegacyDesc:
+      "AMD IOMMU legacy interrupt mode for old hardware passthrough compatibility",
+    nox2apicDesc:
+      "Disable x2APIC, fall back to xAPIC mode, fix interrupt issues on some platforms",
+    intelPstateDisableDesc:
+      "Disable Intel P-State driver, fall back to acpi-cpufreq frequency management",
+    amdPstateDisableDesc:
+      "Disable AMD P-State driver, fall back to acpi-cpufreq frequency management",
+    splitLockDetectOffDesc:
+      "Disable split lock detection, avoid #AC exception frequency throttling",
+    hugepagesDesc:
+      "Pre-allocate specified number of 2MB huge pages for DB/virtualization",
+    thpNeverDesc:
+      "Disable transparent huge pages to avoid allocation latency (for databases)",
+    mitigationsOffDesc:
+      "Disable CPU security mitigations (Spectre/Meltdown), faster but less secure",
     nosmpDesc: "Disable multi-core, run on single core only (for debugging)",
     maxcpusDesc: "Limit max number of CPU cores to use (e.g. maxcpus=4)",
-    nohzFullDesc: "Enable tickless kernel mode to reduce timer interrupts (e.g. nohz_full=1-3)",
-    irqaffinityDesc: "Bind hardware interrupts to specified CPU cores (e.g. irqaffinity=0)",
+    nohzFullDesc:
+      "Enable tickless kernel mode to reduce timer interrupts (e.g. nohz_full=1-3)",
+    irqaffinityDesc:
+      "Bind hardware interrupts to specified CPU cores (e.g. irqaffinity=0)",
     maxCstate1Desc: "Limit CPU to C1 idle state at most, reduce wakeup latency",
-    idlePollDesc: "Use polling idle loop instead of CPU sleep, lowest latency but highest power",
+    idlePollDesc:
+      "Use polling idle loop instead of CPU sleep, lowest latency but highest power",
     nmiWatchdog0Desc: "Disable NMI watchdog timer to reduce interrupt overhead",
     audit0Desc: "Disable audit subsystem to reduce syscall overhead",
     sysrqDesc: "Always enable Magic SysRq key for emergency system recovery",
@@ -589,7 +664,8 @@ const I18N = {
     blocking: "Blocking",
     selectInterface: "Select Interface",
     confirmDeleteBridge: "Are you sure you want to delete bridge",
-    confirmRemoveMember: "Are you sure you want to remove interface from bridge",
+    confirmRemoveMember:
+      "Are you sure you want to remove interface from bridge",
     searchPort: "Search port/address/process",
     noMatch: "No match",
     tcpSettings: "Congestion Control",
@@ -627,12 +703,22 @@ const state = {
 };
 
 function safeDecode(value) {
-  try { return decodeURIComponent(value || ""); } catch (_error) { return value || ""; }
+  try {
+    return decodeURIComponent(value || "");
+  } catch (_error) {
+    return value || "";
+  }
 }
 
 function cookieValue(name) {
   const prefix = `${name}=`;
-  return document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix))?.slice(prefix.length) || "";
+  return (
+    document.cookie
+      .split(";")
+      .map((item) => item.trim())
+      .find((item) => item.startsWith(prefix))
+      ?.slice(prefix.length) || ""
+  );
 }
 
 function queryValue(name) {
@@ -640,13 +726,21 @@ function queryValue(name) {
 }
 
 function storedValue(name) {
-  try { return localStorage.getItem(name) || sessionStorage.getItem(name) || ""; } catch (_error) { return ""; }
+  try {
+    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
+  } catch (_error) {
+    return "";
+  }
 }
 
 function parentStoredValue(name) {
   try {
     if (!window.parent || window.parent === window) return "";
-    return window.parent.localStorage?.getItem(name) || window.parent.sessionStorage?.getItem(name) || "";
+    return (
+      window.parent.localStorage?.getItem(name) ||
+      window.parent.sessionStorage?.getItem(name) ||
+      ""
+    );
   } catch (_error) {
     return "";
   }
@@ -656,13 +750,15 @@ function documentThemeValue(doc) {
   if (!doc) return "";
   const root = doc.documentElement;
   const body = doc.body;
-  return [
-    body?.getAttribute("theme-mode"),
-    body?.dataset?.theme,
-    root?.dataset?.theme,
-    root?.classList?.contains("dark") ? "dark" : "",
-    root?.classList?.contains("light") ? "light" : "",
-  ].find(Boolean) || "";
+  return (
+    [
+      body?.getAttribute("theme-mode"),
+      body?.dataset?.theme,
+      root?.dataset?.theme,
+      root?.classList?.contains("dark") ? "dark" : "",
+      root?.classList?.contains("light") ? "light" : "",
+    ].find(Boolean) || ""
+  );
 }
 
 function parentDocumentThemeValue() {
@@ -675,7 +771,9 @@ function parentDocumentThemeValue() {
 }
 
 function normalizeLanguage(value) {
-  return safeDecode(value).replace("_", "-").toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  return safeDecode(value).replace("_", "-").toLowerCase().startsWith("zh")
+    ? "zh-CN"
+    : "en-US";
 }
 
 function normalizeTheme(value) {
@@ -685,7 +783,9 @@ function normalizeTheme(value) {
   if (theme === "10") return "light";
   if (theme === "20") return "dark";
   if (theme === "system" || theme === "auto" || theme === "os") {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
   return "";
 }
@@ -702,29 +802,50 @@ function currentTheme() {
     documentThemeValue(document),
     parentDocumentThemeValue(),
     queryValue("fnos-theme-mode"),
-  ].map(normalizeTheme).find(Boolean);
+  ]
+    .map(normalizeTheme)
+    .find(Boolean);
   if (fromSystem) return fromSystem;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function t(key) {
-  return (I18N[state.language] || I18N["zh-CN"])[key] || I18N["zh-CN"][key] || key;
+  return (
+    (I18N[state.language] || I18N["zh-CN"])[key] || I18N["zh-CN"][key] || key
+  );
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  state.language = normalizeLanguage(cookieValue("language") || queryValue("language") || navigator.language || "zh-CN");
+  state.language = normalizeLanguage(
+    cookieValue("language") ||
+      queryValue("language") ||
+      navigator.language ||
+      "zh-CN",
+  );
   state.theme = currentTheme();
   document.documentElement.lang = state.language;
   document.documentElement.dataset.theme = state.theme;
   document.body.dataset.theme = state.theme;
-  document.querySelectorAll("[data-i18n]").forEach((node) => { node.textContent = t(node.dataset.i18n); });
-  document.querySelectorAll("[data-i18n-title]").forEach((node) => { node.title = t(node.dataset.i18nTitle); });
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    node.title = t(node.dataset.i18nTitle);
+  });
   document.title = t("appTitle");
   if (rerender) render();
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        char
+      ],
+  );
 }
 
 async function api(action, data = {}) {
@@ -736,7 +857,8 @@ async function api(action, data = {}) {
     body: JSON.stringify({ action, ...data }),
   });
   const result = await response.json();
-  if (!response.ok || !result.ok) throw new Error(result.message || `HTTP ${response.status}`);
+  if (!response.ok || !result.ok)
+    throw new Error(result.message || `HTTP ${response.status}`);
   return result;
 }
 
@@ -791,10 +913,19 @@ function wolStatusText(value) {
   const text = String(value || "").trim();
   if (!text) return t("notAvailable");
   if (text === "d") return t("d");
-  return text.split("").map((item) => t(item)).join(", ");
+  return text
+    .split("")
+    .map((item) => t(item))
+    .join(", ");
 }
 
-function inputField(name, value = "", options = null, extra = "", multiline = false) {
+function inputField(
+  name,
+  value = "",
+  options = null,
+  extra = "",
+  multiline = false,
+) {
   const label = fieldLabel(name);
   if (options) {
     return `<label class="field"><span title="${escapeHtml(name)}">${escapeHtml(label)}</span><select data-name="${escapeHtml(name)}" ${extra}>${options.map((item) => `<option value="${escapeHtml(item)}" ${String(value) === String(item) ? "selected" : ""}>${escapeHtml(optionLabel(name, item))}</option>`).join("")}</select></label>`;
@@ -806,7 +937,11 @@ function inputField(name, value = "", options = null, extra = "", multiline = fa
 }
 
 function wolField(value, options) {
-  const selected = new Set(String(value || "").split("").filter(Boolean));
+  const selected = new Set(
+    String(value || "")
+      .split("")
+      .filter(Boolean),
+  );
   if (!selected.size) selected.add("d");
   if (selected.size > 1) selected.delete("d");
   return `
@@ -814,9 +949,13 @@ function wolField(value, options) {
       <span title="wol">${escapeHtml(t("wol"))}</span>
       <input type="hidden" data-name="wol" value="${escapeHtml([...selected].join(""))}">
       <span class="choice-group" data-wol-group>
-        ${options.map((item) => `
+        ${options
+          .map(
+            (item) => `
           <label class="choice"><input type="checkbox" data-wol-option value="${escapeHtml(item)}" ${selected.has(item) ? "checked" : ""}><span>${escapeHtml(wolStatusText(item))}</span></label>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </span>
     </label>
   `;
@@ -824,17 +963,29 @@ function wolField(value, options) {
 
 function collect(container) {
   const out = {};
-  container.querySelectorAll("[data-name]").forEach((node) => { out[node.dataset.name] = node.type === "checkbox" ? (node.checked ? "on" : "") : node.value; });
+  container.querySelectorAll("[data-name]").forEach((node) => {
+    out[node.dataset.name] =
+      node.type === "checkbox" ? (node.checked ? "on" : "") : node.value;
+  });
   return out;
 }
 
 function fallbackLinkModes(currentSpeed) {
   const current = Number(currentSpeed) || 1000;
-  const speeds = [10, 100, 1000, 2500, 5000, 10000].filter((speed) => speed <= current);
+  const speeds = [10, 100, 1000, 2500, 5000, 10000].filter(
+    (speed) => speed <= current,
+  );
   if (!speeds.includes(current)) speeds.push(current);
-  return speeds.sort((a, b) => a - b).flatMap((speed) => (
-    speed <= 100 ? [{ speed: String(speed), duplex: "half" }, { speed: String(speed), duplex: "full" }] : [{ speed: String(speed), duplex: "full" }]
-  ));
+  return speeds
+    .sort((a, b) => a - b)
+    .flatMap((speed) =>
+      speed <= 100
+        ? [
+            { speed: String(speed), duplex: "half" },
+            { speed: String(speed), duplex: "full" },
+          ]
+        : [{ speed: String(speed), duplex: "full" }],
+    );
 }
 
 function modeValue(speed, duplex) {
@@ -846,7 +997,9 @@ function modeLabel(value) {
   return `${speed || "-"} / ${optionLabel("duplex", duplex || "full")}`;
 }
 
-function syncNetworkAutonegFields(container = document.getElementById("networkList")) {
+function syncNetworkAutonegFields(
+  container = document.getElementById("networkList"),
+) {
   container.querySelectorAll("[data-iface]").forEach((item) => {
     const autoneg = item.querySelector('[data-name="autoneg"]');
     const mode = item.querySelector('[data-name="mode"]');
@@ -856,32 +1009,65 @@ function syncNetworkAutonegFields(container = document.getElementById("networkLi
 }
 
 function renderNav() {
-  document.getElementById("navList").innerHTML = sections.map(([id, label]) => `
+  document.getElementById("navList").innerHTML = sections
+    .map(
+      ([id, label]) => `
     <button class="nav-item ${state.active === id ? "active" : ""}" type="button" data-section="${id}"><span class="nav-icon" aria-hidden="true">${icons[id] || ""}</span><span>${escapeHtml(t(label))}</span></button>
-  `).join("");
-  document.getElementById("pageTitle").textContent = t(sections.find(([id]) => id === state.active)?.[1] || "appTitle");
+  `,
+    )
+    .join("");
+  document.getElementById("pageTitle").textContent = t(
+    sections.find(([id]) => id === state.active)?.[1] || "appTitle",
+  );
 }
 
 function renderBoot() {
   const parsed = state.data.boot?.parsed || {};
-  document.getElementById("bootFields").innerHTML = bootFields.map((key) => inputField(key, parsed[key] || "", null, "", key === "GRUB_CMDLINE_LINUX")).join("");
+  document.getElementById("bootFields").innerHTML = bootFields
+    .map((key) =>
+      inputField(
+        key,
+        parsed[key] || "",
+        null,
+        "",
+        key === "GRUB_CMDLINE_LINUX",
+      ),
+    )
+    .join("");
   const tbody = document.getElementById("kernelParamBody");
   if (tbody) {
-    tbody.innerHTML = kernelParams.map(([param, descKey]) => `<tr><td class="mono">${escapeHtml(param)}</td><td>${escapeHtml(t(descKey))}</td></tr>`).join("");
+    tbody.innerHTML = kernelParams
+      .map(
+        ([param, descKey]) =>
+          `<tr><td class="mono">${escapeHtml(param)}</td><td>${escapeHtml(t(descKey))}</td></tr>`,
+      )
+      .join("");
   }
 }
 
 function renderPower() {
   const parsed = state.data.power?.parsed || {};
-  const options = ["", "poweroff", "reboot", "suspend", "hibernate", "ignore", "lock"];
-  document.getElementById("powerFields").innerHTML = powerFields.map((key) => inputField(key, parsed[key] || "", options)).join("");
+  const options = [
+    "",
+    "poweroff",
+    "reboot",
+    "suspend",
+    "hibernate",
+    "ignore",
+    "lock",
+  ];
+  document.getElementById("powerFields").innerHTML = powerFields
+    .map((key) => inputField(key, parsed[key] || "", options))
+    .join("");
 }
 
 function renderSsh() {
   const parsed = state.data.ssh?.parsed || {};
-  document.getElementById("sshFields").innerHTML = sshFields.map((key) => {
-    return inputField(key, parsed[key] || "", sshOptions[key]);
-  }).join("");
+  document.getElementById("sshFields").innerHTML = sshFields
+    .map((key) => {
+      return inputField(key, parsed[key] || "", sshOptions[key]);
+    })
+    .join("");
   document.getElementById("rootPassword").value = "";
   document.getElementById("rootPasswordConfirm").value = "";
 }
@@ -890,13 +1076,29 @@ function renderCpu() {
   const policies = state.data.cpu?.policies || [];
   const cpus = state.data.cpu?.cpus || [];
   const extra = state.data.cpu?.extra || {};
-  const governors = [...new Set(policies.flatMap((item) => item.available_governors || []).concat(cpus.flatMap((item) => item.available_governors || [])))];
-  const eppOptions = [...new Set(policies.flatMap((item) => item.available_epp || []).concat(cpus.flatMap((item) => item.available_epp || [])))];
+  const governors = [
+    ...new Set(
+      policies
+        .flatMap((item) => item.available_governors || [])
+        .concat(cpus.flatMap((item) => item.available_governors || [])),
+    ),
+  ];
+  const eppOptions = [
+    ...new Set(
+      policies
+        .flatMap((item) => item.available_epp || [])
+        .concat(cpus.flatMap((item) => item.available_epp || [])),
+    ),
+  ];
   const current = policies[0] || cpus[0] || {};
   document.getElementById("cpuFields").innerHTML =
     inputField("min_freq", current.min_freq || "") +
-    inputField("max_freq", current.max_freq || "") + 
-    inputField("governor", current.governor || "", governors.length ? governors : null) +
+    inputField("max_freq", current.max_freq || "") +
+    inputField(
+      "governor",
+      current.governor || "",
+      governors.length ? governors : null,
+    ) +
     (eppOptions.length ? inputField("epp", current.epp || "", eppOptions) : "");
   const extraHtml = [];
   if (extra.boost !== undefined) {
@@ -906,7 +1108,12 @@ function renderCpu() {
     extraHtml.push(inputField("no_turbo", String(extra.no_turbo), ["1", "0"]));
   }
   if (extra.amd_pstate_prefcore !== undefined) {
-    extraHtml.push(inputField("amd_pstate_prefcore", String(extra.amd_pstate_prefcore), ["enabled", "disabled"]));
+    extraHtml.push(
+      inputField("amd_pstate_prefcore", String(extra.amd_pstate_prefcore), [
+        "enabled",
+        "disabled",
+      ]),
+    );
   }
   const extraSection = document.getElementById("cpuExtraSection");
   const extraFields = document.getElementById("cpuExtraFields");
@@ -925,12 +1132,19 @@ function renderCpu() {
     if (isNaN(n)) return escapeHtml(v);
     return (n / 1000000).toFixed(2) + " GHz";
   };
-  tbody.innerHTML = items.length ? items.map((item) => {
-    const driver = item.scaling_driver || "-";
-    const gov = item.governor || "-";
-    const epp = item.epp || "-";
-    const boost = item.boost !== undefined ? (item.boost === "1" ? `<span class="badge-driver">${t("enabled")}</span>` : `<span class="subtle">${t("disabled")}</span>`) : "-";
-    return `<tr>
+  tbody.innerHTML = items.length
+    ? items
+        .map((item) => {
+          const driver = item.scaling_driver || "-";
+          const gov = item.governor || "-";
+          const epp = item.epp || "-";
+          const boost =
+            item.boost !== undefined
+              ? item.boost === "1"
+                ? `<span class="badge-driver">${t("enabled")}</span>`
+                : `<span class="subtle">${t("disabled")}</span>`
+              : "-";
+          return `<tr>
       <td class="mono">${escapeHtml(item.name)}</td>
       <td class="mono">${escapeHtml(driver)}</td>
       <td class="mono">${fmtFreq(item.cur_freq)}</td>
@@ -940,35 +1154,55 @@ function renderCpu() {
       <td>${escapeHtml(epp)}</td>
       <td>${boost}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="8" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
+        })
+        .join("")
+    : `<tr><td colspan="8" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
 }
 
 function renderDisplay() {
   const displays = state.data.display?.displays || [];
   const tbody = document.querySelector("#displayTable tbody");
   if (!tbody) return;
-  tbody.innerHTML = displays.length ? displays.map((item) => {
-    const isConnected = item.status === "connected";
-    const isForcedOff = item.forced_off === true;
-    const statusBadge = isConnected
-      ? `<span class="badge-driver">${escapeHtml(t("displayConnected"))}</span>`
-      : `<span class="subtle">${escapeHtml(t("displayDisconnected"))}</span>`;
-    const monitorName = item.monitor_name || item.manufacturer || "-";
-    const manufacturer = item.manufacturer || "-";
-    const currentRes = item.current_resolution || "-";
-    const nativeRes = item.native_resolution || "-";
-    const refreshRate = item.current_rate ? `${item.current_rate} Hz` : (item.vfreq_range || "-");
-    const size = item.size_inch ? `${item.size_inch}" (${item.size_cm} cm)` : (item.size_cm ? `${item.size_cm} cm` : "-");
-    const dpms = item.dpms || (item.drm_enabled === "enabled" ? "On" : item.drm_enabled === "disabled" ? "Off" : "-");
-    const dpmsBadge = isForcedOff
-      ? `<span class="subtle">${escapeHtml(t("displayDisabled"))}</span>`
-      : dpms === "On" ? `<span class="badge-driver">${escapeHtml(t("displayEnabled"))}</span>` : dpms === "Off" ? `<span class="subtle">${escapeHtml(t("displayDisabled"))}</span>` : escapeHtml(dpms);
-    const powerBtn = !isConnected
-      ? `<span class="subtle">-</span>`
-      : isForcedOff
-      ? `<button type="button" class="ghost-btn display-power-btn" data-display-name="${escapeHtml(item.name)}" data-display-action="on">${escapeHtml(t("displayPowerOn"))}</button>`
-      : `<button type="button" class="ghost-btn display-power-btn" data-display-name="${escapeHtml(item.name)}" data-display-action="off">${escapeHtml(t("displayPowerOff"))}</button>`;
-    return `<tr>
+  tbody.innerHTML = displays.length
+    ? displays
+        .map((item) => {
+          const isConnected = item.status === "connected";
+          const isForcedOff = item.forced_off === true;
+          const statusBadge = isConnected
+            ? `<span class="badge-driver">${escapeHtml(t("displayConnected"))}</span>`
+            : `<span class="subtle">${escapeHtml(t("displayDisconnected"))}</span>`;
+          const monitorName = item.monitor_name || item.manufacturer || "-";
+          const manufacturer = item.manufacturer || "-";
+          const currentRes = item.current_resolution || "-";
+          const nativeRes = item.native_resolution || "-";
+          const refreshRate = item.current_rate
+            ? `${item.current_rate} Hz`
+            : item.vfreq_range || "-";
+          const size = item.size_inch
+            ? `${item.size_inch}" (${item.size_cm} cm)`
+            : item.size_cm
+              ? `${item.size_cm} cm`
+              : "-";
+          const dpms =
+            item.dpms ||
+            (item.drm_enabled === "enabled"
+              ? "On"
+              : item.drm_enabled === "disabled"
+                ? "Off"
+                : "-");
+          const dpmsBadge = isForcedOff
+            ? `<span class="subtle">${escapeHtml(t("displayDisabled"))}</span>`
+            : dpms === "On"
+              ? `<span class="badge-driver">${escapeHtml(t("displayEnabled"))}</span>`
+              : dpms === "Off"
+                ? `<span class="subtle">${escapeHtml(t("displayDisabled"))}</span>`
+                : escapeHtml(dpms);
+          const powerBtn = !isConnected
+            ? `<span class="subtle">-</span>`
+            : isForcedOff
+              ? `<button type="button" class="ghost-btn display-power-btn" data-display-name="${escapeHtml(item.name)}" data-display-action="on">${escapeHtml(t("displayPowerOn"))}</button>`
+              : `<button type="button" class="ghost-btn display-power-btn" data-display-name="${escapeHtml(item.name)}" data-display-action="off">${escapeHtml(t("displayPowerOff"))}</button>`;
+          return `<tr>
       <td class="mono">${escapeHtml(item.connector)}</td>
       <td>${statusBadge}</td>
       <td>${escapeHtml(monitorName)}</td>
@@ -980,7 +1214,9 @@ function renderDisplay() {
       <td>${dpmsBadge}</td>
       <td>${powerBtn}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="10" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
+        })
+        .join("")
+    : `<tr><td colspan="10" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
 }
 
 function renderDns() {
@@ -991,14 +1227,45 @@ function renderDns() {
 function renderNetwork() {
   const saved = state.data.network?.saved || {};
   const list = state.data.network?.interfaces || [];
-  document.getElementById("networkList").innerHTML = list.map((item) => {
-    const cfg = saved[item.name] || {};
-    const wolModes = [...new Set(["d", ...String(item.supported_wol || "").split(""), ...String(item.wol || "").split("")].filter(Boolean))];
-    const wolOptions = wolModes.length ? wolModes : ["d", "g", "p", "u", "b", "m"];
-    const modes = (item.supported_link_modes || []).length ? item.supported_link_modes : fallbackLinkModes(item.speed);
-    const modeOptions = [...new Set(modes.map((mode) => modeValue(mode.speed, mode.duplex)).concat(item.speed ? [modeValue(item.speed, item.duplex || cfg.duplex || "full")] : []).filter(Boolean))].sort((a, b) => Number(a.split("|")[0]) - Number(b.split("|")[0]) || a.localeCompare(b));
-    const currentMode = modeValue(item.speed || cfg.speed || modeOptions[0]?.split("|")[0] || "", item.duplex || cfg.duplex || "full");
-    return `
+  document.getElementById("networkList").innerHTML = list
+    .map((item) => {
+      const cfg = saved[item.name] || {};
+      const wolModes = [
+        ...new Set(
+          [
+            "d",
+            ...String(item.supported_wol || "").split(""),
+            ...String(item.wol || "").split(""),
+          ].filter(Boolean),
+        ),
+      ];
+      const wolOptions = wolModes.length
+        ? wolModes
+        : ["d", "g", "p", "u", "b", "m"];
+      const modes = (item.supported_link_modes || []).length
+        ? item.supported_link_modes
+        : fallbackLinkModes(item.speed);
+      const modeOptions = [
+        ...new Set(
+          modes
+            .map((mode) => modeValue(mode.speed, mode.duplex))
+            .concat(
+              item.speed
+                ? [modeValue(item.speed, item.duplex || cfg.duplex || "full")]
+                : [],
+            )
+            .filter(Boolean),
+        ),
+      ].sort(
+        (a, b) =>
+          Number(a.split("|")[0]) - Number(b.split("|")[0]) ||
+          a.localeCompare(b),
+      );
+      const currentMode = modeValue(
+        item.speed || cfg.speed || modeOptions[0]?.split("|")[0] || "",
+        item.duplex || cfg.duplex || "full",
+      );
+      return `
       <div class="data-item" data-iface="${escapeHtml(item.name)}" data-link-modes="${escapeHtml(JSON.stringify(modes))}">
         <div class="data-title"><span>${escapeHtml(item.name)}</span><span>${escapeHtml(item.operstate || "")}</span></div>
         <div class="data-meta">MAC ${escapeHtml(item.mac || "-")} / ${t("wolStatus")} ${escapeHtml(wolStatusText(item.wol))} / ${t("mode")} ${escapeHtml(modeLabel(currentMode))}</div>
@@ -1010,7 +1277,8 @@ function renderNetwork() {
         </div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
   syncNetworkAutonegFields();
   renderTcp();
   renderBridges();
@@ -1021,26 +1289,59 @@ function renderTcp() {
   const saved = state.data.network?.saved || {};
   const savedTcp = saved.tcp || {};
   const availableCc = tcp.available_congestion_control || [];
-  const ccOptions = availableCc.length ? availableCc : [tcp.congestion_control || "cubic"];
+  const ccOptions = availableCc.length
+    ? availableCc
+    : [tcp.congestion_control || "cubic"];
   const mtuProbingOptions = ["0", "1", "2"];
   const container = document.getElementById("tcpFields");
   if (!container) return;
   container.innerHTML = [
-    inputField("congestion_control", savedTcp.congestion_control || tcp.congestion_control || "cubic", ccOptions),
+    inputField(
+      "congestion_control",
+      savedTcp.congestion_control || tcp.congestion_control || "cubic",
+      ccOptions,
+    ),
     inputField("fastopen", savedTcp.fastopen || tcp.fastopen || "1"),
-    inputField("syncookies", savedTcp.syncookies || tcp.syncookies || "1", ["0", "1"]),
-    inputField("tw_reuse", savedTcp.tw_reuse || tcp.tw_reuse || "2", ["0", "1", "2"]),
+    inputField("syncookies", savedTcp.syncookies || tcp.syncookies || "1", [
+      "0",
+      "1",
+    ]),
+    inputField("tw_reuse", savedTcp.tw_reuse || tcp.tw_reuse || "2", [
+      "0",
+      "1",
+      "2",
+    ]),
     inputField("fin_timeout", savedTcp.fin_timeout || tcp.fin_timeout || "60"),
-    inputField("keepalive_time", savedTcp.keepalive_time || tcp.keepalive_time || "7200"),
+    inputField(
+      "keepalive_time",
+      savedTcp.keepalive_time || tcp.keepalive_time || "7200",
+    ),
     inputField("sack", savedTcp.sack || tcp.sack || "1", ["0", "1"]),
-    inputField("timestamps", savedTcp.timestamps || tcp.timestamps || "1", ["0", "1"]),
-    inputField("window_scaling", savedTcp.window_scaling || tcp.window_scaling || "1", ["0", "1"]),
-    inputField("mtu_probing", savedTcp.mtu_probing || tcp.mtu_probing || "0", mtuProbingOptions),
+    inputField("timestamps", savedTcp.timestamps || tcp.timestamps || "1", [
+      "0",
+      "1",
+    ]),
+    inputField(
+      "window_scaling",
+      savedTcp.window_scaling || tcp.window_scaling || "1",
+      ["0", "1"],
+    ),
+    inputField(
+      "mtu_probing",
+      savedTcp.mtu_probing || tcp.mtu_probing || "0",
+      mtuProbingOptions,
+    ),
   ].join("");
 }
 
 function bridgeMemberStateLabel(state) {
-  const map = { forwarding: "forwarding", learning: "learning", listening: "listening", blocking: "blocking", disabled: "disabled" };
+  const map = {
+    forwarding: "forwarding",
+    learning: "learning",
+    listening: "listening",
+    blocking: "blocking",
+    disabled: "disabled",
+  };
   return t(map[state] || state || "disabled");
 }
 
@@ -1049,41 +1350,104 @@ function renderBridges() {
   const savedBridges = state.data.network?.saved_bridges || {};
   const availableIfaces = state.data.network?.available_ifaces || [];
   const bridgeNames = new Set(bridges.map((b) => b.name));
-  const memberNames = new Set(bridges.flatMap((b) => b.members.map((m) => m.name)));
-  const freeIfaces = availableIfaces.filter((n) => !bridgeNames.has(n) && !memberNames.has(n) && n !== "lo");
+  const memberNames = new Set(
+    bridges.flatMap((b) => b.members.map((m) => m.name)),
+  );
+  const freeIfaces = availableIfaces.filter(
+    (n) => !bridgeNames.has(n) && !memberNames.has(n) && n !== "lo",
+  );
   const container = document.getElementById("bridgeList");
   if (!container) return;
-  container.innerHTML = bridges.length ? bridges.map((bridge) => {
-    const saved = savedBridges[bridge.name] || {};
-    const ip4Type = saved.ip4_type || (saved.ip_type === "dhcp" ? (saved.ipv4_enabled !== false ? "dhcp" : "") : saved.ip_type === "static" ? (saved.ipv4_enabled !== false ? "static" : "") : "");
-    const ip6Type = saved.ip6_type || (saved.ip_type === "dhcp" ? (saved.ipv6_enabled ? "dhcp" : "") : saved.ip_type === "static" ? (saved.ipv6_enabled ? "static" : "") : "");
-    const ipTypeLabel = (v) => v === "dhcp" ? t("ipDhcp") : v === "static" ? t("ipStatic") : t("ipNone");
-    const ip4Badge = ip4Type ? `<span class="badge-driver">IPv4 ${escapeHtml(ipTypeLabel(ip4Type))}</span>` : `<span class="subtle">IPv4 ${escapeHtml(ipTypeLabel(ip4Type))}</span>`;
-    const ip6Badge = ip6Type ? `<span class="badge-driver">IPv6 ${escapeHtml(ipTypeLabel(ip6Type))}</span>` : `<span class="subtle">IPv6 ${escapeHtml(ipTypeLabel(ip6Type))}</span>`;
-    const bridgeType = bridge.type || saved.bridge_type || "linux";
-    const bridgeTypeLabel = bridgeType === "ovs" ? t("bridgeTypeOvs") : t("bridgeTypeLinux");
-    const bridgeTypeBadge = `<span class="badge-driver">${escapeHtml(bridgeTypeLabel)}</span>`;
-    const allAddrs = bridge.addrs || [];
-    const ipv4Addrs = allAddrs.filter((a) => a.family === "inet");
-    const ipv6Addrs = allAddrs.filter((a) => a.family === "inet6");
-    const ipv4Display = ipv4Addrs.length ? ipv4Addrs.map((a) => `${a.address}/${a.prefixlen}`).join(", ") : "";
-    const ipv6Display = ipv6Addrs.length ? ipv6Addrs.map((a) => `${a.address}/${a.prefixlen}`).join(", ") : "";
-    const addrParts = [];
-    if (ipv4Display) addrParts.push(`IPv4: ${ipv4Display}`);
-    if (ipv6Display) addrParts.push(`IPv6: ${ipv6Display}`);
-    const addrDisplay = addrParts.length ? addrParts.join(" / ") : "";
-    const mtu = saved.ip_mtu || "";
-    const dns = saved.ip_dns || "";
-    const row2 = [bridgeTypeBadge, ip4Badge, ip6Badge];
-    if (mtu) row2.push(`<span>MTU ${escapeHtml(mtu)}</span>`);
-    if (dns) row2.push(`<span>DNS ${escapeHtml(dns)}</span>`);
-    const row3 = addrDisplay ? [`<span class="mono" style="font-size:11px">${escapeHtml(addrDisplay)}</span>`] : [];
-    const row4 = [`<span>STP ${bridge.stp ? t("enabled") : t("disabled")}</span>`, `<span>${escapeHtml(t("forwardDelay"))} ${escapeHtml(bridge.forward_delay || "-")}</span>`, `<span>${escapeHtml(t("helloTime"))} ${escapeHtml(bridge.hello_time || "-")}</span>`, `<span>${escapeHtml(t("maxAge"))} ${escapeHtml(bridge.max_age || "-")}</span>`];
-    const memberHtml = bridge.members.length ? bridge.members.map((m) => `<span class="badge-member">${escapeHtml(m.name)}<span class="member-state">${escapeHtml(bridgeMemberStateLabel(m.state))}</span><button type="button" class="member-remove-btn" data-bridge="${escapeHtml(bridge.name)}" data-member="${escapeHtml(m.name)}" title="${escapeHtml(t("removeMember"))}">×</button></span>`).join("") : `<span class="subtle">${escapeHtml(t("noData"))}</span>`;
-    const ifaceOptions = freeIfaces.length ? freeIfaces.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("") : "";
-    const addMemberHtml = freeIfaces.length ? `<select class="bridge-add-select" data-bridge="${escapeHtml(bridge.name)}"><option value="">${escapeHtml(t("selectInterface"))}</option>${ifaceOptions}</select>` : "";
-    const savedData = encodeURIComponent(JSON.stringify(saved));
-    return `<div class="bridge-card" data-bridge-card="${escapeHtml(bridge.name)}">
+  container.innerHTML = bridges.length
+    ? bridges
+        .map((bridge) => {
+          const saved = savedBridges[bridge.name] || {};
+          const ip4Type =
+            saved.ip4_type ||
+            (saved.ip_type === "dhcp"
+              ? saved.ipv4_enabled !== false
+                ? "dhcp"
+                : ""
+              : saved.ip_type === "static"
+                ? saved.ipv4_enabled !== false
+                  ? "static"
+                  : ""
+                : "");
+          const ip6Type =
+            saved.ip6_type ||
+            (saved.ip_type === "dhcp"
+              ? saved.ipv6_enabled
+                ? "dhcp"
+                : ""
+              : saved.ip_type === "static"
+                ? saved.ipv6_enabled
+                  ? "static"
+                  : ""
+                : "");
+          const ipTypeLabel = (v) =>
+            v === "dhcp"
+              ? t("ipDhcp")
+              : v === "static"
+                ? t("ipStatic")
+                : t("ipNone");
+          const ip4Badge = ip4Type
+            ? `<span class="badge-driver">IPv4 ${escapeHtml(ipTypeLabel(ip4Type))}</span>`
+            : `<span class="subtle">IPv4 ${escapeHtml(ipTypeLabel(ip4Type))}</span>`;
+          const ip6Badge = ip6Type
+            ? `<span class="badge-driver">IPv6 ${escapeHtml(ipTypeLabel(ip6Type))}</span>`
+            : `<span class="subtle">IPv6 ${escapeHtml(ipTypeLabel(ip6Type))}</span>`;
+          const bridgeType = bridge.type || saved.bridge_type || "linux";
+          const bridgeTypeLabel =
+            bridgeType === "ovs" ? t("bridgeTypeOvs") : t("bridgeTypeLinux");
+          const bridgeTypeBadge = `<span class="badge-driver">${escapeHtml(bridgeTypeLabel)}</span>`;
+          const allAddrs = bridge.addrs || [];
+          const ipv4Addrs = allAddrs.filter((a) => a.family === "inet");
+          const ipv6Addrs = allAddrs.filter((a) => a.family === "inet6");
+          const ipv4Display = ipv4Addrs.length
+            ? ipv4Addrs.map((a) => `${a.address}/${a.prefixlen}`).join(", ")
+            : "";
+          const ipv6Display = ipv6Addrs.length
+            ? ipv6Addrs.map((a) => `${a.address}/${a.prefixlen}`).join(", ")
+            : "";
+          const addrParts = [];
+          if (ipv4Display) addrParts.push(`IPv4: ${ipv4Display}`);
+          if (ipv6Display) addrParts.push(`IPv6: ${ipv6Display}`);
+          const addrDisplay = addrParts.length ? addrParts.join(" / ") : "";
+          const mtu = saved.ip_mtu || "";
+          const dns = saved.ip_dns || "";
+          const row2 = [bridgeTypeBadge, ip4Badge, ip6Badge];
+          if (mtu) row2.push(`<span>MTU ${escapeHtml(mtu)}</span>`);
+          if (dns) row2.push(`<span>DNS ${escapeHtml(dns)}</span>`);
+          const row3 = addrDisplay
+            ? [`<span class="mono">${escapeHtml(addrDisplay)}</span>`]
+            : [];
+          const row4 = [
+            `<span>STP ${bridge.stp ? t("enabled") : t("disabled")}</span>`,
+            `<span>${escapeHtml(t("forwardDelay"))} ${escapeHtml(bridge.forward_delay || "-")}</span>`,
+            `<span>${escapeHtml(t("helloTime"))} ${escapeHtml(bridge.hello_time || "-")}</span>`,
+            `<span>${escapeHtml(t("maxAge"))} ${escapeHtml(bridge.max_age || "-")}</span>`,
+          ];
+          const memberHtml = bridge.members.length
+            ? bridge.members
+                .map(
+                  (m) =>
+                    `<span class="badge-member">${escapeHtml(m.name)}<span class="member-state">${escapeHtml(bridgeMemberStateLabel(m.state))}</span><button type="button" class="member-remove-btn" data-bridge="${escapeHtml(bridge.name)}" data-member="${escapeHtml(m.name)}" title="${escapeHtml(t("removeMember"))}">×</button></span>`,
+                )
+                .join("")
+            : `<span class="subtle">${escapeHtml(t("noData"))}</span>`;
+          const ifaceOptions = freeIfaces.length
+            ? freeIfaces
+                .map(
+                  (n) =>
+                    `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`,
+                )
+                .join("")
+            : "";
+          const addMemberHtml = freeIfaces.length
+            ? `<select class="bridge-add-select" data-bridge="${escapeHtml(bridge.name)}"><option value="">${escapeHtml(t("selectInterface"))}</option>${ifaceOptions}</select>`
+            : "";
+          const savedData = encodeURIComponent(JSON.stringify(saved));
+          return `<div class="bridge-card" data-bridge-card="${escapeHtml(bridge.name)}">
       <div class="bridge-card-head">
         <span class="bridge-card-name">${escapeHtml(bridge.name)}</span>
         <div class="bridge-card-actions">
@@ -1098,16 +1462,24 @@ function renderBridges() {
         ${memberHtml} ${addMemberHtml}
       </div>
     </div>`;
-  }).join("") : `<div class="subtle" style="text-align:center;padding:20px">${escapeHtml(t("noData"))}</div>`;
+        })
+        .join("")
+    : `<div class="subtle-center">${escapeHtml(t("noData"))}</div>`;
 }
 
 function renderProxy() {
   const values = state.data.proxy?.values || {};
   const targets = state.data.proxy?.targets || {};
-  document.getElementById("proxyFields").innerHTML = proxyFields.map((key) => inputField(key, values[key] || "")).join("");
-  document.getElementById("proxyTargets").innerHTML = proxyTargetList.map((key) => `
+  document.getElementById("proxyFields").innerHTML = proxyFields
+    .map((key) => inputField(key, values[key] || ""))
+    .join("");
+  document.getElementById("proxyTargets").innerHTML = proxyTargetList
+    .map(
+      (key) => `
     <label class="check"><input type="checkbox" data-proxy-target value="${escapeHtml(key)}" ${targets[key] ? "checked" : ""}><span>${escapeHtml(t(key + "Target"))}</span></label>
-  `).join("");
+  `,
+    )
+    .join("");
 }
 
 function renderIdentity() {
@@ -1128,44 +1500,79 @@ function renderDevice() {
   const pciTbody = document.querySelector("#pciTable tbody");
   const usbTbody = document.querySelector("#usbTable tbody");
   if (!pciTbody || !usbTbody) return;
-  pciTbody.innerHTML = pci.length ? pci.map((item) => `<tr>
+  pciTbody.innerHTML = pci.length
+    ? pci
+        .map(
+          (item) => `<tr>
       <td class="mono">${escapeHtml(item.slot || "-")}</td>
       <td>${item.class_id ? `<span class="mono class-id">[${escapeHtml(item.class_id)}]</span> ` : ""}${escapeHtml(item.class || "-")}</td>
       <td>${escapeHtml(item.description || "-")}</td>
       <td class="mono">${escapeHtml(item.device_id || "-")}</td>
       <td>${item.driver ? `<span class="badge-driver">${escapeHtml(item.driver)}</span>` : "-"}</td>
-    </tr>`).join("") : `<tr><td colspan="5" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
-  usbTbody.innerHTML = usb.length ? usb.map((item) => `<tr>
+    </tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="5" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
+  usbTbody.innerHTML = usb.length
+    ? usb
+        .map(
+          (item) => `<tr>
       <td class="mono">${escapeHtml(item.bus || "-")}</td>
       <td class="mono">${escapeHtml(item.device || "-")}</td>
       <td>${escapeHtml(item.description || "-")}</td>
       <td class="mono">${escapeHtml(item.id || "-")}</td>
       <td>${item.driver ? `<span class="badge-driver">${escapeHtml(item.driver)}</span>` : "-"}</td>
-    </tr>`).join("") : `<tr><td colspan="5" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
+    </tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="5" class="empty-cell">${escapeHtml(t("noData"))}</td></tr>`;
 }
 
 function filterPortEntry(item, keyword) {
   if (!keyword) return true;
   const kw = keyword.toLowerCase();
-  return [item.local_address, item.port, item.process_name, item.process_pid].some((v) => String(v || "").toLowerCase().includes(kw));
+  return [
+    item.local_address,
+    item.port,
+    item.process_name,
+    item.process_pid,
+  ].some((v) =>
+    String(v || "")
+      .toLowerCase()
+      .includes(kw),
+  );
 }
 
 function renderPortTable(entries, tbody, keyword) {
   if (!tbody) return;
-  const filtered = keyword ? entries.filter((item) => filterPortEntry(item, keyword)) : entries;
-  tbody.innerHTML = filtered.length ? filtered.map((item) => `<tr>
+  const filtered = keyword
+    ? entries.filter((item) => filterPortEntry(item, keyword))
+    : entries;
+  tbody.innerHTML = filtered.length
+    ? filtered
+        .map(
+          (item) => `<tr>
       <td class="mono">${escapeHtml(item.local_address || "-")}</td>
       <td class="mono">${escapeHtml(item.port || "-")}</td>
       <td>${escapeHtml(item.process_name || "-")}</td>
       <td class="mono">${escapeHtml(item.process_pid || "-")}</td>
-    </tr>`).join("") : `<tr><td colspan="4" class="empty-cell">${escapeHtml(keyword ? t("noMatch") : t("noData"))}</td></tr>`;
+    </tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="4" class="empty-cell">${escapeHtml(keyword ? t("noMatch") : t("noData"))}</td></tr>`;
 }
 
 function renderPort() {
   const port = state.data.port || {};
-  const keyword = (document.getElementById("portSearchInput")?.value || "").trim();
-  const tcp = (port.tcp || []).slice().sort((a, b) => (parseInt(a.port) || 0) - (parseInt(b.port) || 0));
-  const udp = (port.udp || []).slice().sort((a, b) => (parseInt(a.port) || 0) - (parseInt(b.port) || 0));
+  const keyword = (
+    document.getElementById("portSearchInput")?.value || ""
+  ).trim();
+  const tcp = (port.tcp || [])
+    .slice()
+    .sort((a, b) => (parseInt(a.port) || 0) - (parseInt(b.port) || 0));
+  const udp = (port.udp || [])
+    .slice()
+    .sort((a, b) => (parseInt(a.port) || 0) - (parseInt(b.port) || 0));
   renderPortTable(tcp, document.querySelector("#tcpTable tbody"), keyword);
   renderPortTable(udp, document.querySelector("#udpTable tbody"), keyword);
 }
@@ -1182,7 +1589,12 @@ function renderDiag() {
   document.querySelectorAll("#diagTabs .diag-tab").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.diag === diagActive);
   });
-  const forms = { ping: "diagPingForm", traceroute: "diagTracerouteForm", nslookup: "diagNslookupForm", arp: "diagArpForm" };
+  const forms = {
+    ping: "diagPingForm",
+    traceroute: "diagTracerouteForm",
+    nslookup: "diagNslookupForm",
+    arp: "diagArpForm",
+  };
   Object.entries(forms).forEach(([key, id]) => {
     document.getElementById(id).classList.toggle("hidden", key !== diagActive);
   });
@@ -1199,23 +1611,40 @@ async function runDiag() {
   let tool, data;
 
   if (diagActive === "ping") {
-    const target = (document.getElementById("diagPingTarget").value || "").trim();
-    if (!target) { showToast(t("diagNoTarget"), true); return; }
+    const target = (
+      document.getElementById("diagPingTarget").value || ""
+    ).trim();
+    if (!target) {
+      showToast(t("diagNoTarget"), true);
+      return;
+    }
     const rawCount = parseInt(document.getElementById("diagPingCount").value);
     const count = Number.isNaN(rawCount) ? 4 : Math.min(9999, rawCount);
     const ipv6 = isIpv6(target);
     tool = "ping";
     data = { target, count, ipv6 };
   } else if (diagActive === "traceroute") {
-    const target = (document.getElementById("diagTracerouteTarget").value || "").trim();
-    if (!target) { showToast(t("diagNoTarget"), true); return; }
+    const target = (
+      document.getElementById("diagTracerouteTarget").value || ""
+    ).trim();
+    if (!target) {
+      showToast(t("diagNoTarget"), true);
+      return;
+    }
     const ipv6 = isIpv6(target);
     tool = "traceroute";
     data = { target, ipv6 };
   } else if (diagActive === "nslookup") {
-    const target = (document.getElementById("diagNslookupTarget").value || "").trim();
-    if (!target) { showToast(t("diagNoTarget"), true); return; }
-    const server = (document.getElementById("diagNslookupServer").value || "").trim();
+    const target = (
+      document.getElementById("diagNslookupTarget").value || ""
+    ).trim();
+    if (!target) {
+      showToast(t("diagNoTarget"), true);
+      return;
+    }
+    const server = (
+      document.getElementById("diagNslookupServer").value || ""
+    ).trim();
     const ipv6 = isIpv6(target);
     tool = "nslookup";
     data = { target, server: server || undefined, ipv6 };
@@ -1265,14 +1694,19 @@ async function runDiag() {
         }
         if (!eventData) continue;
         let parsed;
-        try { parsed = JSON.parse(eventData); } catch { continue; }
+        try {
+          parsed = JSON.parse(eventData);
+        } catch {
+          continue;
+        }
         if (eventType === "data") {
           output.value += (output.value ? "\n" : "") + (parsed.line || "");
           output.scrollTop = output.scrollHeight;
         } else if (eventType === "done") {
           if (parsed.rc !== 0) output.classList.add("diag-error");
         } else if (eventType === "error") {
-          output.value += (output.value ? "\n" : "") + (parsed.message || "error");
+          output.value +=
+            (output.value ? "\n" : "") + (parsed.message || "error");
           output.classList.add("diag-error");
         }
       }
@@ -1312,7 +1746,16 @@ function renderPanels() {
   document.querySelectorAll("[data-panel]").forEach((panel) => {
     panel.classList.toggle("hidden", panel.dataset.panel !== state.active);
   });
-  document.getElementById("saveBtn").classList.toggle("hidden", state.active === "identity" || state.active === "device" || state.active === "port" || state.active === "display" || state.active === "diag");
+  document
+    .getElementById("saveBtn")
+    .classList.toggle(
+      "hidden",
+      state.active === "identity" ||
+        state.active === "device" ||
+        state.active === "port" ||
+        state.active === "display" ||
+        state.active === "diag",
+    );
 }
 
 function render() {
@@ -1348,22 +1791,45 @@ async function saveActive() {
   try {
     let data;
     if (state.active === "boot") {
-      data = await api("saveBoot", { changes: collect(document.getElementById("bootFields")), apply: document.getElementById("bootApply").checked });
+      data = await api("saveBoot", {
+        changes: collect(document.getElementById("bootFields")),
+        apply: document.getElementById("bootApply").checked,
+      });
     } else if (state.active === "power") {
-      data = await api("savePower", { changes: collect(document.getElementById("powerFields")), apply: document.getElementById("powerApply").checked });
+      data = await api("savePower", {
+        changes: collect(document.getElementById("powerFields")),
+        apply: document.getElementById("powerApply").checked,
+      });
     } else if (state.active === "ssh") {
       const password = document.getElementById("rootPassword").value;
-      const passwordConfirm = document.getElementById("rootPasswordConfirm").value;
+      const passwordConfirm = document.getElementById(
+        "rootPasswordConfirm",
+      ).value;
       if (password || passwordConfirm) {
-        if (password !== passwordConfirm) throw new Error(t("passwordMismatch"));
+        if (password !== passwordConfirm)
+          throw new Error(t("passwordMismatch"));
       }
-      data = await api("saveSsh", { changes: collect(document.getElementById("sshFields")), password, apply: document.getElementById("sshApply").checked });
+      data = await api("saveSsh", {
+        changes: collect(document.getElementById("sshFields")),
+        password,
+        apply: document.getElementById("sshApply").checked,
+      });
     } else if (state.active === "cpu") {
-      data = await api("saveCpu", { settings: { ...collect(document.getElementById("cpuFields")), ...collect(document.getElementById("cpuExtraFields")) } });
+      data = await api("saveCpu", {
+        settings: {
+          ...collect(document.getElementById("cpuFields")),
+          ...collect(document.getElementById("cpuExtraFields")),
+        },
+      });
     } else if (state.active === "dns") {
-      data = await api("saveDns", { resolv: document.getElementById("resolvContent").value, hosts: document.getElementById("hostsContent").value });
+      data = await api("saveDns", {
+        resolv: document.getElementById("resolvContent").value,
+        hosts: document.getElementById("hostsContent").value,
+      });
     } else if (state.active === "network") {
-      const interfaces = [...document.querySelectorAll("#networkList [data-iface]")].map((item) => {
+      const interfaces = [
+        ...document.querySelectorAll("#networkList [data-iface]"),
+      ].map((item) => {
         const values = collect(item);
         delete values.mtu;
         if (values.autoneg === "on") {
@@ -1377,14 +1843,26 @@ async function saveActive() {
         }
         return { name: item.dataset.iface, ...values };
       });
-      data = await api("saveNetwork", { interfaces, tcp: collect(document.getElementById("tcpFields")) });
+      data = await api("saveNetwork", {
+        interfaces,
+        tcp: collect(document.getElementById("tcpFields")),
+      });
     } else if (state.active === "proxy") {
       const proxyTargets = {};
-      document.querySelectorAll("[data-proxy-target]").forEach((el) => { proxyTargets[el.value] = el.checked; });
-      data = await api("saveProxy", { proxy: collect(document.getElementById("proxyFields")), targets: proxyTargets });
+      document.querySelectorAll("[data-proxy-target]").forEach((el) => {
+        proxyTargets[el.value] = el.checked;
+      });
+      data = await api("saveProxy", {
+        proxy: collect(document.getElementById("proxyFields")),
+        targets: proxyTargets,
+      });
     } else if (state.active === "identity") {
       const values = collect(document.getElementById("identityFields"));
-      data = await api("saveIdentity", { enabled: values.enabled === "on", device_id: values.device_id, apply: document.getElementById("identityApply").checked });
+      data = await api("saveIdentity", {
+        enabled: values.enabled === "on",
+        device_id: values.device_id,
+        apply: document.getElementById("identityApply").checked,
+      });
     }
     state.data = { ...state.data, ...data };
     render();
@@ -1401,7 +1879,11 @@ async function saveIdentityFromSwitch() {
   setSaving(true);
   try {
     const values = collect(document.getElementById("identityFields"));
-    const data = await api("saveIdentity", { enabled: values.enabled === "on", device_id: values.device_id, apply: document.getElementById("identityApply").checked });
+    const data = await api("saveIdentity", {
+      enabled: values.enabled === "on",
+      device_id: values.device_id,
+      apply: document.getElementById("identityApply").checked,
+    });
     state.data = { ...state.data, ...data };
     render();
     showToast(t("saved"));
@@ -1420,23 +1902,40 @@ document.getElementById("navList").addEventListener("click", (event) => {
   renderPanels();
 });
 
-document.getElementById("refreshBtn").addEventListener("click", () => loadData().catch((error) => showToast(error.message, true)));
-document.getElementById("saveBtn").addEventListener("click", () => saveActive().catch((error) => showToast(error.message, true)));
-document.getElementById("identityFields").addEventListener("change", (event) => {
-  if (event.target.dataset.name === "enabled") saveIdentityFromSwitch().catch((error) => showToast(error.message, true));
-});
+document
+  .getElementById("refreshBtn")
+  .addEventListener("click", () =>
+    loadData().catch((error) => showToast(error.message, true)),
+  );
+document
+  .getElementById("saveBtn")
+  .addEventListener("click", () =>
+    saveActive().catch((error) => showToast(error.message, true)),
+  );
+document
+  .getElementById("identityFields")
+  .addEventListener("change", (event) => {
+    if (event.target.dataset.name === "enabled")
+      saveIdentityFromSwitch().catch((error) => showToast(error.message, true));
+  });
 document.getElementById("networkList").addEventListener("change", (event) => {
   const item = event.target.closest("[data-iface]");
   if (!item) return;
   if (event.target.dataset.wolOption !== undefined) {
     const checked = [...item.querySelectorAll("[data-wol-option]:checked")];
     if (event.target.value === "d" && event.target.checked) {
-      item.querySelectorAll('[data-wol-option]:not([value="d"])').forEach((node) => { node.checked = false; });
+      item
+        .querySelectorAll('[data-wol-option]:not([value="d"])')
+        .forEach((node) => {
+          node.checked = false;
+        });
     } else if (event.target.value !== "d" && event.target.checked) {
       const disabled = item.querySelector('[data-wol-option][value="d"]');
       if (disabled) disabled.checked = false;
     }
-    const selected = [...item.querySelectorAll("[data-wol-option]:checked")].map((node) => node.value).join("");
+    const selected = [...item.querySelectorAll("[data-wol-option]:checked")]
+      .map((node) => node.value)
+      .join("");
     const hidden = item.querySelector('[data-name="wol"]');
     if (hidden) hidden.value = selected || "d";
   } else if (event.target.dataset.name === "autoneg") {
@@ -1463,32 +1962,62 @@ document.getElementById("diagTabs").addEventListener("click", (event) => {
   const tab = event.target.closest("[data-diag]");
   if (tab) switchDiag(tab.dataset.diag);
 });
-document.getElementById("diagRunBtn").addEventListener("click", () => runDiag());
-document.getElementById("diagStopBtn").addEventListener("click", () => stopDiag());
+document
+  .getElementById("diagRunBtn")
+  .addEventListener("click", () => runDiag());
+document
+  .getElementById("diagStopBtn")
+  .addEventListener("click", () => stopDiag());
 
 function showBridgeIpModal(name, saved, currentStp, bridgeType) {
   const modal = document.getElementById("confirmModal");
-  const content = modal.querySelector(".confirm-content") || modal.querySelector(".modal-content");
+  const content =
+    modal.querySelector(".confirm-content") ||
+    modal.querySelector(".modal-content");
   const isConfirm = !!content;
   const origHtml = isConfirm ? content.innerHTML : "";
   const origStyle = content.getAttribute("style") || "";
-  const curIp4Type = saved.ip4_type || (saved.ip_type === "dhcp" ? (saved.ipv4_enabled !== false ? "dhcp" : "") : saved.ip_type === "static" ? (saved.ipv4_enabled !== false ? "static" : "") : "");
-  const curIp6Type = saved.ip6_type || (saved.ip_type === "dhcp" ? (saved.ipv6_enabled ? "dhcp" : "") : saved.ip_type === "static" ? (saved.ipv6_enabled ? "static" : "") : "");
-  const ipTypeOpts = (cur) => `<option value=""${!cur ? " selected" : ""}>${escapeHtml(t("ipNone"))}</option><option value="dhcp"${cur === "dhcp" ? " selected" : ""}>DHCP</option><option value="static"${cur === "static" ? " selected" : ""}>${escapeHtml(t("ipStatic"))}</option>`;
-  content.setAttribute("style", "width:min(680px,calc(100vw - 48px));max-height:88vh;overflow:auto;padding:20px;");
+  const curIp4Type =
+    saved.ip4_type ||
+    (saved.ip_type === "dhcp"
+      ? saved.ipv4_enabled !== false
+        ? "dhcp"
+        : ""
+      : saved.ip_type === "static"
+        ? saved.ipv4_enabled !== false
+          ? "static"
+          : ""
+        : "");
+  const curIp6Type =
+    saved.ip6_type ||
+    (saved.ip_type === "dhcp"
+      ? saved.ipv6_enabled
+        ? "dhcp"
+        : ""
+      : saved.ip_type === "static"
+        ? saved.ipv6_enabled
+          ? "static"
+          : ""
+        : "");
+  const ipTypeOpts = (cur) =>
+    `<option value=""${!cur ? " selected" : ""}>${escapeHtml(t("ipNone"))}</option><option value="dhcp"${cur === "dhcp" ? " selected" : ""}>DHCP</option><option value="static"${cur === "static" ? " selected" : ""}>${escapeHtml(t("ipStatic"))}</option>`;
+  content.setAttribute(
+    "style",
+    "width:min(680px,calc(100vw - 48px));max-height:88vh;overflow:auto;padding:20px;",
+  );
   content.innerHTML = `
-    <p style="margin:0 0 16px;font-size:14px;font-weight:800;">${escapeHtml(name)} - ${escapeHtml(t("ipEdit"))}</p>
-    <div class="grid" style="margin-bottom:16px;">
+    <p class="modal-title">${escapeHtml(name)} - ${escapeHtml(t("ipEdit"))}</p>
+    <div class="grid mb-16">
       <label class="field" id="bridgeModalMtuWrap"><span>${escapeHtml(t("ipMtu"))}</span><input id="bridgeModalMtu" type="text" value="${escapeHtml(saved.ip_mtu || "")}" placeholder="1500" spellcheck="false"></label>
-      <label class="check" style="align-self:end;margin-bottom:6px;"><input id="bridgeModalStp" type="checkbox" ${currentStp ? "checked" : ""}><span>${escapeHtml(t("stp"))}</span></label>
+      <label class="check check-end"><input id="bridgeModalStp" type="checkbox" ${currentStp ? "checked" : ""}><span>${escapeHtml(t("stp"))}</span></label>
     </div>
-    <div style="margin-bottom:16px;">
-      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:var(--muted);">IPv4</p>
-      <div class="grid" style="margin-bottom:8px;">
-        <label class="field"><span>${escapeHtml(t("ip4Type"))}</span><select id="bridgeModalIp4Type" style="width:100%;min-height:36px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);padding:8px 10px;font-size:13px;font-weight:600;">${ipTypeOpts(curIp4Type)}</select></label>
+    <div class="mb-16">
+      <p class="section-title">IPv4</p>
+      <div class="grid mb-8">
+        <label class="field"><span>${escapeHtml(t("ip4Type"))}</span><select id="bridgeModalIp4Type" class="ip-type-select">${ipTypeOpts(curIp4Type)}</select></label>
       </div>
-      <div id="bridgeModalIpv4Static" style="${curIp4Type === "static" ? "" : "display:none;"}">
-        <div class="grid" style="margin-bottom:12px;">
+      <div id="bridgeModalIpv4Static" class="${curIp4Type !== "static" ? "hidden" : ""}">
+        <div class="grid mb-12">
           <label class="field"><span>${escapeHtml(t("ipv4Address"))}</span><input id="bridgeModalIpv4Addr" type="text" value="${escapeHtml(saved.ip_address || "")}" placeholder="192.168.1.100" spellcheck="false"></label>
           <label class="field"><span>${escapeHtml(t("ipv4Prefixlen"))}</span><input id="bridgeModalIpv4Prefix" type="text" value="${escapeHtml(saved.ip_prefixlen || "24")}" placeholder="24" spellcheck="false"></label>
           <label class="field"><span>${escapeHtml(t("ipv4Gateway"))}</span><input id="bridgeModalIpv4Gw" type="text" value="${escapeHtml(saved.ip_gateway || "")}" placeholder="192.168.1.1" spellcheck="false"></label>
@@ -1496,13 +2025,13 @@ function showBridgeIpModal(name, saved, currentStp, bridgeType) {
         </div>
       </div>
     </div>
-    <div style="margin-bottom:16px;">
-      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:var(--muted);">IPv6</p>
-      <div class="grid" style="margin-bottom:8px;">
-        <label class="field"><span>${escapeHtml(t("ip6Type"))}</span><select id="bridgeModalIp6Type" style="width:100%;min-height:36px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);padding:8px 10px;font-size:13px;font-weight:600;">${ipTypeOpts(curIp6Type)}</select></label>
+    <div class="mb-16">
+      <p class="section-title">IPv6</p>
+      <div class="grid mb-8">
+        <label class="field"><span>${escapeHtml(t("ip6Type"))}</span><select id="bridgeModalIp6Type" class="ip-type-select">${ipTypeOpts(curIp6Type)}</select></label>
       </div>
-      <div id="bridgeModalIpv6Static" style="${curIp6Type === "static" ? "" : "display:none;"}">
-        <div class="grid" style="margin-bottom:12px;">
+      <div id="bridgeModalIpv6Static" class="${curIp6Type !== "static" ? "hidden" : ""}">
+        <div class="grid mb-12">
           <label class="field"><span>${escapeHtml(t("ipv6Address"))}</span><input id="bridgeModalIpv6Addr" type="text" value="${escapeHtml(saved.ip6_address || "")}" placeholder="2001:db8::1" spellcheck="false"></label>
           <label class="field"><span>${escapeHtml(t("ipv6Prefixlen"))}</span><input id="bridgeModalIpv6Prefix" type="text" value="${escapeHtml(saved.ip6_prefixlen || "64")}" placeholder="64" spellcheck="false"></label>
           <label class="field"><span>${escapeHtml(t("ipv6Gateway"))}</span><input id="bridgeModalIpv6Gw" type="text" value="${escapeHtml(saved.ip6_gateway || "")}" placeholder="2001:db8::1" spellcheck="false"></label>
@@ -1519,32 +2048,63 @@ function showBridgeIpModal(name, saved, currentStp, bridgeType) {
   const ip4TypeSelect = document.getElementById("bridgeModalIp4Type");
   const ip6TypeSelect = document.getElementById("bridgeModalIp6Type");
   ip4TypeSelect.addEventListener("change", () => {
-    document.getElementById("bridgeModalIpv4Static").style.display = ip4TypeSelect.value === "static" ? "" : "none";
+    document
+      .getElementById("bridgeModalIpv4Static")
+      .classList.toggle("hidden", ip4TypeSelect.value !== "static");
   });
   ip6TypeSelect.addEventListener("change", () => {
-    document.getElementById("bridgeModalIpv6Static").style.display = ip6TypeSelect.value === "static" ? "" : "none";
+    document
+      .getElementById("bridgeModalIpv6Static")
+      .classList.toggle("hidden", ip6TypeSelect.value !== "static");
   });
   const cleanup = () => {
     modal.classList.add("hidden");
     content.innerHTML = origHtml;
     content.setAttribute("style", origStyle);
   };
-  document.getElementById("bridgeModalCancel").addEventListener("click", cleanup);
+  document
+    .getElementById("bridgeModalCancel")
+    .addEventListener("click", cleanup);
   document.getElementById("bridgeModalOk").addEventListener("click", () => {
     const ip4_type = ip4TypeSelect.value;
     const ip6_type = ip6TypeSelect.value;
     const ip_mtu = document.getElementById("bridgeModalMtu").value.trim();
     const stp = document.getElementById("bridgeModalStp").checked;
-    const ip_address = document.getElementById("bridgeModalIpv4Addr").value.trim();
-    const ip_prefixlen = document.getElementById("bridgeModalIpv4Prefix").value.trim() || "24";
-    const ip_gateway = document.getElementById("bridgeModalIpv4Gw").value.trim();
+    const ip_address = document
+      .getElementById("bridgeModalIpv4Addr")
+      .value.trim();
+    const ip_prefixlen =
+      document.getElementById("bridgeModalIpv4Prefix").value.trim() || "24";
+    const ip_gateway = document
+      .getElementById("bridgeModalIpv4Gw")
+      .value.trim();
     const ip_dns = document.getElementById("bridgeModalIpv4Dns").value.trim();
-    const ip6_address = document.getElementById("bridgeModalIpv6Addr").value.trim();
-    const ip6_prefixlen = document.getElementById("bridgeModalIpv6Prefix").value.trim() || "64";
-    const ip6_gateway = document.getElementById("bridgeModalIpv6Gw").value.trim();
+    const ip6_address = document
+      .getElementById("bridgeModalIpv6Addr")
+      .value.trim();
+    const ip6_prefixlen =
+      document.getElementById("bridgeModalIpv6Prefix").value.trim() || "64";
+    const ip6_gateway = document
+      .getElementById("bridgeModalIpv6Gw")
+      .value.trim();
     const ip6_dns = document.getElementById("bridgeModalIpv6Dns").value.trim();
     cleanup();
-    bridgeAction("update_ip", { name, ip4_type, ip6_type, ip_address, ip_prefixlen, ip_gateway, ip_dns, ip_mtu, ip6_address, ip6_prefixlen, ip6_gateway, ip6_dns, stp, bridge_type: bridgeType });
+    bridgeAction("update_ip", {
+      name,
+      ip4_type,
+      ip6_type,
+      ip_address,
+      ip_prefixlen,
+      ip_gateway,
+      ip_dns,
+      ip_mtu,
+      ip6_address,
+      ip6_prefixlen,
+      ip6_gateway,
+      ip6_dns,
+      stp,
+      bridge_type: bridgeType,
+    });
   });
 }
 
@@ -1553,7 +2113,12 @@ async function bridgeAction(action, data = {}) {
   setSaving(true);
   try {
     const result = await api("saveBridge", { bridge_action: action, ...data });
-    state.data.network = { ...state.data.network, bridges: result.bridges, saved_bridges: result.saved_bridges, available_ifaces: result.available_ifaces };
+    state.data.network = {
+      ...state.data.network,
+      bridges: result.bridges,
+      saved_bridges: result.saved_bridges,
+      available_ifaces: result.available_ifaces,
+    };
     renderBridges();
     showToast(t("saved"));
   } catch (error) {
@@ -1573,33 +2138,39 @@ document.getElementById("createBridgeBtn").addEventListener("click", () => {
   });
 });
 
-document.getElementById("bridgeList").addEventListener("click", async (event) => {
-  const deleteBtn = event.target.closest(".bridge-delete-btn");
-  if (deleteBtn) {
-    const name = deleteBtn.dataset.bridge;
-    const bridge_type = deleteBtn.dataset.bridgeType;
-    if (await showConfirm(`${t("confirmDeleteBridge")} ${name}?`)) {
-      bridgeAction("delete", { name, bridge_type });
+document
+  .getElementById("bridgeList")
+  .addEventListener("click", async (event) => {
+    const deleteBtn = event.target.closest(".bridge-delete-btn");
+    if (deleteBtn) {
+      const name = deleteBtn.dataset.bridge;
+      const bridge_type = deleteBtn.dataset.bridgeType;
+      if (await showConfirm(`${t("confirmDeleteBridge")} ${name}?`)) {
+        bridgeAction("delete", { name, bridge_type });
+      }
+      return;
     }
-    return;
-  }
-  const removeBtn = event.target.closest(".member-remove-btn");
-  if (removeBtn) {
-    const name = removeBtn.dataset.bridge;
-    const member = removeBtn.dataset.member;
-    bridgeAction("remove_member", { name, member });
-    return;
-  }
-  const editBtn = event.target.closest(".bridge-edit-btn");
-  if (editBtn) {
-    const name = editBtn.dataset.bridge;
-    const bridge_type = editBtn.dataset.bridgeType;
-    const saved = JSON.parse(decodeURIComponent(editBtn.dataset.saved || "{}"));
-    const bridge = (state.data.network?.bridges || []).find((b) => b.name === name);
-    showBridgeIpModal(name, saved, bridge?.stp || false, bridge_type);
-    return;
-  }
-});
+    const removeBtn = event.target.closest(".member-remove-btn");
+    if (removeBtn) {
+      const name = removeBtn.dataset.bridge;
+      const member = removeBtn.dataset.member;
+      bridgeAction("remove_member", { name, member });
+      return;
+    }
+    const editBtn = event.target.closest(".bridge-edit-btn");
+    if (editBtn) {
+      const name = editBtn.dataset.bridge;
+      const bridge_type = editBtn.dataset.bridgeType;
+      const saved = JSON.parse(
+        decodeURIComponent(editBtn.dataset.saved || "{}"),
+      );
+      const bridge = (state.data.network?.bridges || []).find(
+        (b) => b.name === name,
+      );
+      showBridgeIpModal(name, saved, bridge?.stp || false, bridge_type);
+      return;
+    }
+  });
 
 document.getElementById("bridgeList").addEventListener("change", (event) => {
   const addSelect = event.target.closest(".bridge-add-select");
@@ -1613,8 +2184,9 @@ document.getElementById("bridgeList").addEventListener("change", (event) => {
 
 async function displayAction(action, name) {
   if (state.saving) return;
-  const confirmMsg = action === "off" ? t("displayPowerOffConfirm") : t("displayPowerOnConfirm");
-  if (!await showConfirm(confirmMsg)) return;
+  const confirmMsg =
+    action === "off" ? t("displayPowerOffConfirm") : t("displayPowerOnConfirm");
+  if (!(await showConfirm(confirmMsg))) return;
   setSaving(true);
   try {
     const result = await api("saveDisplay", { display_action: action, name });
@@ -1634,17 +2206,31 @@ document.getElementById("displayTable").addEventListener("click", (event) => {
   displayAction(btn.dataset.displayAction, btn.dataset.displayName);
 });
 
-document.getElementById("aboutBtn").addEventListener("click", () => document.getElementById("aboutModal").classList.remove("hidden"));
-document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => document.getElementById("aboutModal").classList.add("hidden")));
+document
+  .getElementById("aboutBtn")
+  .addEventListener("click", () =>
+    document.getElementById("aboutModal").classList.remove("hidden"),
+  );
+document
+  .querySelectorAll("[data-close]")
+  .forEach((button) =>
+    button.addEventListener("click", () =>
+      document.getElementById("aboutModal").classList.add("hidden"),
+    ),
+  );
 document.getElementById("aboutModal").addEventListener("click", (event) => {
-  if (event.target.id === "aboutModal") document.getElementById("aboutModal").classList.add("hidden");
+  if (event.target.id === "aboutModal")
+    document.getElementById("aboutModal").classList.add("hidden");
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") document.getElementById("aboutModal").classList.add("hidden");
+  if (event.key === "Escape")
+    document.getElementById("aboutModal").classList.add("hidden");
 });
 
 applyPreferences();
-window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyPreferences({ rerender: true }));
+window
+  .matchMedia?.("(prefers-color-scheme: dark)")
+  .addEventListener?.("change", () => applyPreferences({ rerender: true }));
 window.addEventListener("storage", () => applyPreferences({ rerender: true }));
 setInterval(() => applyPreferences(), 1500);
 

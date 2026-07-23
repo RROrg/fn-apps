@@ -2,5 +2,4 @@
 
 ### This script is called after the user uninstalls the application.
 
-
 exit 0

@@ -7,7 +7,13 @@ const state = {
   adapter: null,
   paired: [],
   available: [],
-  audio: { sinks: [], sources: [], bluetoothAudio: [], defaultSink: "", defaultSource: "" },
+  audio: {
+    sinks: [],
+    sources: [],
+    bluetoothAudio: [],
+    defaultSink: "",
+    defaultSource: "",
+  },
   sendTarget: "",
   scanning: false,
   scanTimer: null,
@@ -149,7 +155,8 @@ const I18N = {
     obexAgentFixed: "文件接收服务已修复",
     obexAgentFixFailed: "修复失败，请重试",
     about: "关于",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -280,7 +287,8 @@ const I18N = {
     obexAgentFixed: "File receiving service fixed",
     obexAgentFixFailed: "Fix failed, please retry",
     about: "About",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -358,23 +366,43 @@ const els = {
 };
 
 function safeDecode(value) {
-  try { return decodeURIComponent(value || ""); } catch (_e) { return value || ""; }
+  try {
+    return decodeURIComponent(value || "");
+  } catch (_e) {
+    return value || "";
+  }
 }
 
 function cookieValue(name) {
   const prefix = `${name}=`;
-  return document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix))?.slice(prefix.length) || "";
+  return (
+    document.cookie
+      .split(";")
+      .map((item) => item.trim())
+      .find((item) => item.startsWith(prefix))
+      ?.slice(prefix.length) || ""
+  );
 }
 
 function storedValue(name) {
-  try { return localStorage.getItem(name) || sessionStorage.getItem(name) || ""; } catch (_e) { return ""; }
+  try {
+    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
+  } catch (_e) {
+    return "";
+  }
 }
 
 function parentStoredValue(name) {
   try {
     if (!window.parent || window.parent === window) return "";
-    return window.parent.localStorage.getItem(name) || window.parent.sessionStorage.getItem(name) || "";
-  } catch (_e) { return ""; }
+    return (
+      window.parent.localStorage.getItem(name) ||
+      window.parent.sessionStorage.getItem(name) ||
+      ""
+    );
+  } catch (_e) {
+    return "";
+  }
 }
 
 function queryValue(name) {
@@ -385,14 +413,24 @@ function documentThemeValue(doc) {
   if (!doc) return "";
   const root = doc.documentElement;
   const body = doc.body;
-  return [body?.getAttribute("theme-mode"), body?.dataset?.theme, root?.dataset?.theme, root?.classList?.contains("dark") ? "dark" : "", root?.classList?.contains("light") ? "light" : ""].find(Boolean) || "";
+  return (
+    [
+      body?.getAttribute("theme-mode"),
+      body?.dataset?.theme,
+      root?.dataset?.theme,
+      root?.classList?.contains("dark") ? "dark" : "",
+      root?.classList?.contains("light") ? "light" : "",
+    ].find(Boolean) || ""
+  );
 }
 
 function parentDocumentThemeValue() {
   try {
     if (!window.parent || window.parent === window) return "";
     return documentThemeValue(window.parent.document);
-  } catch (_e) { return ""; }
+  } catch (_e) {
+    return "";
+  }
 }
 
 function normalizeLanguage(value) {
@@ -406,28 +444,58 @@ function normalizeTheme(value) {
   if (theme.includes("light") || theme === "day") return "light";
   if (theme === "10") return "light";
   if (theme === "20") return "dark";
-  if (["system", "auto", "os"].includes(theme)) return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (["system", "auto", "os"].includes(theme))
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   return "";
 }
 
 function currentTheme() {
-  return [queryValue("theme"), cookieValue("fnos-theme-mode"), cookieValue("os-theme-mode"), storedValue("fnos-theme-mode"), storedValue("os-theme-mode"), parentStoredValue("fnos-theme-mode"), parentStoredValue("os-theme-mode"), documentThemeValue(document), parentDocumentThemeValue()].map(normalizeTheme).find(Boolean) || (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  return (
+    [
+      queryValue("theme"),
+      cookieValue("fnos-theme-mode"),
+      cookieValue("os-theme-mode"),
+      storedValue("fnos-theme-mode"),
+      storedValue("os-theme-mode"),
+      parentStoredValue("fnos-theme-mode"),
+      parentStoredValue("os-theme-mode"),
+      documentThemeValue(document),
+      parentDocumentThemeValue(),
+    ]
+      .map(normalizeTheme)
+      .find(Boolean) ||
+    (window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light")
+  );
 }
 
 function t(key, params = {}) {
   const messages = I18N[state.language] || I18N["zh-CN"];
-  return String(messages[key] || I18N["zh-CN"][key] || key).replace(/\{(\w+)\}/g, (_match, name) => params[name] ?? "");
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
+  );
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = normalizeLanguage(cookieValue("language") || queryValue("language") || navigator.language || "zh-CN");
+  const nextLanguage = normalizeLanguage(
+    cookieValue("language") ||
+      queryValue("language") ||
+      navigator.language ||
+      "zh-CN",
+  );
   const changed = nextLanguage !== state.language;
   state.language = nextLanguage;
   state.theme = currentTheme();
   document.documentElement.lang = nextLanguage;
   document.documentElement.dataset.theme = state.theme;
   document.body.dataset.theme = state.theme;
-  document.querySelectorAll("[data-i18n]").forEach((node) => { node.textContent = t(node.dataset.i18n); });
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
   document.title = t("appTitle");
   if (state.loaded) render();
   else els.summary.textContent = t("loading");
@@ -466,22 +534,33 @@ async function api(action, { method = "GET", data = null } = {}) {
   const response = await fetch(apiUrl(action), options);
   const result = await response.json();
   if (!response.ok || result.ok === false) {
-    throw new Error(result.error || result.message || `HTTP ${response.status}`);
+    throw new Error(
+      result.error || result.message || `HTTP ${response.status}`,
+    );
   }
   return result;
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        char
+      ],
+  );
 }
 
 function setOptions(select, values, selected, firstLabel = "") {
   const options = [];
-  if (firstLabel) options.push(`<option value="">${escapeHtml(firstLabel)}</option>`);
+  if (firstLabel)
+    options.push(`<option value="">${escapeHtml(firstLabel)}</option>`);
   values.forEach((value) => {
     const label = Array.isArray(value) ? value[1] : value;
     const optionValue = Array.isArray(value) ? value[0] : value;
-    options.push(`<option value="${escapeHtml(optionValue)}">${escapeHtml(label)}</option>`);
+    options.push(
+      `<option value="${escapeHtml(optionValue)}">${escapeHtml(label)}</option>`,
+    );
   });
   select.innerHTML = options.join("");
   select.value = selected || "";
@@ -518,7 +597,9 @@ function renderDeviceRow(dev, isPaired) {
   const icon = deviceIcon(dev.deviceType);
   const name = escapeHtml(dev.alias || dev.name || "Unknown");
   const addr = escapeHtml(dev.address);
-  const statusBadge = dev.connected ? '<span class="ok">●</span>' : '<span class="bad">○</span>';
+  const statusBadge = dev.connected
+    ? '<span class="ok">●</span>'
+    : '<span class="bad">○</span>';
 
   let actions = "";
   if (isPaired) {
@@ -554,16 +635,23 @@ function renderDevices() {
   if (!state.paired.length) {
     els.pairedDevices.innerHTML = `<div class="empty">${t("noPairedDevices")}</div>`;
   } else {
-    els.pairedDevices.innerHTML = state.paired.map((dev) => renderDeviceRow(dev, true)).join("");
+    els.pairedDevices.innerHTML = state.paired
+      .map((dev) => renderDeviceRow(dev, true))
+      .join("");
   }
 
   if (!state.available.length) {
     els.availableDevices.innerHTML = `<div class="empty">${t("noAvailableDevices")}</div>`;
   } else {
-    els.availableDevices.innerHTML = state.available.map((dev) => renderDeviceRow(dev, false)).join("");
+    els.availableDevices.innerHTML = state.available
+      .map((dev) => renderDeviceRow(dev, false))
+      .join("");
   }
 
-  const sendTargets = state.paired.map((dev) => [dev.address, `${dev.alias || dev.name || "Unknown"} (${dev.address})`]);
+  const sendTargets = state.paired.map((dev) => [
+    dev.address,
+    `${dev.alias || dev.name || "Unknown"} (${dev.address})`,
+  ]);
   const savedTarget = els.sendTargetSelect.value || state.sendTarget;
   setOptions(els.sendTargetSelect, sendTargets, savedTarget, t("selectDevice"));
 }
@@ -579,17 +667,24 @@ function renderAdapter() {
     els.statName.textContent = "-";
     return;
   }
-  els.summary.textContent = adapter.powered ? `${t("powered")} · ${adapter.name || adapter.address}` : t("poweredOff");
+  els.summary.textContent = adapter.powered
+    ? `${t("powered")} · ${adapter.name || adapter.address}`
+    : t("poweredOff");
   els.powerToggle.classList.toggle("active", adapter.powered);
   els.powerToggle.setAttribute("aria-checked", String(adapter.powered));
   els.discoverableToggle.classList.toggle("active", adapter.discoverable);
-  els.discoverableToggle.setAttribute("aria-checked", String(adapter.discoverable));
+  els.discoverableToggle.setAttribute(
+    "aria-checked",
+    String(adapter.discoverable),
+  );
   els.pairableToggle.classList.toggle("active", adapter.pairable);
   els.pairableToggle.setAttribute("aria-checked", String(adapter.pairable));
   els.statAddr.textContent = adapter.address || "-";
   els.statName.textContent = adapter.alias || adapter.name || "-";
   els.statPaired.textContent = String(state.paired.length);
-  els.statConnected.textContent = String(state.paired.filter((d) => d.connected).length);
+  els.statConnected.textContent = String(
+    state.paired.filter((d) => d.connected).length,
+  );
 }
 
 function renderAudio() {
@@ -599,15 +694,24 @@ function renderAudio() {
     els.sinkSelect.disabled = true;
     els.sourceSelect.innerHTML = "";
     els.sourceSelect.disabled = true;
-    const noAudio = state.language === "zh-CN" ? "音频服务未运行" : "Audio service not running";
+    const noAudio =
+      state.language === "zh-CN"
+        ? "音频服务未运行"
+        : "Audio service not running";
     els.sinkSelect.innerHTML = `<option value="">${noAudio}</option>`;
     els.sourceSelect.innerHTML = `<option value="">${noAudio}</option>`;
     return;
   }
   els.sinkSelect.disabled = false;
   els.sourceSelect.disabled = false;
-  const sinks = (audio.sinks || []).map((s) => [s.name, s.displayName || s.name]);
-  const sources = (audio.sources || []).map((s) => [s.name, s.displayName || s.name]);
+  const sinks = (audio.sinks || []).map((s) => [
+    s.name,
+    s.displayName || s.name,
+  ]);
+  const sources = (audio.sources || []).map((s) => [
+    s.name,
+    s.displayName || s.name,
+  ]);
   setOptions(els.sinkSelect, sinks, audio.defaultSink || "");
   setOptions(els.sourceSelect, sources, audio.defaultSource || "");
 }
@@ -637,7 +741,39 @@ function formatSpeed(bytesPerSec) {
 
 function fileIcon(name) {
   const ext = (name || "").split(".").pop().toLowerCase();
-  const map = { pdf: "📄", doc: "📝", docx: "📝", xls: "📊", xlsx: "📊", ppt: "📑", pptx: "📑", jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️", bmp: "🖼️", svg: "🖼️", mp3: "🎵", wav: "🎵", flac: "🎵", aac: "🎵", ogg: "🎵", mp4: "🎬", avi: "🎬", mkv: "🎬", mov: "🎬", zip: "📦", rar: "📦", "7z": "📦", tar: "📦", gz: "📦", txt: "📃", json: "📃", csv: "📃", xml: "📃" };
+  const map = {
+    pdf: "📄",
+    doc: "📝",
+    docx: "📝",
+    xls: "📊",
+    xlsx: "📊",
+    ppt: "📑",
+    pptx: "📑",
+    jpg: "🖼️",
+    jpeg: "🖼️",
+    png: "🖼️",
+    gif: "🖼️",
+    bmp: "🖼️",
+    svg: "🖼️",
+    mp3: "🎵",
+    wav: "🎵",
+    flac: "🎵",
+    aac: "🎵",
+    ogg: "🎵",
+    mp4: "🎬",
+    avi: "🎬",
+    mkv: "🎬",
+    mov: "🎬",
+    zip: "📦",
+    rar: "📦",
+    "7z": "📦",
+    tar: "📦",
+    gz: "📦",
+    txt: "📃",
+    json: "📃",
+    csv: "📃",
+    xml: "📃",
+  };
   return map[ext] || "📎";
 }
 
@@ -647,13 +783,17 @@ function renderReceivedFiles() {
     els.receivedFilesList.innerHTML = `<div class="empty">${t("noReceivedFiles")}</div>`;
     return;
   }
-  const savePath = files[0] && files[0].path ? files[0].path.replace(/\/[^/]+$/, "") : "";
+  const savePath =
+    files[0] && files[0].path ? files[0].path.replace(/\/[^/]+$/, "") : "";
   const displayPath = savePath ? toFileManagerPath(savePath) : "";
-  let html = displayPath ? `<div class="save-path-hint">${t("savePath")}：<code>${escapeHtml(displayPath)}</code></div>` : "";
-  html += files.map((f) => {
-    const d = new Date(f.time * 1000);
-    const ts = d.toLocaleString();
-    return `<div class="received-row">
+  let html = displayPath
+    ? `<div class="save-path-hint">${t("savePath")}：<code>${escapeHtml(displayPath)}</code></div>`
+    : "";
+  html += files
+    .map((f) => {
+      const d = new Date(f.time * 1000);
+      const ts = d.toLocaleString();
+      return `<div class="received-row">
       <span class="received-icon">${fileIcon(f.name)}</span>
       <div class="received-info">
         <div class="received-name">${escapeHtml(f.name)}</div>
@@ -661,7 +801,8 @@ function renderReceivedFiles() {
       </div>
       <button class="danger-btn" type="button" data-action="delete-received" data-name="${escapeHtml(f.name)}">${t("delete")}</button>
     </div>`;
-  }).join("");
+    })
+    .join("");
   els.receivedFilesList.innerHTML = html;
 }
 
@@ -675,12 +816,15 @@ function renderTransferHistory() {
     return;
   }
   if (!els.transferHistoryList) return;
-  els.transferHistoryList.innerHTML = history.map((h) => {
-    const d = new Date(h.time * 1000);
-    const ts = d.toLocaleString();
-    const statusCls = h.status === "success" ? "transfer-ok" : "transfer-fail";
-    const statusLabel = h.status === "success" ? t("successStatus") : t("failedStatus");
-    return `<div class="transfer-row ${statusCls}">
+  els.transferHistoryList.innerHTML = history
+    .map((h) => {
+      const d = new Date(h.time * 1000);
+      const ts = d.toLocaleString();
+      const statusCls =
+        h.status === "success" ? "transfer-ok" : "transfer-fail";
+      const statusLabel =
+        h.status === "success" ? t("successStatus") : t("failedStatus");
+      return `<div class="transfer-row ${statusCls}">
       <span class="transfer-dir">↑</span>
       <div class="transfer-info">
         <div class="transfer-name">${escapeHtml(h.filename)}</div>
@@ -688,7 +832,8 @@ function renderTransferHistory() {
       </div>
       <span class="transfer-status ${statusCls}">${statusLabel}</span>
     </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 let _progressTimer = null;
@@ -749,12 +894,30 @@ function startProgressPolling() {
       }
       if (els.transferProgress) {
         if (res.active || (_progressSeenActive && res.status === "complete")) {
-          const pct = res.size > 0 ? Math.round(res.transferred / res.size * 100) : 0;
+          const pct =
+            res.size > 0 ? Math.round((res.transferred / res.size) * 100) : 0;
           const dir = res.direction === "receive" ? "↓" : "↑";
-          const dirLabel = res.direction === "receive" ? t("receiveDir") : t("sendDir");
-          const statusLabel = res.status === "queued" ? t("queued") : res.status === "active" ? t("active") : res.status === "complete" ? t("complete") || "✓" : res.status === "error" ? t("error") || "✗" : res.status === "retrying" ? t("retrying") : res.status === "sending" ? t("active") : "";
+          const dirLabel =
+            res.direction === "receive" ? t("receiveDir") : t("sendDir");
+          const statusLabel =
+            res.status === "queued"
+              ? t("queued")
+              : res.status === "active"
+                ? t("active")
+                : res.status === "complete"
+                  ? t("complete") || "✓"
+                  : res.status === "error"
+                    ? t("error") || "✗"
+                    : res.status === "retrying"
+                      ? t("retrying")
+                      : res.status === "sending"
+                        ? t("active")
+                        : "";
 
-          _progressSnapshots.push({ ts: Date.now(), transferred: res.transferred });
+          _progressSnapshots.push({
+            ts: Date.now(),
+            transferred: res.transferred,
+          });
           if (_progressSnapshots.length > 20) _progressSnapshots.shift();
           const speed = calcSpeed(res.transferred, res.size);
           const eta = calcETA(speed, res.transferred, res.size);
@@ -762,7 +925,11 @@ function startProgressPolling() {
           const etaStr = eta ? ` · ${t("eta")} ${eta}` : "";
 
           const isComplete = pct >= 100 || res.status === "complete";
-          const barCls = isComplete ? "progress-bar-fill complete" : res.status === "error" ? "progress-bar-fill error" : "progress-bar-fill active";
+          const barCls = isComplete
+            ? "progress-bar-fill complete"
+            : res.status === "error"
+              ? "progress-bar-fill error"
+              : "progress-bar-fill active";
 
           els.transferProgress.innerHTML = `
             <div class="progress-header">
@@ -842,16 +1009,27 @@ function renderServerMode() {
   els.serverPowerToggle.classList.toggle("active", adapter.powered);
   els.serverPowerToggle.setAttribute("aria-checked", String(adapter.powered));
   els.serverDiscoverableToggle.classList.toggle("active", adapter.discoverable);
-  els.serverDiscoverableToggle.setAttribute("aria-checked", String(adapter.discoverable));
+  els.serverDiscoverableToggle.setAttribute(
+    "aria-checked",
+    String(adapter.discoverable),
+  );
   els.serverPairableToggle.classList.toggle("active", adapter.pairable);
-  els.serverPairableToggle.setAttribute("aria-checked", String(adapter.pairable));
+  els.serverPairableToggle.setAttribute(
+    "aria-checked",
+    String(adapter.pairable),
+  );
   els.serverAddr.textContent = adapter.address || "-";
   if (!els.serverAliasInput.value && adapter.alias) {
     els.serverAliasInput.value = adapter.alias;
   }
-  els.serverAdvertiseBtn.textContent = state.serverAdvertise ? t("stopAdvertise") : t("startAdvertise");
+  els.serverAdvertiseBtn.textContent = state.serverAdvertise
+    ? t("stopAdvertise")
+    : t("startAdvertise");
   els.serverAdvertiseBtn.classList.toggle("danger-btn", state.serverAdvertise);
-  els.serverAdvertiseBtn.classList.toggle("primary-btn", !state.serverAdvertise);
+  els.serverAdvertiseBtn.classList.toggle(
+    "primary-btn",
+    !state.serverAdvertise,
+  );
 
   if (els.obexAgentWarning) {
     els.obexAgentWarning.classList.toggle("hidden", state.obexAgentReady);
@@ -860,20 +1038,24 @@ function renderServerMode() {
   if (!state.serverProfiles.length) {
     els.serverProfilesList.innerHTML = `<div class="empty">${t("noProfiles")}</div>`;
   } else {
-    els.serverProfilesList.innerHTML = state.serverProfiles.map((p) =>
-      `<div class="profile-row"><span class="profile-name">${escapeHtml(p.name)}</span><span class="profile-uuid">${escapeHtml(p.uuid)}</span></div>`
-    ).join("");
+    els.serverProfilesList.innerHTML = state.serverProfiles
+      .map(
+        (p) =>
+          `<div class="profile-row"><span class="profile-name">${escapeHtml(p.name)}</span><span class="profile-uuid">${escapeHtml(p.uuid)}</span></div>`,
+      )
+      .join("");
   }
 
   els.incomingCount.textContent = String(state.incomingDevices.length);
   if (!state.incomingDevices.length) {
     els.incomingDevices.innerHTML = `<div class="empty">${t("noIncomingDevices")}</div>`;
   } else {
-    els.incomingDevices.innerHTML = state.incomingDevices.map((dev) => {
-      const icon = deviceIcon(dev.deviceType);
-      const name = escapeHtml(dev.alias || dev.name || "Unknown");
-      const addr = escapeHtml(dev.address);
-      return `<div class="device-row">
+    els.incomingDevices.innerHTML = state.incomingDevices
+      .map((dev) => {
+        const icon = deviceIcon(dev.deviceType);
+        const name = escapeHtml(dev.alias || dev.name || "Unknown");
+        const addr = escapeHtml(dev.address);
+        return `<div class="device-row">
         <div class="device-icon">${icon}</div>
         <div class="device-info">
           <div class="device-name"><span class="ok">●</span> ${name}</div>
@@ -885,7 +1067,8 @@ function renderServerMode() {
           <button class="ghost-btn" type="button" data-action="disconnect" data-addr="${addr}">${t("disconnect")}</button>
         </div>
       </div>`;
-    }).join("");
+      })
+      .join("");
   }
   renderTethering();
 }
@@ -904,19 +1087,25 @@ function renderTethering() {
   if (!clientList.length) {
     els.tetheringClientsList.innerHTML = `<div class="empty">${th.active ? t("noTetheringClients") : "-"}</div>`;
   } else {
-    els.tetheringClientsList.innerHTML = `
+    els.tetheringClientsList.innerHTML =
+      `
       <div class="client-row client-header">
         <span>${t("clientMAC")}</span>
         <span>${t("clientIP")}</span>
         <span>${t("uploadSpeed")} / ${t("downloadSpeed")}</span>
       </div>
-    ` + clientList.map((c) => `
+    ` +
+      clientList
+        .map(
+          (c) => `
       <div class="client-row">
         <span>${escapeHtml(c.mac || "-")}</span>
         <span>${escapeHtml(c.ip || "-")}</span>
         <span class="speed-cell"><span class="speed-up">↑${formatSpeed(c.txSpeed || 0)}</span><span class="speed-down">↓${formatSpeed(c.rxSpeed || 0)}</span></span>
       </div>
-    `).join("");
+    `,
+        )
+        .join("");
   }
 }
 
@@ -950,7 +1139,14 @@ async function loadAll() {
     state.adapter = adapterRes.adapter || null;
     state.paired = devicesRes.paired || [];
     state.available = devicesRes.available || [];
-    state.audio = { audioAvailable: audioRes.audioAvailable !== false, sinks: audioRes.sinks || [], sources: audioRes.sources || [], bluetoothAudio: audioRes.bluetoothAudio || [], defaultSink: audioRes.defaultSink || "", defaultSource: audioRes.defaultSource || "" };
+    state.audio = {
+      audioAvailable: audioRes.audioAvailable !== false,
+      sinks: audioRes.sinks || [],
+      sources: audioRes.sources || [],
+      bluetoothAudio: audioRes.bluetoothAudio || [],
+      defaultSink: audioRes.defaultSink || "",
+      defaultSource: audioRes.defaultSource || "",
+    };
     state.receivedFiles = receivedRes.files || [];
     state.transferHistory = historyRes.history || [];
 
@@ -960,7 +1156,13 @@ async function loadAll() {
       const tetherRes = results[7];
       state.serverProfiles = profilesRes.profiles || [];
       state.incomingDevices = incomingRes.devices || [];
-      state.tethering = { active: tetherRes.active || false, bridge: tetherRes.bridge || "", ip: tetherRes.ip || "", clients: tetherRes.clients || 0, clientList: tetherRes.clientList || [] };
+      state.tethering = {
+        active: tetherRes.active || false,
+        bridge: tetherRes.bridge || "",
+        ip: tetherRes.ip || "",
+        clients: tetherRes.clients || 0,
+        clientList: tetherRes.clientList || [],
+      };
     }
 
     if (state.adapter && state.adapter.discovering && !state.scanning) {
@@ -971,11 +1173,13 @@ async function loadAll() {
       clearScanTimer();
     }
     if (state.adapter && !state.scanning && state.available.length === 0) {
-      api("scan_start", { method: "POST" }).then(() => {
-        state.scanning = true;
-        startScanTimer();
-        render();
-      }).catch(() => {});
+      api("scan_start", { method: "POST" })
+        .then(() => {
+          state.scanning = true;
+          startScanTimer();
+          render();
+        })
+        .catch(() => {});
     }
     state.loaded = true;
     startReceiveWatch();
@@ -999,11 +1203,24 @@ async function refreshLiveData({ silent = true } = {}) {
     state.paired = results[1].paired || [];
     state.available = results[1].available || [];
     const audioRes = results[2];
-    state.audio = { audioAvailable: audioRes.audioAvailable !== false, sinks: audioRes.sinks || [], sources: audioRes.sources || [], bluetoothAudio: audioRes.bluetoothAudio || [], defaultSink: audioRes.defaultSink || "", defaultSource: audioRes.defaultSource || "" };
+    state.audio = {
+      audioAvailable: audioRes.audioAvailable !== false,
+      sinks: audioRes.sinks || [],
+      sources: audioRes.sources || [],
+      bluetoothAudio: audioRes.bluetoothAudio || [],
+      defaultSink: audioRes.defaultSink || "",
+      defaultSource: audioRes.defaultSource || "",
+    };
     if (state.role === "server" && results.length >= 5) {
       state.incomingDevices = results[3].devices || [];
       const tetherRes = results[4];
-      state.tethering = { active: tetherRes.active || false, bridge: tetherRes.bridge || "", ip: tetherRes.ip || "", clients: tetherRes.clients || 0, clientList: tetherRes.clientList || [] };
+      state.tethering = {
+        active: tetherRes.active || false,
+        bridge: tetherRes.bridge || "",
+        ip: tetherRes.ip || "",
+        clients: tetherRes.clients || 0,
+        clientList: tetherRes.clientList || [],
+      };
     }
     if (state.adapter && !state.adapter.discovering && state.scanning) {
       state.scanning = false;
@@ -1054,7 +1271,9 @@ async function toggleDiscoverable() {
   try {
     const action = state.adapter.discoverable ? "off" : "on";
     await api("adapter_discoverable", { method: "POST", data: { action } });
-    showToast(state.adapter.discoverable ? t("discoverableOff") : t("discoverableOn"));
+    showToast(
+      state.adapter.discoverable ? t("discoverableOff") : t("discoverableOn"),
+    );
     await loadAll();
   } catch (error) {
     showToast(error.message, true);
@@ -1093,7 +1312,9 @@ function startScanTimer() {
     if (state.scanning) {
       try {
         await api("scan_stop", { method: "POST" });
-      } catch (_e) { /* ignore */ }
+      } catch (_e) {
+        /* ignore */
+      }
       state.scanning = false;
       render();
     }
@@ -1122,8 +1343,11 @@ async function toggleScan() {
 
 async function pairDevice(addr) {
   const dev = state.available.find((d) => d.address === addr);
-  const name = dev ? (dev.alias || dev.name || addr) : addr;
-  const ok = await confirmDialog(t("confirmPair"), t("confirmPairMsg", { name, address: addr }));
+  const name = dev ? dev.alias || dev.name || addr : addr;
+  const ok = await confirmDialog(
+    t("confirmPair"),
+    t("confirmPairMsg", { name, address: addr }),
+  );
   if (!ok) return;
   setBusy(true);
   try {
@@ -1153,8 +1377,11 @@ async function connectDevice(addr) {
 
 async function disconnectDevice(addr) {
   const dev = state.paired.find((d) => d.address === addr);
-  const name = dev ? (dev.alias || dev.name || addr) : addr;
-  const ok = await confirmDialog(t("confirmDisconnect"), t("confirmDisconnectMsg", { name, address: addr }));
+  const name = dev ? dev.alias || dev.name || addr : addr;
+  const ok = await confirmDialog(
+    t("confirmDisconnect"),
+    t("confirmDisconnectMsg", { name, address: addr }),
+  );
   if (!ok) return;
   setBusy(true);
   try {
@@ -1170,8 +1397,11 @@ async function disconnectDevice(addr) {
 
 async function removeDevice(addr) {
   const dev = state.paired.find((d) => d.address === addr);
-  const name = dev ? (dev.alias || dev.name || addr) : addr;
-  const ok = await confirmDialog(t("confirmRemove"), t("confirmRemoveMsg", { name, address: addr }));
+  const name = dev ? dev.alias || dev.name || addr : addr;
+  const ok = await confirmDialog(
+    t("confirmRemove"),
+    t("confirmRemoveMsg", { name, address: addr }),
+  );
   if (!ok) return;
   setBusy(true);
   try {
@@ -1214,8 +1444,14 @@ async function untrustDevice(addr) {
 async function sendFile() {
   const addr = els.sendTargetSelect.value;
   const filepath = els.sendFilePath.value.trim();
-  if (!addr) { showToast("Select a target device", true); return; }
-  if (!filepath) { showToast("Enter file path", true); return; }
+  if (!addr) {
+    showToast("Select a target device", true);
+    return;
+  }
+  if (!filepath) {
+    showToast("Enter file path", true);
+    return;
+  }
   setBusy(true);
   els.sendFileBtn.textContent = t("sending");
   const fname = filepath.split("/").pop() || filepath;
@@ -1237,7 +1473,10 @@ async function sendFile() {
   startProgressPolling();
   let sendOk = false;
   try {
-    await api("send_file", { method: "POST", data: { address: addr, filepath } });
+    await api("send_file", {
+      method: "POST",
+      data: { address: addr, filepath },
+    });
     sendOk = true;
     showToast(t("fileSent"));
   } catch (error) {
@@ -1254,11 +1493,13 @@ async function sendFile() {
       if (pctEl && sendOk) pctEl.textContent = "100%";
       if (sendOk) {
         setTimeout(() => {
-          if (els.transferProgress) els.transferProgress.classList.add("hidden");
+          if (els.transferProgress)
+            els.transferProgress.classList.add("hidden");
         }, 2000);
       } else {
         setTimeout(() => {
-          if (els.transferProgress) els.transferProgress.classList.add("hidden");
+          if (els.transferProgress)
+            els.transferProgress.classList.add("hidden");
         }, 3000);
       }
     }
@@ -1307,7 +1548,14 @@ async function deleteReceived(name) {
 async function loadAudio() {
   try {
     const audioRes = await api("audio_status");
-    state.audio = { audioAvailable: audioRes.audioAvailable !== false, sinks: audioRes.sinks || [], sources: audioRes.sources || [], bluetoothAudio: audioRes.bluetoothAudio || [], defaultSink: audioRes.defaultSink || "", defaultSource: audioRes.defaultSource || "" };
+    state.audio = {
+      audioAvailable: audioRes.audioAvailable !== false,
+      sinks: audioRes.sinks || [],
+      sources: audioRes.sources || [],
+      bluetoothAudio: audioRes.bluetoothAudio || [],
+      defaultSink: audioRes.defaultSink || "",
+      defaultSource: audioRes.defaultSource || "",
+    };
     renderAudio();
   } catch (_e) {}
 }
@@ -1338,28 +1586,38 @@ async function setSource() {
   }
 }
 
-els.refresh.addEventListener("click", () => loadAll().catch((error) => showToast(error.message, true)));
-els.scan.addEventListener("click", () => toggleScan().catch((error) => showToast(error.message, true)));
+els.refresh.addEventListener("click", () =>
+  loadAll().catch((error) => showToast(error.message, true)),
+);
+els.scan.addEventListener("click", () =>
+  toggleScan().catch((error) => showToast(error.message, true)),
+);
 els.powerToggle.addEventListener("click", () => togglePower());
 els.discoverableToggle.addEventListener("click", () => toggleDiscoverable());
 els.pairableToggle.addEventListener("click", () => togglePairable());
 els.sendFileBtn.addEventListener("click", () => sendFile());
 els.sinkSelect.addEventListener("change", () => setSink());
 els.sourceSelect.addEventListener("change", () => setSource());
-els.sendTargetSelect.addEventListener("change", () => { state.sendTarget = els.sendTargetSelect.value; });
+els.sendTargetSelect.addEventListener("change", () => {
+  state.sendTarget = els.sendTargetSelect.value;
+});
 els.clearReceivedBtn.addEventListener("click", () => clearReceived());
 els.clearHistoryBtn.addEventListener("click", () => clearTransferHistory());
 
 els.roleClientBtn.addEventListener("click", () => switchRole("client"));
 els.roleServerBtn.addEventListener("click", () => switchRole("server"));
 els.serverPowerToggle.addEventListener("click", () => togglePower());
-els.serverDiscoverableToggle.addEventListener("click", () => toggleDiscoverable());
+els.serverDiscoverableToggle.addEventListener("click", () =>
+  toggleDiscoverable(),
+);
 els.serverPairableToggle.addEventListener("click", () => togglePairable());
 els.serverAdvertiseBtn.addEventListener("click", () => toggleAdvertise());
 els.fixObexAgentBtn.addEventListener("click", () => fixObexAgent());
 els.serverAliasInput.addEventListener("change", () => setServerAlias());
 els.tetheringToggle.addEventListener("click", () => toggleTethering());
-els.aboutBtn.addEventListener("click", () => els.aboutModal.classList.remove("hidden"));
+els.aboutBtn.addEventListener("click", () =>
+  els.aboutModal.classList.remove("hidden"),
+);
 
 async function switchRole(role) {
   if (state.role === role) return;
@@ -1368,7 +1626,10 @@ async function switchRole(role) {
     await api("role_set", { method: "POST", data: { role } });
     state.role = role;
     if (role === "server") {
-      const [profilesRes, incomingRes] = await Promise.all([api("server_profiles"), api("incoming_devices")]);
+      const [profilesRes, incomingRes] = await Promise.all([
+        api("server_profiles"),
+        api("incoming_devices"),
+      ]);
       state.serverProfiles = profilesRes.profiles || [];
       state.incomingDevices = incomingRes.devices || [];
     }
@@ -1449,11 +1710,20 @@ async function toggleTethering() {
       showToast(t("tetheringOff"));
     } else {
       const bridgeIP = els.tetherBridgeIP.value.trim() || "192.168.7.1";
-      await api("tethering_start", { method: "POST", data: { bridge_ip: bridgeIP } });
+      await api("tethering_start", {
+        method: "POST",
+        data: { bridge_ip: bridgeIP },
+      });
       showToast(t("tetheringOn"));
     }
     const res = await api("tethering_status");
-    state.tethering = { active: res.active || false, bridge: res.bridge || "", ip: res.ip || "", clients: res.clients || 0, clientList: res.clientList || [] };
+    state.tethering = {
+      active: res.active || false,
+      bridge: res.bridge || "",
+      ip: res.ip || "",
+      clients: res.clients || 0,
+      clientList: res.clientList || [],
+    };
     renderTethering();
   } catch (error) {
     showToast(error.message, true);
@@ -1467,7 +1737,10 @@ document.addEventListener("click", async (event) => {
     event.target.closest(".modal").classList.add("hidden");
     return;
   }
-  if (event.target.classList.contains("modal") && !event.target.closest(".modal-content")) {
+  if (
+    event.target.classList.contains("modal") &&
+    !event.target.closest(".modal-content")
+  ) {
     event.target.classList.add("hidden");
     return;
   }
@@ -1482,17 +1755,31 @@ document.addEventListener("click", async (event) => {
   }
   if (!action || !addr) return;
   switch (action) {
-    case "pair": await pairDevice(addr); break;
-    case "connect": await connectDevice(addr); break;
-    case "disconnect": await disconnectDevice(addr); break;
-    case "remove": await removeDevice(addr); break;
-    case "trust": await trustDevice(addr); break;
-    case "untrust": await untrustDevice(addr); break;
+    case "pair":
+      await pairDevice(addr);
+      break;
+    case "connect":
+      await connectDevice(addr);
+      break;
+    case "disconnect":
+      await disconnectDevice(addr);
+      break;
+    case "remove":
+      await removeDevice(addr);
+      break;
+    case "trust":
+      await trustDevice(addr);
+      break;
+    case "untrust":
+      await untrustDevice(addr);
+      break;
   }
 });
 
 applyPreferences();
-window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyPreferences());
+window
+  .matchMedia?.("(prefers-color-scheme: dark)")
+  .addEventListener?.("change", () => applyPreferences());
 window.addEventListener("storage", () => applyPreferences({ rerender: true }));
 setInterval(() => refreshLiveData(), 5000);
 setBusy(true);

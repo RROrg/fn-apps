@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import json
 import mimetypes
@@ -43,10 +50,10 @@ TASKS_STATE = {"tasks": {}}
 
 GITHUB_DOMAINS = (
     "https://github.com/",
-    "https://gist.github.com/",
-    "https://codeload.github.com/",
+    "https://api.github.com/",
     "https://raw.githubusercontent.com/",
-    "https://objects.githubusercontent.com/",
+    "https://user-images.githubusercontent.com/",
+    "https://release-assets.githubusercontent.com/",
     "https://github-releases.githubusercontent.com/",
 )
 
@@ -91,7 +98,7 @@ def request_context(method, query="", headers=None, body=b"", handler=None):
 
 
 def current_request():
-    return getattr(REQUEST_CONTEXT, "value", None)
+    return getattr(REQUEST_CONTEXT, "value", {})
 
 
 def header_value(headers, name):
@@ -105,20 +112,22 @@ def header_value(headers, name):
 
 
 class ThreadingUnixHTTPServer(
-    socketserver.ThreadingMixIn, socketserver.UnixStreamServer
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
 ):
     daemon_threads = True
     allow_reuse_address = True
 
     def __init__(self, socket_path, handler_cls, *, base_path, www_root):
-        self.server_name = "fn-appdownload"
+        self.server_name = APP_NAME
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -136,21 +145,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self.route()
 
-    def log_message(self, fmt, *args):
+    def log_message(self, format, *args):
         sys.stdout.write(
             "%s - - [%s] %s\n"
-            % (self.client_address, self.log_date_time_string(), fmt % args)
+            % (self.client_address, self.log_date_time_string(), format % args)
         )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            location = self.server.base_path + "/"
-            if parsed.query:
-                location += "?" + parsed.query
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", location)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
@@ -172,7 +183,6 @@ class Handler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
-
         content_type = (
             mimetypes.guess_type(str(target))[0] or "application/octet-stream"
         )
@@ -181,22 +191,17 @@ class Handler(BaseHTTPRequestHandler):
             "application/json",
         }:
             content_type = f"{content_type}; charset=utf-8"
-        size = target.stat().st_size
+        data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(size))
+        self.send_header("Content-Length", str(len(data)))
         self.send_header(
             "Cache-Control",
             "no-store" if target.name == "index.html" else "public, max-age=60",
         )
         self.end_headers()
         if self.command != "HEAD":
-            with target.open("rb") as handle:
-                while True:
-                    chunk = handle.read(1024 * 256)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
+            self.wfile.write(data)
 
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
@@ -264,7 +269,7 @@ def json_response(payload, status="200 OK"):
     )
     code, status_text = normalize_status(status)
     request = current_request()
-    handler = request.get("handler") if request else None
+    handler = request.get("handler", None)
     if handler is not None:
         handler.send_response(code)
         handler.send_header("Content-Type", "application/json; charset=utf-8")
@@ -307,7 +312,9 @@ def read_settings():
     if data.get("githubProxyEnabled") is None:
         data["githubProxyEnabled"] = True
     if not data.get("githubProxyUrl"):
-        data["githubProxyUrl"] = DEFAULT_SETTINGS.get("githubProxyUrl", "https://gh-proxy.com/")
+        data["githubProxyUrl"] = DEFAULT_SETTINGS.get(
+            "githubProxyUrl", "https://gh-proxy.com/"
+        )
     return data
 
 
@@ -332,7 +339,7 @@ def save_tasks(_data):
 
 def request_body():
     request = current_request()
-    if request:
+    if request != {}:
         method = request.get("method", "GET").upper()
         body = request.get("body", b"") or b""
         query_string = request.get("query", "") or ""
@@ -363,14 +370,18 @@ def request_body():
 
 def incoming_token():
     request = current_request()
-    if not request:
+    if request == {}:
         return ""
 
-    auth = header_value(request.get("headers", {}), "Authorization") or os.environ.get("Authorization", "")
+    auth = header_value(request.get("headers", {}), "Authorization") or os.environ.get(
+        "Authorization", ""
+    )
     if auth.lower().startswith("trim "):
         return auth.split(None, 1)[1].strip()
 
-    cookie = header_value(request.get("headers", {}), "Cookie") or os.environ.get("HTTP_COOKIE", "")
+    cookie = header_value(request.get("headers", {}), "Cookie") or os.environ.get(
+        "HTTP_COOKIE", ""
+    )
     if cookie:
         parsed = {}
         for part in str(cookie).split(";"):
@@ -426,7 +437,10 @@ def unix_http(method, path, payload=None, timeout=15, token_override=None):
             ["Content-Type: application/json", f"Content-Length: {len(body)}"]
         )
     request = ("\r\n".join(headers) + "\r\n\r\n").encode("utf-8") + body
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    with socket.socket(
+        socket.AF_UNIX,  # pyright: ignore[reportAttributeAccessIssue]
+        socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
+    ) as client:
         client.settimeout(timeout)
         client.connect(APP_CENTER_SOCKET)
         client.sendall(request)
@@ -621,7 +635,14 @@ def latest_map(latest_raw):
     return result
 
 
-def normalize_official_item(item, latest_by_app, tasks, override_version=None, override_source_id=None, settings=None):
+def normalize_official_item(
+    item,
+    latest_by_app,
+    tasks,
+    override_version=None,
+    override_source_id=None,
+    settings=None,
+):
     if settings is None:
         settings = read_settings()
     app_id = str(pick(item, ("appName", "name", "packageName", "id", "app_id")))
@@ -660,7 +681,9 @@ def normalize_official_item(item, latest_by_app, tasks, override_version=None, o
             )
         ),
         "version": version,
-        "icon": apply_github_proxy(pick(item, ("icon", "iconUrl", "icon_url", "logo"), ""), settings),
+        "icon": apply_github_proxy(
+            pick(item, ("icon", "iconUrl", "icon_url", "logo"), ""), settings
+        ),
         "source": "官方商店",
         "sourceID": source_id,
         "packageSourceType": "cloud",
@@ -707,20 +730,26 @@ def official_apps(settings=None, token=None):
     if settings is None:
         settings = read_settings()
     tasks = read_tasks()["tasks"]
-    app_raw_box = [None]
-    latest_raw_box = [None]
-    app_raw_error = [None]
-    latest_raw_error = [None]
+    app_raw_box: list[dict | None] = [None]
+    latest_raw_box: list[dict | None] = [None]
+    app_raw_error: list[Exception | None] = [None]
+    latest_raw_error: list[Exception | None] = [None]
 
     def fetch_app_list():
         try:
-            app_raw_box[0] = unix_http("GET", "/app-center/v1/app/list?language=zh-CN", token_override=token)
+            app_raw_box[0] = unix_http(
+                "GET", "/app-center/v1/app/list?language=zh-CN", token_override=token
+            )
         except Exception as exc:
             app_raw_error[0] = exc
 
     def fetch_latest():
         try:
-            latest_raw_box[0] = unix_http("GET", "/app-center/v1/app/latest-release?language=zh-CN", token_override=token)
+            latest_raw_box[0] = unix_http(
+                "GET",
+                "/app-center/v1/app/latest-release?language=zh-CN",
+                token_override=token,
+            )
         except Exception as exc:
             latest_raw_error[0] = exc
 
@@ -747,7 +776,9 @@ def official_apps(settings=None, token=None):
     seen_keys = set()
     official_ids = set()
     for item in first_array(app_raw):
-        main_app = normalize_official_item(item, latest_by_app, tasks, settings=settings)
+        main_app = normalize_official_item(
+            item, latest_by_app, tasks, settings=settings
+        )
         if main_app["id"]:
             official_ids.add(main_app["id"])
         main_key = task_key("official", main_app["id"], main_app["version"])
@@ -771,13 +802,19 @@ def official_apps(settings=None, token=None):
             override_sid = sid or None
             apps.append(
                 normalize_official_item(
-                    item, latest_by_app, tasks,
+                    item,
+                    latest_by_app,
+                    tasks,
                     override_version=ver,
                     override_source_id=override_sid,
                     settings=settings,
                 )
             )
-    return {"apps": apps, "official_ids": official_ids, "raw": {"list": app_raw, "latestRelease": latest_raw}}
+    return {
+        "apps": apps,
+        "official_ids": official_ids,
+        "raw": {"list": app_raw, "latestRelease": latest_raw},
+    }
 
 
 def load_source_json(url):
@@ -845,14 +882,14 @@ def _parse_stem(stem, known_ids=None):
         for aid in sorted_ids:
             prefix = aid + "-"
             if stem.startswith(prefix):
-                ver = stem[len(prefix):]
+                ver = stem[len(prefix) :]
                 if ver:
                     return aid, ver
     last_dash = stem.rfind("-")
     if last_dash < 1:
         return None, None
     app_id = stem[:last_dash]
-    version = stem[last_dash + 1:]
+    version = stem[last_dash + 1 :]
     if not app_id or not version:
         return None, None
     return app_id, version
@@ -879,19 +916,21 @@ def orphaned_apps(known_keys, official_ids=None, all_known_ids=None, settings=No
             continue
         if app_id in official_ids:
             continue
-        apps.append({
-            "id": app_id,
-            "store": "thirdparty",
-            "name": app_id,
-            "version": version,
-            "icon": "",
-            "source": "",
-            "downloadUrl": "",
-            "status": "downloaded",
-            "downloaded": True,
-            "orphaned": True,
-            "path": str(entry),
-        })
+        apps.append(
+            {
+                "id": app_id,
+                "store": "thirdparty",
+                "name": app_id,
+                "version": version,
+                "icon": "",
+                "source": "",
+                "downloadUrl": "",
+                "status": "downloaded",
+                "downloaded": True,
+                "orphaned": True,
+                "path": str(entry),
+            }
+        )
     return apps
 
 
@@ -916,7 +955,11 @@ def third_party_apps(official_ids=None, settings=None, token=None):
                 entries = [(str(index), item) for index, item in enumerate(data or [])]
             for app_id, item in entries:
                 if isinstance(item, dict):
-                    apps.append(normalize_third_party_item(str(app_id), item, name, source_url=url, settings=settings))
+                    apps.append(
+                        normalize_third_party_item(
+                            str(app_id), item, name, source_url=url, settings=settings
+                        )
+                    )
                     version = str(pick(item, ("version", "versionName"), ""))
                     known_keys.add(task_key("thirdparty", str(app_id), version))
         except Exception as exc:
@@ -924,9 +967,13 @@ def third_party_apps(official_ids=None, settings=None, token=None):
     if official_ids is None:
         official_ids = set()
         try:
-            official_raw = unix_http("GET", "/app-center/v1/app/list?language=zh-CN", token_override=token)
+            official_raw = unix_http(
+                "GET", "/app-center/v1/app/list?language=zh-CN", token_override=token
+            )
             for item in first_array(official_raw):
-                app_id = str(pick(item, ("appName", "name", "packageName", "id", "app_id")))
+                app_id = str(
+                    pick(item, ("appName", "name", "packageName", "id", "app_id"))
+                )
                 if app_id:
                     official_ids.add(app_id)
         except Exception:
@@ -946,7 +993,9 @@ def third_party_apps(official_ids=None, settings=None, token=None):
         if a.get("id"):
             all_known_ids.add(a["id"])
     all_known_ids.update(official_ids)
-    apps.extend(orphaned_apps(known_keys, official_ids, all_known_ids, settings=settings))
+    apps.extend(
+        orphaned_apps(known_keys, official_ids, all_known_ids, settings=settings)
+    )
     return {"apps": apps, "errors": errors}
 
 
@@ -974,7 +1023,10 @@ def save_settings(payload):
         "downloadDir": download_dir_value,
         "thirdPartySources": clean_sources,
         "githubProxyEnabled": bool(payload.get("githubProxyEnabled", True)),
-        "githubProxyUrl": str(payload.get("githubProxyUrl") or DEFAULT_SETTINGS.get("githubProxyUrl", "https://gh-proxy.com/")).strip(),
+        "githubProxyUrl": str(
+            payload.get("githubProxyUrl")
+            or DEFAULT_SETTINGS.get("githubProxyUrl", "https://gh-proxy.com/")
+        ).strip(),
     }
     write_json_file(SETTINGS_FILE, data)
     download_dir(data).mkdir(parents=True, exist_ok=True)
@@ -1199,7 +1251,9 @@ def status_payload(apps=None, skip_remote=False):
                     if source_path:
                         try:
                             packaged_path = package_official_download(
-                                task.get("appId", ""), task.get("version", ""), source_path
+                                task.get("appId", ""),
+                                task.get("version", ""),
+                                source_path,
                             )
                             if packaged_path:
                                 task["path"] = packaged_path
@@ -1229,10 +1283,10 @@ def dispatch():
     elif action == "app-list":
         settings = read_settings()
         token = incoming_token()
-        official_result_box = [None]
-        official_error_box = [None]
-        thirdparty_result_box = [None]
-        thirdparty_error_box = [None]
+        official_result_box: list[dict | None] = [None]
+        official_error_box: list[Exception | None] = [None]
+        thirdparty_result_box: list[dict | None] = [None]
+        thirdparty_error_box: list[Exception | None] = [None]
 
         def fetch_official():
             try:
@@ -1242,7 +1296,9 @@ def dispatch():
 
         def fetch_thirdparty():
             try:
-                thirdparty_result_box[0] = third_party_apps(settings=settings, token=token)
+                thirdparty_result_box[0] = third_party_apps(
+                    settings=settings, token=token
+                )
             except Exception as exc:
                 thirdparty_error_box[0] = exc
 
@@ -1261,24 +1317,33 @@ def dispatch():
         thirdparty_result = thirdparty_result_box[0] or {}
         thirdparty_errors = thirdparty_result.get("errors", [])
         if thirdparty_error_box[0]:
-            thirdparty_errors.append({"source": "thirdparty", "message": str(thirdparty_error_box[0])})
+            thirdparty_errors.append(
+                {"source": "thirdparty", "message": str(thirdparty_error_box[0])}
+            )
 
         all_apps = official_result.get("apps", []) + thirdparty_result.get("apps", [])
         tasks_data = status_payload(skip_remote=True)
-        json_response({
-            "ok": True,
-            "apps": all_apps,
-            "errors": thirdparty_errors,
-            "tasks": tasks_data.get("tasks", {}),
-            "files": tasks_data.get("files", {}),
-        })
+        json_response(
+            {
+                "ok": True,
+                "apps": all_apps,
+                "errors": thirdparty_errors,
+                "tasks": tasks_data.get("tasks", {}),
+                "files": tasks_data.get("files", {}),
+            }
+        )
     elif action == "official-list":
         settings = read_settings()
         token = incoming_token()
         result = official_apps(settings=settings, token=token)
         tasks_data = status_payload()
         json_response(
-            {"ok": True, "apps": result.get("apps", []), "tasks": tasks_data.get("tasks", {}), "raw": result.get("raw")}
+            {
+                "ok": True,
+                "apps": result.get("apps", []),
+                "tasks": tasks_data.get("tasks", {}),
+                "raw": result.get("raw"),
+            }
         )
     elif action == "thirdparty-list":
         settings = read_settings()

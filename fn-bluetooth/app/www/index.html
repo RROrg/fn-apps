@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>蓝牙管理</title>
   <link rel="stylesheet" href="/app/fn-bluetooth/style.css">
 </head>
+
 <body>
   <div class="app-shell">
     <header class="topbar">
@@ -32,13 +34,16 @@
           </div>
           <div class="adapter-row">
             <span class="label" data-i18n="bluetooth">蓝牙</span>
-            <div id="powerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="powerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0" title="蓝牙">
+            </div>
             <span class="label" data-i18n="discoverable">可发现</span>
-            <div id="discoverableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="discoverableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
+              title="可发现"></div>
             <span class="label" data-i18n="pairable">可配对</span>
-            <div id="pairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="pairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0" title="可配对">
+            </div>
           </div>
-          <div class="stats-grid" style="margin-top:14px">
+          <div class="stats-grid stats-grid-gap">
             <div class="stat"><span data-i18n="adapterAddr">适配器地址</span><strong id="statAddr">-</strong></div>
             <div class="stat"><span data-i18n="adapterName">适配器名称</span><strong id="statName">-</strong></div>
             <div class="stat"><span data-i18n="pairedCount">已配对</span><strong id="statPaired">0</strong></div>
@@ -122,23 +127,26 @@
           </div>
           <div class="adapter-row">
             <span class="label" data-i18n="bluetooth">蓝牙</span>
-            <div id="serverPowerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="serverPowerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
+              title="蓝牙"></div>
             <span class="label" data-i18n="discoverable">可发现</span>
-            <div id="serverDiscoverableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="serverDiscoverableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
+              title="可发现"></div>
             <span class="label" data-i18n="pairable">可配对</span>
-            <div id="serverPairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="serverPairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
+              title="可配对"></div>
           </div>
-          <div class="grid" style="margin-top:14px">
+          <div class="grid grid-gap">
             <label class="field">
               <span data-i18n="serverAlias">设备名称</span>
               <input id="serverAliasInput" type="text" placeholder="FN-Bluetooth" autocomplete="off">
             </label>
             <div class="field">
               <span data-i18n="adapterAddr">适配器地址</span>
-              <strong id="serverAddr" style="margin-top:6px;display:block">-</strong>
+              <strong id="serverAddr" class="server-addr">-</strong>
             </div>
           </div>
-          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+          <div class="server-actions">
             <button id="serverAdvertiseBtn" class="primary-btn" type="button" data-i18n="startAdvertise">开始广播</button>
           </div>
           <div id="obexAgentWarning" class="warning-banner hidden">
@@ -166,12 +174,15 @@
         <section class="panel">
           <div class="section-head">
             <h2 data-i18n="tethering">蓝牙共享网络</h2>
-            <div id="tetheringToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div id="tetheringToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
+              title="蓝牙共享网络"></div>
           </div>
           <div class="stats-grid three-col">
             <div class="stat"><span data-i18n="tetheringBridge">网桥接口</span><strong id="tetherBridge">-</strong></div>
-            <div class="stat"><span data-i18n="tetheringGateway">网关地址</span><input id="tetherBridgeIP" type="text" class="stat-input" value="192.168.7.1" placeholder="192.168.7.1" autocomplete="off"></div>
-            <div class="stat"><span data-i18n="tetheringClients">已连接客户端</span><strong id="tetherClients">0</strong></div>
+            <div class="stat"><span data-i18n="tetheringGateway">网关地址</span><input id="tetherBridgeIP" type="text"
+                class="stat-input" value="192.168.7.1" placeholder="192.168.7.1" autocomplete="off"></div>
+            <div class="stat"><span data-i18n="tetheringClients">已连接客户端</span><strong id="tetherClients">0</strong>
+            </div>
           </div>
           <div id="tetheringClientsList" class="client-list"></div>
         </section>
@@ -205,8 +216,8 @@
         <div class="about-section">
           <h3 data-i18n="communitySupport">社区支持</h3>
           <ul class="about-list">
-            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank"
-                rel="noopener noreferrer" data-i18n="join">点击加入</a></li>
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
             <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
                 rel="noopener noreferrer">RROrg/fn-apps</a></li>
           </ul>
@@ -214,8 +225,8 @@
 
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
-          <img class="about-sponsor-image"
-            src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png" alt="sponsoring">
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring">
         </div>
 
         <div class="about-copyright">
@@ -230,4 +241,5 @@
   <div id="toast" class="toast hidden"></div>
   <script src="/app/fn-bluetooth/app.js"></script>
 </body>
+
 </html>

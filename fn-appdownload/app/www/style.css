@@ -313,8 +313,18 @@ textarea {
   position: relative;
   min-height: 0;
   overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+}
+
+@supports (scrollbar-color: var(--line-strong) transparent) {
+  .table-wrap {
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+@supports (scrollbar-width: thin) {
+  .table-wrap {
+    scrollbar-width: thin;
+  }
 }
 
 .table-wrap::-webkit-scrollbar {
@@ -968,7 +978,6 @@ textarea {
   }
 
   .sidebar {
-    min-height: auto;
     gap: 8px;
     padding: 10px;
     border-right: 0;

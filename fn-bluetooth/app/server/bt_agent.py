@@ -1,8 +1,15 @@
-#!/usr/bin/env python3
-import dbus
-import dbus.service
-import dbus.mainloop.glib
-from gi.repository import GLib
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
+import dbus  # pyright: ignore[reportMissingImports]
+import dbus.service  # pyright: ignore[reportMissingImports]
+import dbus.mainloop.glib  # pyright: ignore[reportMissingImports]
+from gi.repository import GLib  # pyright: ignore[reportMissingImports]
 import sys
 import os
 import time
@@ -22,7 +29,10 @@ class AutoAgent(dbus.service.Object):
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def AuthorizeService(self, device, uuid):
-        print(f"Agent: AuthorizeService device={device} uuid={uuid} -> AUTO YES", flush=True)
+        print(
+            f"Agent: AuthorizeService device={device} uuid={uuid} -> AUTO YES",
+            flush=True,
+        )
 
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="s")
     def RequestPinCode(self, device):
@@ -44,7 +54,10 @@ class AutoAgent(dbus.service.Object):
 
     @dbus.service.method(AGENT_IFACE, in_signature="ou", out_signature="")
     def RequestConfirmation(self, device, passkey):
-        print(f"Agent: RequestConfirmation device={device} passkey={passkey} -> AUTO YES", flush=True)
+        print(
+            f"Agent: RequestConfirmation device={device} passkey={passkey} -> AUTO YES",
+            flush=True,
+        )
 
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="")
     def RequestAuthorization(self, device):
@@ -71,9 +84,14 @@ class ObexAutoAgent(dbus.service.Object):
             props = dbus.Interface(transfer_obj, "org.freedesktop.DBus.Properties")
             name = str(props.Get("org.bluez.obex.Transfer1", "Name"))
             size = int(props.Get("org.bluez.obex.Transfer1", "Size"))
-            print(f"OBEX Agent: AuthorizePush {transfer_path} name={name} size={size} -> ACCEPT", flush=True)
+            print(
+                f"OBEX Agent: AuthorizePush {transfer_path} name={name} size={size} -> ACCEPT",
+                flush=True,
+            )
         except Exception as e:
-            print(f"OBEX Agent: AuthorizePush {transfer_path} -> ACCEPT ({e})", flush=True)
+            print(
+                f"OBEX Agent: AuthorizePush {transfer_path} -> ACCEPT ({e})", flush=True
+            )
         return ""
 
     @dbus.service.method(OBEX_AGENT_IFACE, in_signature="", out_signature="")
@@ -82,13 +100,16 @@ class ObexAutoAgent(dbus.service.Object):
 
 
 def _setup_session_env():
-    xdg = f"/run/user/{os.getuid()}"
+    xdg = f"/run/user/{os.getuid()}"  # pyright: ignore[reportAttributeAccessIssue]
     os.environ["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={xdg}/bus"
     os.environ["XDG_RUNTIME_DIR"] = xdg
 
 
 def _wait_for_obexd(max_wait=15):
-    bus_addr = os.environ.get("DBUS_SESSION_BUS_ADDRESS", f"unix:path=/run/user/{os.getuid()}/bus")
+    bus_addr = os.environ.get(
+        "DBUS_SESSION_BUS_ADDRESS",
+        f"unix:path=/run/user/{os.getuid()}/bus",  # pyright: ignore[reportAttributeAccessIssue]
+    )
     for i in range(max_wait * 2):
         try:
             bus = dbus.bus.BusConnection(bus_addr)
@@ -123,7 +144,9 @@ def main():
     system_bus = dbus.SystemBus()
     agent = AutoAgent(system_bus, AGENT_PATH)
     try:
-        mgr = dbus.Interface(system_bus.get_object(BUS_NAME, "/org/bluez"), "org.bluez.AgentManager1")
+        mgr = dbus.Interface(
+            system_bus.get_object(BUS_NAME, "/org/bluez"), "org.bluez.AgentManager1"
+        )
         mgr.RegisterAgent(AGENT_PATH, "DisplayYesNo")
         mgr.RequestDefaultAgent(AGENT_PATH)
         print("BlueZ Agent registered as DisplayYesNo", flush=True)
@@ -133,7 +156,10 @@ def main():
         for retry in range(5):
             time.sleep(3)
             try:
-                mgr = dbus.Interface(system_bus.get_object(BUS_NAME, "/org/bluez"), "org.bluez.AgentManager1")
+                mgr = dbus.Interface(
+                    system_bus.get_object(BUS_NAME, "/org/bluez"),
+                    "org.bluez.AgentManager1",
+                )
                 mgr.RegisterAgent(AGENT_PATH, "DisplayYesNo")
                 mgr.RequestDefaultAgent(AGENT_PATH)
                 print("BlueZ Agent registered on retry", flush=True)
@@ -141,7 +167,10 @@ def main():
             except Exception as e2:
                 print(f"BlueZ Agent retry {retry + 1} failed: {e2}", flush=True)
 
-    bus_addr = os.environ.get("DBUS_SESSION_BUS_ADDRESS", f"unix:path=/run/user/{os.getuid()}/bus")
+    bus_addr = os.environ.get(
+        "DBUS_SESSION_BUS_ADDRESS",
+        f"unix:path=/run/user/{os.getuid()}/bus",  # pyright: ignore[reportAttributeAccessIssue]
+    )
     obex_registered = False
     session_bus = None
 
@@ -153,7 +182,10 @@ def main():
                 obex_registered = True
                 break
         except Exception as e:
-            print(f"OBEX session bus connect attempt {attempt + 1}/10 failed: {e}", flush=True)
+            print(
+                f"OBEX session bus connect attempt {attempt + 1}/10 failed: {e}",
+                flush=True,
+            )
             if session_bus:
                 try:
                     session_bus.close()
@@ -175,10 +207,15 @@ def main():
         print("  3. obexd not registered on session bus", flush=True)
 
     if session_bus:
+
         def _on_name_owner_changed(name, old_owner, new_owner):
             if name == OBEX_BUS_NAME and new_owner != "":
-                print(f"obexd appeared on bus, re-registering OBEX Agent...", flush=True)
-                GLib.timeout_add_seconds(2, lambda: _register_obex_agent(session_bus) and False)
+                print(
+                    f"obexd appeared on bus, re-registering OBEX Agent...", flush=True
+                )
+                GLib.timeout_add_seconds(
+                    2, lambda: _register_obex_agent(session_bus) and False
+                )
 
         try:
             session_bus.add_signal_receiver(

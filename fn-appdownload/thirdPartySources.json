@@ -1,0 +1,48 @@
+DEFAULT_SETTINGS = {
+    "thirdPartySources": [
+        {
+            "name": "RROrg",
+            "url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fnpack.json",
+            "enabled": True,
+        }
+    ],
+    "githubProxyEnabled": True,
+    "githubProxyUrl": "https://gh-proxy.com/",
+}
+
+https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/Brian099/fn_fpk_packages/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/EWEDLCM/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/shuangji66/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/Hxido-RXM/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/moxyis/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/ctllo-bit/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/yaya918/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/hbestm/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/710850609/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/IMGZCQ/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/zyp1690/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/mac1256/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/Wyf841015/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/snltty/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/jianzhichu/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/mynono33/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/htnanako/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/0999we/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/upchr/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/KKKK987/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/wanjianmojun/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/HonghaoLee/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/MuLinForest/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/magiccode1412/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/ryxiang/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/nx5888/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/fyzhu/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/boater-man/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/ifsherlock/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/DPanel-dev/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/yuexps/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/dysfwhq/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/ray5378/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/damadingding/FnDepot/refs/heads/main/fnpack.json
+https://raw.githubusercontent.com/shaoweiluo17-lang/FnDepot/refs/heads/main/fnpack.json

@@ -105,7 +105,7 @@
         <section id="cpuPanel" class="panel hidden" data-panel="cpu">
           <h3 data-i18n="cpuSettings">CPU 设置</h3>
           <div class="grid" id="cpuFields"></div>
-          <div class="info-subsection" id="cpuExtraSection" style="display:none">
+          <div class="info-subsection hidden" id="cpuExtraSection">
             <h4 data-i18n="cpuExtra">其他项</h4>
             <div class="grid" id="cpuExtraFields"></div>
           </div>
@@ -113,21 +113,21 @@
             <h4 data-i18n="cpuList">CPU 列表</h4>
             <div class="table-wrap">
               <table class="info-table" id="cpuTable">
-              <thead>
-                <tr>
-                  <th data-i18n="cpuName">名称</th>
-                  <th data-i18n="cpuDriver">驱动</th>
-                  <th data-i18n="currentFreq">当前频率</th>
-                  <th data-i18n="min_freq">最小频率</th>
-                  <th data-i18n="max_freq">最大频率</th>
-                  <th data-i18n="governor">策略</th>
-                  <th data-i18n="epp">EPP</th>
-                  <th data-i18n="boost">Boost</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
+                <thead>
+                  <tr>
+                    <th data-i18n="cpuName">名称</th>
+                    <th data-i18n="cpuDriver">驱动</th>
+                    <th data-i18n="currentFreq">当前频率</th>
+                    <th data-i18n="min_freq">最小频率</th>
+                    <th data-i18n="max_freq">最大频率</th>
+                    <th data-i18n="governor">策略</th>
+                    <th data-i18n="epp">EPP</th>
+                    <th data-i18n="boost">Boost</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -150,8 +150,13 @@
           <div class="info-subsection">
             <h4 data-i18n="bridgeSettings">桥接设置</h4>
             <div class="bridge-toolbar">
-              <label class="field bridge-name-field"><span data-i18n="bridgeName">桥接名称</span><input id="bridgeNameInput" type="text" placeholder="br0" spellcheck="false"></label>
-              <label class="field bridge-type-field"><span data-i18n="bridgeType">桥接类型</span><select id="bridgeTypeSelect"><option value="linux">Linux 桥接</option><option value="ovs">OVS 桥接</option></select></label>
+              <label class="field bridge-name-field"><span data-i18n="bridgeName">桥接名称</span><input id="bridgeNameInput"
+                  type="text" placeholder="br0" spellcheck="false"></label>
+              <label class="field bridge-type-field"><span data-i18n="bridgeType">桥接类型</span><select
+                  id="bridgeTypeSelect">
+                  <option value="linux">Linux 桥接</option>
+                  <option value="ovs">OVS 桥接</option>
+                </select></label>
               <button id="createBridgeBtn" class="ghost-btn" type="button" data-i18n="createBridge">创建桥接</button>
             </div>
             <div id="bridgeList" class="data-list"></div>
@@ -222,7 +227,8 @@
           <div class="section-head">
             <h3 data-i18n="portSettings">端口信息</h3>
             <div class="port-search">
-              <input id="portSearchInput" type="text" data-i18n-placeholder="searchPort" placeholder="搜索端口/地址/进程" spellcheck="false">
+              <input id="portSearchInput" type="text" data-i18n-placeholder="searchPort" placeholder="搜索端口/地址/进程"
+                spellcheck="false">
             </div>
           </div>
           <div class="info-subsection">
@@ -271,23 +277,29 @@
           </div>
           <div id="diagPingForm" class="diag-form">
             <div class="grid">
-              <label class="field"><span data-i18n="diagTarget">目标地址</span><input id="diagPingTarget" type="text" placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
-              <label class="field diag-count-field"><span data-i18n="diagCount">次数</span><input id="diagPingCount" type="number" value="4" min="0" max="9999"></label>
+              <label class="field"><span data-i18n="diagTarget">目标地址</span><input id="diagPingTarget" type="text"
+                  placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
+              <label class="field diag-count-field"><span data-i18n="diagCount">次数</span><input id="diagPingCount"
+                  type="number" value="4" min="0" max="9999"></label>
             </div>
           </div>
           <div id="diagTracerouteForm" class="diag-form hidden">
             <div class="grid">
-              <label class="field wide"><span data-i18n="diagTarget">目标地址</span><input id="diagTracerouteTarget" type="text" placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
+              <label class="field wide"><span data-i18n="diagTarget">目标地址</span><input id="diagTracerouteTarget"
+                  type="text" placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
             </div>
           </div>
           <div id="diagNslookupForm" class="diag-form hidden">
             <div class="grid">
-              <label class="field"><span data-i18n="diagTarget">目标域名</span><input id="diagNslookupTarget" type="text" placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
-              <label class="field"><span data-i18n="diagDnsServer">DNS 服务器</span><input id="diagNslookupServer" type="text" placeholder="8.8.8.8 (可选)" spellcheck="false"></label>
+              <label class="field"><span data-i18n="diagTarget">目标域名</span><input id="diagNslookupTarget" type="text"
+                  placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
+              <label class="field"><span data-i18n="diagDnsServer">DNS 服务器</span><input id="diagNslookupServer"
+                  type="text" placeholder="8.8.8.8 (可选)" spellcheck="false"></label>
             </div>
           </div>
           <div id="diagArpForm" class="diag-form hidden"></div>
-          <label class="field wide diag-output-field"><span data-i18n="diagOutput">输出</span><textarea id="diagOutput" readonly spellcheck="false" placeholder="" data-i18n-placeholder="diagPlaceholder"></textarea></label>
+          <label class="field wide diag-output-field"><span data-i18n="diagOutput">输出</span><textarea id="diagOutput"
+              readonly spellcheck="false" placeholder="" data-i18n-placeholder="diagPlaceholder"></textarea></label>
         </section>
       </form>
     </main>
@@ -309,14 +321,17 @@
         <div class="about-section">
           <h3 data-i18n="communitySupport">社区支持</h3>
           <ul class="about-list">
-            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer" data-i18n="join">点击加入</a></li>
-            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank" rel="noopener noreferrer">RROrg/fn-apps</a></li>
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
+            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
+                rel="noopener noreferrer">RROrg/fn-apps</a></li>
           </ul>
         </div>
 
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
-          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png" alt="sponsoring">
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring">
         </div>
 
         <div class="about-copyright">

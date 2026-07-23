@@ -1,5 +1,5 @@
 appname               = fn-bluetooth
-version               = 1.0.1
+version               = 1.0.2
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all

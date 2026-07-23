@@ -215,11 +215,11 @@ textarea {
   object-fit: cover;
 }
 
-.app-icon img.hidden + span {
+.app-icon img.hidden+span {
   display: inline;
 }
 
-.app-icon img + span {
+.app-icon img+span {
   display: none;
 }
 
@@ -344,7 +344,7 @@ textarea {
   padding: 16px 18px 18px;
 }
 
-.panel + .panel {
+.panel+.panel {
   margin-top: 12px;
 }
 
@@ -379,7 +379,7 @@ textarea {
   font-weight: 600;
 }
 
-.field > span small {
+.field>span small {
   font-size: 11px;
   font-weight: 400;
   opacity: 0.6;
@@ -577,7 +577,6 @@ textarea {
   }
 
   .sidebar {
-    min-height: auto;
     height: 42vh;
     max-height: 42vh;
     border-right: 0;

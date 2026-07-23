@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import base64
 import json
@@ -27,13 +34,16 @@ def get_audio_env():
         del env["PULSE_SERVER"]
     if "PULSE_SERVER" not in env:
         system_socket = "/var/run/pulse/native"
-        user_socket = f"/run/user/{os.getuid()}/pulse/native"
+        user_socket = f"/run/user/{os.getuid()}/pulse/native"  # pyright: ignore[reportAttributeAccessIssue]
         if os.path.exists(system_socket):
             env["PULSE_SERVER"] = system_socket
         elif os.path.exists(user_socket):
             env["PULSE_SERVER"] = user_socket
     if "XDG_RUNTIME_DIR" not in env:
-        for d in [f"/run/user/{os.getuid()}", "/run/user/0"]:
+        for d in [
+            f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+            "/run/user/0",
+        ]:
             if os.path.isdir(d):
                 env["XDG_RUNTIME_DIR"] = d
                 break
@@ -88,6 +98,7 @@ def ensure_audio_service():
         return ok
     return False
 
+
 MIME_TYPES = {
     ".mp3": "audio/mpeg",
     ".wav": "audio/wav",
@@ -101,7 +112,8 @@ MIME_TYPES = {
 
 
 class ThreadingUnixHTTPServer(
-    socketserver.ThreadingMixIn, socketserver.UnixStreamServer
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
 ):
     daemon_threads = True
     allow_reuse_address = True
@@ -111,10 +123,11 @@ class ThreadingUnixHTTPServer(
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -132,17 +145,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self.route()
 
-    def log_message(self, fmt, *args):
-        pass
+    def log_message(self, format, *args):
+        sys.stdout.write(
+            "%s - - [%s] %s\n"
+            % (self.client_address, self.log_date_time_string(), format % args)
+        )
+        sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            location = self.server.base_path + "/"
-            if parsed.query:
-                location += "?" + parsed.query
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", location)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
@@ -162,8 +181,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.BAD_REQUEST, "Bad request")
             return
         if not target.is_file():
-            target = self.server.www_root / "index.html"
-        if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
         content_type = (
@@ -174,22 +191,17 @@ class Handler(BaseHTTPRequestHandler):
             "application/json",
         }:
             content_type = f"{content_type}; charset=utf-8"
-        size = target.stat().st_size
+        data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(size))
+        self.send_header("Content-Length", str(len(data)))
         self.send_header(
             "Cache-Control",
-            "no-store" if target.name == "index.html" else "public, max-age=3600",
+            "no-store" if target.name == "index.html" else "public, max-age=60",
         )
         self.end_headers()
         if self.command != "HEAD":
-            with target.open("rb") as handle:
-                while True:
-                    chunk = handle.read(1024 * 256)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
+            self.wfile.write(data)
 
     def serve_api(self, path, query):
         from urllib.parse import parse_qs
@@ -295,11 +307,17 @@ class Handler(BaseHTTPRequestHandler):
 
             if range_header:
                 try:
-                    range_value = range_header.replace("bytes=", "", 1).split(",", 1)[0].strip()
+                    range_value = (
+                        range_header.replace("bytes=", "", 1).split(",", 1)[0].strip()
+                    )
                     first, _, last = range_value.partition("-")
                     if first:
                         start = int(first)
-                        end = int(last) if last else min(file_size - 1, start + max_stream_chunk - 1)
+                        end = (
+                            int(last)
+                            if last
+                            else min(file_size - 1, start + max_stream_chunk - 1)
+                        )
                     else:
                         suffix_length = int(last)
                         if suffix_length <= 0:
@@ -674,6 +692,8 @@ def _extract_cover(mf):
             elif tag_type == "_MP4Tags":
                 covr = mf.tags.get("covr")
                 if covr:
+                    import mutagen.mp4
+
                     cover_data = bytes(covr[0])
                     img_format = covr[0].imageformat
                     if img_format == mutagen.mp4.MP4Cover.FORMAT_PNG:
@@ -752,7 +772,9 @@ class ServerPlayer:
             ensure_audio_service()
             result = subprocess.run(
                 ["pactl", "list", "sinks"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
                 env=get_audio_env(),
             )
             devices = []
@@ -792,7 +814,8 @@ class ServerPlayer:
             cmd.append(file_path)
             try:
                 self._process = subprocess.Popen(
-                    cmd, env=env,
+                    cmd,
+                    env=env,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
@@ -807,10 +830,19 @@ class ServerPlayer:
     def _get_duration(self, file_path):
         try:
             result = subprocess.run(
-                ["ffprobe", "-v", "quiet", "-show_entries",
-                 "format=duration", "-of",
-                 "default=noprint_wrappers=1:nokey=1", file_path],
-                capture_output=True, text=True, timeout=10,
+                [
+                    "ffprobe",
+                    "-v",
+                    "quiet",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    file_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             return float(result.stdout.strip())
         except Exception:
@@ -852,7 +884,9 @@ class ServerPlayer:
         with self._lock:
             if self._process and self._state == "playing":
                 try:
-                    self._process.send_signal(signal.SIGSTOP)
+                    self._process.send_signal(
+                        signal.SIGSTOP  # pyright: ignore[reportAttributeAccessIssue]
+                    )
                     self._state = "paused"
                     self._pause_position = time.time() - self._start_time
                 except Exception:
@@ -862,7 +896,9 @@ class ServerPlayer:
         with self._lock:
             if self._process and self._state == "paused":
                 try:
-                    self._process.send_signal(signal.SIGCONT)
+                    self._process.send_signal(
+                        signal.SIGCONT  # pyright: ignore[reportAttributeAccessIssue]
+                    )
                     self._state = "playing"
                     self._start_time = time.time() - self._pause_position
                 except Exception:

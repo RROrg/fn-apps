@@ -4,18 +4,18 @@
 
 OBEX_OVERRIDE_DIR="$(eval echo ~root)/.config/systemd/user/obex.service.d"
 if [ -d "${OBEX_OVERRIDE_DIR}" ]; then
-    rm -rf "${OBEX_OVERRIDE_DIR}" 2>/dev/null || true
-    if command -v systemctl >/dev/null 2>&1; then
-        XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}" systemctl --user daemon-reload 2>/dev/null || true
-    fi
+  rm -rf "${OBEX_OVERRIDE_DIR}" 2>/dev/null || true
+  if command -v systemctl >/dev/null 2>&1; then
+    XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}" systemctl --user daemon-reload 2>/dev/null || true
+  fi
 fi
 
 [ "${wizard_data_action:-}" == "delete" ] && {
   REMOVE_PKGS=""
   for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils obexftp python3-dbus python3-gi; do
-      if dpkg -s "$pkg" >/dev/null 2>&1; then
-          REMOVE_PKGS="$REMOVE_PKGS $pkg"
-      fi
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+      REMOVE_PKGS="$REMOVE_PKGS $pkg"
+    fi
   done
 
   [ -n "$REMOVE_PKGS" ] && apt-get remove -y -qq $REMOVE_PKGS 2>/dev/null || true

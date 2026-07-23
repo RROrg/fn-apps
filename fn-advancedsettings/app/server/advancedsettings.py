@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import json
 import mimetypes
@@ -54,11 +61,14 @@ PATHS = {
 
 REQUEST_CONTEXT = threading.local()
 TCP_MODULES_PROBED = False
-_diag_proc = None
+_diag_proc: subprocess.Popen | None = None
 _diag_lock = threading.Lock()
 
 
-class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+class ThreadingUnixHTTPServer(
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
+):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -67,10 +77,11 @@ class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStre
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -82,15 +93,29 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.route()
 
-    def log_message(self, fmt, *args):
-        sys.stdout.write("%s - - [%s] %s\n" % (self.client_address, self.log_date_time_string(), fmt % args))
+    def do_PUT(self):
+        self.route()
+
+    def do_DELETE(self):
+        self.route()
+
+    def log_message(self, format, *args):
+        sys.stdout.write(
+            "%s - - [%s] %s\n"
+            % (self.client_address, self.log_date_time_string(), format % args)
+        )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", self.server.base_path + "/" + (("?" + parsed.query) if parsed.query else ""))
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
@@ -112,14 +137,22 @@ class Handler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
-        content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
-        if content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
+        content_type = (
+            mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        )
+        if content_type.startswith("text/") or content_type in {
+            "application/javascript",
+            "application/json",
+        }:
             content_type = f"{content_type}; charset=utf-8"
         data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
-        self.send_header("Cache-Control", "no-store" if target.name == "index.html" else "public, max-age=60")
+        self.send_header(
+            "Cache-Control",
+            "no-store" if target.name == "index.html" else "public, max-age=60",
+        )
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(data)
@@ -128,7 +161,12 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length) if length else b""
         previous = getattr(REQUEST_CONTEXT, "value", None)
-        REQUEST_CONTEXT.value = {"method": self.command, "query": query or "", "body": body, "handler": self}
+        REQUEST_CONTEXT.value = {
+            "method": self.command,
+            "query": query or "",
+            "body": body,
+            "handler": self,
+        }
         try:
             dispatch()
         except Exception as exc:
@@ -151,17 +189,22 @@ def normalize_base_path(path):
 
 def strip_base_path(path, base_path):
     if base_path != "/" and path.startswith(base_path):
-        return path[len(base_path):] or "/"
+        return path[len(base_path) :] or "/"
     return path or "/"
 
 
 def current_request():
-    return getattr(REQUEST_CONTEXT, "value", None)
+    return getattr(REQUEST_CONTEXT, "value", {})
 
 
 def json_response(payload, status=200):
-    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    handler = current_request().get("handler")
+    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    request = current_request()
+    handler = request.get("handler", None)
+    if handler is None:
+        return
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
@@ -171,7 +214,10 @@ def json_response(payload, status=200):
 
 
 def sse_response():
-    handler = current_request().get("handler")
+    request = current_request()
+    handler = request.get("handler", None)
+    if handler is None:
+        return None
     handler.send_response(200)
     handler.send_header("Content-Type", "text/event-stream; charset=utf-8")
     handler.send_header("Cache-Control", "no-cache")
@@ -191,10 +237,10 @@ def sse_send(wfile, event, data):
 
 
 def request_body():
-    req = current_request() or {}
-    body = req.get("body") or b""
+    request = current_request()
+    body = request.get("body", b"")
     if not body:
-        parsed = urllib.parse.parse_qs(req.get("query", ""), keep_blank_values=True)
+        parsed = urllib.parse.parse_qs(request.get("query", ""), keep_blank_values=True)
         return {key: values[-1] for key, values in parsed.items()}
     return json.loads(body.decode("utf-8", "replace") or "{}")
 
@@ -219,8 +265,20 @@ def write_text(path, content, mode=0o644):
 
 
 def run(cmd, timeout=30):
-    proc = subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout, check=False)
-    return {"cmd": " ".join(cmd), "rc": proc.returncode, "stdout": proc.stdout.strip(), "stderr": proc.stderr.strip()}
+    proc = subprocess.run(
+        cmd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=timeout,
+        check=False,
+    )
+    return {
+        "cmd": " ".join(cmd),
+        "rc": proc.returncode,
+        "stdout": proc.stdout.strip(),
+        "stderr": proc.stderr.strip(),
+    }
 
 
 def try_run_many(commands):
@@ -253,7 +311,9 @@ def load_state():
 
 def save_state(data):
     BASE_STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    STATE_FILE.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def valid_iface_name(name):
@@ -266,12 +326,17 @@ def read_iface_addrs(name):
     try:
         for iface_info in json.loads(result["stdout"] or "[]"):
             for addr_info in iface_info.get("addr_info", []):
-                if addr_info.get("family") in ("inet", "inet6") and addr_info.get("scope") == "global":
-                    addrs.append({
-                        "family": addr_info["family"],
-                        "address": addr_info.get("local", ""),
-                        "prefixlen": addr_info.get("prefixlen", 0),
-                    })
+                if (
+                    addr_info.get("family") in ("inet", "inet6")
+                    and addr_info.get("scope") == "global"
+                ):
+                    addrs.append(
+                        {
+                            "family": addr_info["family"],
+                            "address": addr_info.get("local", ""),
+                            "prefixlen": addr_info.get("prefixlen", 0),
+                        }
+                    )
     except Exception:
         pass
     return addrs
@@ -362,7 +427,7 @@ def update_kv_lines(text, changes, *, sep="=", section=None, commented=True):
     for line in lines:
         stripped = line.strip()
         if stripped.startswith("[") and "]" in stripped:
-            current_section = stripped[1:stripped.index("]")]
+            current_section = stripped[1 : stripped.index("]")]
             out.append(line)
             if current_section == section:
                 insert_at = len(out)
@@ -379,9 +444,15 @@ def update_kv_lines(text, changes, *, sep="=", section=None, commented=True):
                     out.append(f"{prefix}{key}{sep}{q}{value}{q}\n")
                 continue
         out.append(line)
-    missing = [key for key, value in changes.items() if key not in applied and value not in (None, "")]
+    missing = [
+        key
+        for key, value in changes.items()
+        if key not in applied and value not in (None, "")
+    ]
     if missing:
-        insert = [f"{key}{sep}{value}\n" for key, value in changes.items() if key in missing]
+        insert = [
+            f"{key}{sep}{value}\n" for key, value in changes.items() if key in missing
+        ]
         if section and insert_at is None:
             out.extend([f"\n[{section}]\n"] + insert)
         elif section:
@@ -394,7 +465,11 @@ def update_kv_lines(text, changes, *, sep="=", section=None, commented=True):
 
 
 def read_service_active(name):
-    result = run(["systemctl", "is-active", name], timeout=8) if shutil_which("systemctl") else {"stdout": "unknown"}
+    result = (
+        run(["systemctl", "is-active", name], timeout=8)
+        if shutil_which("systemctl")
+        else {"stdout": "unknown"}
+    )
     return result.get("stdout") or "unknown"
 
 
@@ -410,54 +485,112 @@ def save_boot(data):
     write_text(PATHS["grub"], update_kv_lines(source, changes))
     results = []
     if data.get("apply"):
-        results = try_run_many([
-            ["update-grub"],
-            ["grub-mkconfig", "-o", "/boot/grub/grub.cfg"],
-            ["grub2-mkconfig", "-o", "/boot/grub2/grub.cfg"],
-        ])
+        results = try_run_many(
+            [
+                ["update-grub"],
+                ["grub-mkconfig", "-o", "/boot/grub/grub.cfg"],
+                ["grub2-mkconfig", "-o", "/boot/grub2/grub.cfg"],
+            ]
+        )
     if results:
-        errors = [f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}' for r in results if r.get("rc") != 0]
+        errors = [
+            f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}'
+            for r in results
+            if r.get("rc") != 0
+        ]
         if errors:
             raise RuntimeError("; ".join(errors))
     return {"boot": read_boot(), "results": results}
 
 
 POWER_FIELDS = [
-    "HandlePowerKey", "HandlePowerKeyLongPress", "HandleRebootKey", "HandleRebootKeyLongPress",
-    "HandleSuspendKey", "HandleSuspendKeyLongPress", "HandleHibernateKey", "HandleHibernateKeyLongPress",
-    "HandleLidSwitch", "HandleLidSwitchExternalPower", "HandleLidSwitchDocked",
+    "HandlePowerKey",
+    "HandlePowerKeyLongPress",
+    "HandleRebootKey",
+    "HandleRebootKeyLongPress",
+    "HandleSuspendKey",
+    "HandleSuspendKeyLongPress",
+    "HandleHibernateKey",
+    "HandleHibernateKeyLongPress",
+    "HandleLidSwitch",
+    "HandleLidSwitchExternalPower",
+    "HandleLidSwitchDocked",
 ]
 
 
 def read_power():
     text = read_text(PATHS["logind"])
-    return {"content": text, "parsed": parse_kv_file(text), "service": read_service_active("systemd-logind")}
+    return {
+        "content": text,
+        "parsed": parse_kv_file(text),
+        "service": read_service_active("systemd-logind"),
+    }
 
 
 def save_power(data):
-    changes = {key: (data.get("changes") or {}).get(key, "") for key in POWER_FIELDS if key in (data.get("changes") or {})}
-    source = data.get("content") if data.get("content") is not None else read_text(PATHS["logind"])
+    changes = {
+        key: (data.get("changes") or {}).get(key, "")
+        for key in POWER_FIELDS
+        if key in (data.get("changes") or {})
+    }
+    source = (
+        data.get("content")
+        if data.get("content") is not None
+        else read_text(PATHS["logind"])
+    )
     write_text(PATHS["logind"], update_kv_lines(source, changes, section="Login"))
     results = []
     if data.get("apply") and shutil_which("systemctl"):
         results.append(run(["systemctl", "restart", "systemd-logind"], timeout=20))
     if results:
-        errors = [f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}' for r in results if r.get("rc") != 0]
+        errors = [
+            f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}'
+            for r in results
+            if r.get("rc") != 0
+        ]
         if errors:
             raise RuntimeError("; ".join(errors))
     return {"power": read_power(), "results": results}
 
 
-SSH_FIELDS = ["PermitRootLogin", "PasswordAuthentication", "PubkeyAuthentication", "PermitEmptyPasswords", "PermitTTY", "X11Forwarding", "AllowTcpForwarding", "AllowAgentForwarding", "GatewayPorts"]
-SSH_DEFAULTS = {"PermitRootLogin": "prohibit-password", "PasswordAuthentication": "yes", "PubkeyAuthentication": "yes", "PermitEmptyPasswords": "no", "PermitTTY": "yes", "X11Forwarding": "no", "AllowTcpForwarding": "yes", "AllowAgentForwarding": "yes", "GatewayPorts": "no"}
-SSH_START_COMMANDS = [["systemctl", "start", "ssh"], ["systemctl", "start", "sshd"], ["/etc/init.d/ssh", "start"]]
-SSH_RESTART_COMMANDS = [["systemctl", "restart", "ssh"], ["systemctl", "restart", "sshd"], ["/etc/init.d/ssh", "restart"]]
+SSH_FIELDS = [
+    "PermitRootLogin",
+    "PasswordAuthentication",
+    "PubkeyAuthentication",
+    "PermitEmptyPasswords",
+    "PermitTTY",
+    "X11Forwarding",
+    "AllowTcpForwarding",
+    "AllowAgentForwarding",
+    "GatewayPorts",
+]
+SSH_DEFAULTS = {
+    "PermitRootLogin": "prohibit-password",
+    "PasswordAuthentication": "yes",
+    "PubkeyAuthentication": "yes",
+    "PermitEmptyPasswords": "no",
+    "PermitTTY": "yes",
+    "X11Forwarding": "no",
+    "AllowTcpForwarding": "yes",
+    "AllowAgentForwarding": "yes",
+    "GatewayPorts": "no",
+}
+SSH_START_COMMANDS = [
+    ["systemctl", "start", "ssh"],
+    ["systemctl", "start", "sshd"],
+    ["/etc/init.d/ssh", "start"],
+]
+SSH_RESTART_COMMANDS = [
+    ["systemctl", "restart", "ssh"],
+    ["systemctl", "restart", "sshd"],
+    ["/etc/init.d/ssh", "restart"],
+]
 
 
 def ensure_sshd_runtime_dir():
     runtime_dir = Path("/run/sshd")
     runtime_dir.mkdir(parents=True, exist_ok=True)
-    os.chown(runtime_dir, 0, 0)
+    os.chown(runtime_dir, 0, 0)  # pyright: ignore[reportAttributeAccessIssue]
     os.chmod(runtime_dir, 0o755)
 
 
@@ -486,7 +619,10 @@ def ensure_sshd_config():
         for item in results
         if item.get("rc") != 0
     )
-    raise RuntimeError(f"{PATHS['sshd']} does not exist after starting SSH service" + (f": {detail}" if detail else ""))
+    raise RuntimeError(
+        f"{PATHS['sshd']} does not exist after starting SSH service"
+        + (f": {detail}" if detail else "")
+    )
 
 
 def validate_sshd_content(content):
@@ -505,22 +641,42 @@ def validate_sshd_content(content):
         except Exception:
             pass
     if result["rc"] != 0:
-        raise RuntimeError(result["stderr"] or result["stdout"] or "invalid sshd config")
+        raise RuntimeError(
+            result["stderr"] or result["stdout"] or "invalid sshd config"
+        )
 
 
 def change_root_password(password):
     if "\n" in password or "\r" in password:
         raise RuntimeError("root password cannot contain line breaks")
-    proc = subprocess.run(["chpasswd"], input=f"root:{password}\n", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-    result = {"cmd": "chpasswd root", "rc": proc.returncode, "stdout": proc.stdout.strip(), "stderr": proc.stderr.strip()}
+    proc = subprocess.run(
+        ["chpasswd"],
+        input=f"root:{password}\n",
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    result = {
+        "cmd": "chpasswd root",
+        "rc": proc.returncode,
+        "stdout": proc.stdout.strip(),
+        "stderr": proc.stderr.strip(),
+    }
     if proc.returncode != 0:
-        raise RuntimeError(result["stderr"] or result["stdout"] or "failed to change root password")
+        raise RuntimeError(
+            result["stderr"] or result["stdout"] or "failed to change root password"
+        )
     return result
 
 
 def save_sshd(data):
     results = ensure_sshd_config()
-    changes = {key: str(value) for key, value in (data.get("changes") or {}).items() if key in SSH_FIELDS}
+    changes = {
+        key: str(value)
+        for key, value in (data.get("changes") or {}).items()
+        if key in SSH_FIELDS
+    }
     if not changes and not data.get("password"):
         return {"ssh": read_ssh(), "results": results}
     custom_text = read_text(PATHS["sshd_custom"])
@@ -536,7 +692,11 @@ def save_sshd(data):
     if data.get("apply"):
         results.extend(try_run_many(SSH_RESTART_COMMANDS))
     if results:
-        errors = [f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}' for r in results if r.get("rc") != 0]
+        errors = [
+            f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}'
+            for r in results
+            if r.get("rc") != 0
+        ]
         if errors:
             raise RuntimeError("; ".join(errors))
     return {"ssh": read_ssh(), "results": results}
@@ -548,7 +708,12 @@ def read_ssh():
     parsed = {k: SSH_DEFAULTS.get(k, "") for k in SSH_FIELDS if k in SSH_DEFAULTS}
     parsed.update(parse_sshd(text))
     parsed.update(parse_sshd(custom_text))
-    return {"content": text, "custom": custom_text, "parsed": parsed, "service": read_service_active("sshd")}
+    return {
+        "content": text,
+        "custom": custom_text,
+        "parsed": parsed,
+        "service": read_service_active("sshd"),
+    }
 
 
 def _display_forced_off_path(name):
@@ -603,7 +768,17 @@ def read_display():
             edid_data = edid_path.read_bytes()
             if len(edid_data) >= 128:
                 try:
-                    mfg_id = chr(64 + ((edid_data[8] >> 2) & 0x1f)) + chr(64 + (((edid_data[8] & 0x3) << 3) | ((edid_data[9] >> 5) & 0x7))) + chr(64 + (edid_data[9] & 0x1f))
+                    mfg_id = (
+                        chr(64 + ((edid_data[8] >> 2) & 0x1F))
+                        + chr(
+                            64
+                            + (
+                                ((edid_data[8] & 0x3) << 3)
+                                | ((edid_data[9] >> 5) & 0x7)
+                            )
+                        )
+                        + chr(64 + (edid_data[9] & 0x1F))
+                    )
                     info["manufacturer"] = mfg_id
                 except Exception:
                     info["manufacturer"] = ""
@@ -622,16 +797,21 @@ def read_display():
                 v_cm = edid_data[22]
                 if h_cm and v_cm:
                     info["size_cm"] = f"{h_cm}×{v_cm}"
-                    diag_inch = round((h_cm ** 2 + v_cm ** 2) ** 0.5 / 2.54, 1)
+                    diag_inch = round((h_cm**2 + v_cm**2) ** 0.5 / 2.54, 1)
                     info["size_inch"] = str(diag_inch)
                 for offset in range(54, 108, 18):
                     if offset + 5 > len(edid_data):
                         break
                     tag = edid_data[offset]
-                    if tag == 0xfc:
-                        descriptor = edid_data[offset + 5:offset + 18]
-                        info["monitor_name"] = descriptor.decode("ascii", errors="replace").strip().rstrip("\n").rstrip()
-                    elif tag == 0xfd:
+                    if tag == 0xFC:
+                        descriptor = edid_data[offset + 5 : offset + 18]
+                        info["monitor_name"] = (
+                            descriptor.decode("ascii", errors="replace")
+                            .strip()
+                            .rstrip("\n")
+                            .rstrip()
+                        )
+                    elif tag == 0xFD:
                         min_v = edid_data[offset + 5]
                         max_v = edid_data[offset + 6]
                         min_h = edid_data[offset + 7]
@@ -640,17 +820,33 @@ def read_display():
                             info["vfreq_range"] = f"{min_v}-{max_v} Hz"
                         if min_h and max_h:
                             info["hfreq_range"] = f"{min_h}-{max_h} kHz"
-                    elif tag == 0xfe:
-                        descriptor = edid_data[offset + 5:offset + 18]
-                        info["serial_string"] = descriptor.decode("ascii", errors="replace").strip().rstrip("\n").rstrip()
-                    elif tag == 0xff:
-                        descriptor = edid_data[offset + 5:offset + 18]
-                        info["serial_string"] = descriptor.decode("ascii", errors="replace").strip().rstrip("\n").rstrip()
+                    elif tag == 0xFE:
+                        descriptor = edid_data[offset + 5 : offset + 18]
+                        info["serial_string"] = (
+                            descriptor.decode("ascii", errors="replace")
+                            .strip()
+                            .rstrip("\n")
+                            .rstrip()
+                        )
+                    elif tag == 0xFF:
+                        descriptor = edid_data[offset + 5 : offset + 18]
+                        info["serial_string"] = (
+                            descriptor.decode("ascii", errors="replace")
+                            .strip()
+                            .rstrip("\n")
+                            .rstrip()
+                        )
                     elif tag == 0:
-                        pixel_clk = int.from_bytes(edid_data[offset:offset + 2], "little")
+                        pixel_clk = int.from_bytes(
+                            edid_data[offset : offset + 2], "little"
+                        )
                         if pixel_clk:
-                            h_active = int.from_bytes(edid_data[offset + 2:offset + 4], "little")
-                            v_active = int.from_bytes(edid_data[offset + 5:offset + 7], "little")
+                            h_active = int.from_bytes(
+                                edid_data[offset + 2 : offset + 4], "little"
+                            )
+                            v_active = int.from_bytes(
+                                edid_data[offset + 5 : offset + 7], "little"
+                            )
                             if h_active and v_active:
                                 info["native_resolution"] = f"{h_active}×{v_active}"
         dpms_path = card / "dpms"
@@ -673,7 +869,9 @@ def read_display():
             m = re.match(r"\d+:(\d+)", dev_str)
             if m:
                 drm_minor = m.group(1)
-                force_path = Path(f"/sys/kernel/debug/dri/{drm_minor}/{connector}/force")
+                force_path = Path(
+                    f"/sys/kernel/debug/dri/{drm_minor}/{connector}/force"
+                )
                 if force_path.exists():
                     try:
                         info["drm_force"] = read_text(force_path).strip()
@@ -711,7 +909,9 @@ def _drm_debug_dirs():
     if not debug_dir.exists():
         return []
     try:
-        return sorted([p for p in debug_dir.iterdir() if p.is_dir()], key=lambda p: p.name)
+        return sorted(
+            [p for p in debug_dir.iterdir() if p.is_dir()], key=lambda p: p.name
+        )
     except Exception:
         return []
 
@@ -720,6 +920,7 @@ def _drm_read_dpms_states():
     result = {}
     import ctypes
     import ctypes.util
+
     libdrm_path = ctypes.util.find_library("drm")
     if not libdrm_path:
         return result
@@ -728,13 +929,17 @@ def _drm_read_dpms_states():
     except OSError:
         return result
 
-    DRM_MODE_OBJECT_CONNECTOR = 0xc0c0c0c0
+    DRM_MODE_OBJECT_CONNECTOR = 0xC0C0C0C0
 
     libdrm.drmModeGetResources.restype = ctypes.c_void_p
     libdrm.drmModeGetResources.argtypes = [ctypes.c_int]
     libdrm.drmModeFreeResources.argtypes = [ctypes.c_void_p]
     libdrm.drmModeObjectGetProperties.restype = ctypes.c_void_p
-    libdrm.drmModeObjectGetProperties.argtypes = [ctypes.c_int, ctypes.c_uint32, ctypes.c_uint32]
+    libdrm.drmModeObjectGetProperties.argtypes = [
+        ctypes.c_int,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+    ]
     libdrm.drmModeFreeObjectProperties.argtypes = [ctypes.c_void_p]
     libdrm.drmModeGetProperty.restype = ctypes.c_void_p
     libdrm.drmModeGetProperty.argtypes = [ctypes.c_int, ctypes.c_uint32]
@@ -742,17 +947,24 @@ def _drm_read_dpms_states():
 
     class DrmModeRes(ctypes.Structure):
         _fields_ = [
-            ("count_fbs", ctypes.c_int), ("fb_id_ptr", ctypes.c_uint64),
-            ("count_crtcs", ctypes.c_int), ("crtc_id_ptr", ctypes.c_uint64),
-            ("count_connectors", ctypes.c_int), ("connector_id_ptr", ctypes.c_uint64),
-            ("count_encoders", ctypes.c_int), ("encoder_id_ptr", ctypes.c_uint64),
-            ("min_width", ctypes.c_uint32), ("max_width", ctypes.c_uint32),
-            ("min_height", ctypes.c_uint32), ("max_height", ctypes.c_uint32),
+            ("count_fbs", ctypes.c_int),
+            ("fb_id_ptr", ctypes.c_uint64),
+            ("count_crtcs", ctypes.c_int),
+            ("crtc_id_ptr", ctypes.c_uint64),
+            ("count_connectors", ctypes.c_int),
+            ("connector_id_ptr", ctypes.c_uint64),
+            ("count_encoders", ctypes.c_int),
+            ("encoder_id_ptr", ctypes.c_uint64),
+            ("min_width", ctypes.c_uint32),
+            ("max_width", ctypes.c_uint32),
+            ("min_height", ctypes.c_uint32),
+            ("max_height", ctypes.c_uint32),
         ]
 
     class DrmModeObjProps(ctypes.Structure):
         _fields_ = [
-            ("count_props", ctypes.c_int), ("props_ptr", ctypes.c_uint64),
+            ("count_props", ctypes.c_int),
+            ("props_ptr", ctypes.c_uint64),
             ("prop_values_ptr", ctypes.c_uint64),
         ]
 
@@ -771,7 +983,12 @@ def _drm_read_dpms_states():
 
     for card_dev in sorted(Path("/dev/dri").glob("card*")):
         try:
-            fd = os.open(str(card_dev), os.O_RDWR | os.O_NONBLOCK | os.O_CLOEXEC)
+            fd = os.open(
+                str(card_dev),
+                os.O_RDWR
+                | os.O_NONBLOCK  # pyright: ignore[reportAttributeAccessIssue]
+                | os.O_CLOEXEC,  # pyright: ignore[reportAttributeAccessIssue]
+            )
         except OSError:
             continue
         try:
@@ -782,19 +999,25 @@ def _drm_read_dpms_states():
                 res = ctypes.cast(res_ptr, ctypes.POINTER(DrmModeRes)).contents
                 if res.count_connectors <= 0 or not res.connector_id_ptr:
                     continue
-                conn_ids = list(ctypes.cast(
-                    ctypes.c_void_p(res.connector_id_ptr),
-                    ctypes.POINTER(ctypes.c_uint32 * res.count_connectors),
-                ).contents)
+                conn_ids = list(
+                    ctypes.cast(
+                        ctypes.c_void_p(res.connector_id_ptr),
+                        ctypes.POINTER(ctypes.c_uint32 * res.count_connectors),
+                    ).contents
+                )
             finally:
                 libdrm.drmModeFreeResources(res_ptr)
 
             for cid in conn_ids:
-                props_ptr = libdrm.drmModeObjectGetProperties(fd, cid, DRM_MODE_OBJECT_CONNECTOR)
+                props_ptr = libdrm.drmModeObjectGetProperties(
+                    fd, cid, DRM_MODE_OBJECT_CONNECTOR
+                )
                 if not props_ptr:
                     continue
                 try:
-                    props = ctypes.cast(props_ptr, ctypes.POINTER(DrmModeObjProps)).contents
+                    props = ctypes.cast(
+                        props_ptr, ctypes.POINTER(DrmModeObjProps)
+                    ).contents
                     if props.count_props <= 0 or not props.props_ptr:
                         continue
                     prop_ids = ctypes.cast(
@@ -812,7 +1035,9 @@ def _drm_read_dpms_states():
                         if not prop_ptr:
                             continue
                         try:
-                            prop = ctypes.cast(prop_ptr, ctypes.POINTER(DrmModeProp)).contents
+                            prop = ctypes.cast(
+                                prop_ptr, ctypes.POINTER(DrmModeProp)
+                            ).contents
                             pname = prop.name.decode("utf-8", errors="replace")
                             if pname == "DPMS":
                                 dpms_val = int(prop_values[i])
@@ -845,8 +1070,6 @@ def _drm_get_card_dev(name):
     return None, None
 
 
-
-
 def _drm_dpms_control(name, on):
     card_dev, minor = _drm_get_card_dev(name)
     if not card_dev:
@@ -854,6 +1077,7 @@ def _drm_dpms_control(name, on):
     connector_name = name.split("-", 1)[1] if "-" in name else name
     import ctypes
     import ctypes.util
+
     libdrm_path = ctypes.util.find_library("drm")
     if not libdrm_path:
         return False, "libdrm not found"
@@ -862,39 +1086,58 @@ def _drm_dpms_control(name, on):
     except OSError:
         return False, "failed to load libdrm"
 
-    fd = os.open(str(card_dev), os.O_RDWR | os.O_CLOEXEC)
+    fd = os.open(
+        str(card_dev),
+        os.O_RDWR | os.O_CLOEXEC,  # pyright: ignore[reportAttributeAccessIssue]
+    )
     try:
         libdrm.drmSetMaster.restype = ctypes.c_int
         libdrm.drmSetMaster.argtypes = [ctypes.c_int]
         is_master = libdrm.drmSetMaster(fd) == 0
 
-        DRM_MODE_OBJECT_CONNECTOR = 0xc0c0c0c0
+        DRM_MODE_OBJECT_CONNECTOR = 0xC0C0C0C0
 
         libdrm.drmModeGetResources.restype = ctypes.c_void_p
         libdrm.drmModeGetResources.argtypes = [ctypes.c_int]
         libdrm.drmModeFreeResources.argtypes = [ctypes.c_void_p]
         libdrm.drmModeObjectGetProperties.restype = ctypes.c_void_p
-        libdrm.drmModeObjectGetProperties.argtypes = [ctypes.c_int, ctypes.c_uint32, ctypes.c_uint32]
+        libdrm.drmModeObjectGetProperties.argtypes = [
+            ctypes.c_int,
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+        ]
         libdrm.drmModeFreeObjectProperties.argtypes = [ctypes.c_void_p]
         libdrm.drmModeGetProperty.restype = ctypes.c_void_p
         libdrm.drmModeGetProperty.argtypes = [ctypes.c_int, ctypes.c_uint32]
         libdrm.drmModeFreeProperty.argtypes = [ctypes.c_void_p]
         libdrm.drmModeConnectorSetProperty.restype = ctypes.c_int
-        libdrm.drmModeConnectorSetProperty.argtypes = [ctypes.c_int, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint64]
+        libdrm.drmModeConnectorSetProperty.argtypes = [
+            ctypes.c_int,
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_uint64,
+        ]
 
         class DrmModeRes(ctypes.Structure):
             _fields_ = [
-                ("count_fbs", ctypes.c_int), ("fb_id_ptr", ctypes.c_uint64),
-                ("count_crtcs", ctypes.c_int), ("crtc_id_ptr", ctypes.c_uint64),
-                ("count_connectors", ctypes.c_int), ("connector_id_ptr", ctypes.c_uint64),
-                ("count_encoders", ctypes.c_int), ("encoder_id_ptr", ctypes.c_uint64),
-                ("min_width", ctypes.c_uint32), ("max_width", ctypes.c_uint32),
-                ("min_height", ctypes.c_uint32), ("max_height", ctypes.c_uint32),
+                ("count_fbs", ctypes.c_int),
+                ("fb_id_ptr", ctypes.c_uint64),
+                ("count_crtcs", ctypes.c_int),
+                ("crtc_id_ptr", ctypes.c_uint64),
+                ("count_connectors", ctypes.c_int),
+                ("connector_id_ptr", ctypes.c_uint64),
+                ("count_encoders", ctypes.c_int),
+                ("encoder_id_ptr", ctypes.c_uint64),
+                ("min_width", ctypes.c_uint32),
+                ("max_width", ctypes.c_uint32),
+                ("min_height", ctypes.c_uint32),
+                ("max_height", ctypes.c_uint32),
             ]
 
         class DrmModeObjProps(ctypes.Structure):
             _fields_ = [
-                ("count_props", ctypes.c_int), ("props_ptr", ctypes.c_uint64),
+                ("count_props", ctypes.c_int),
+                ("props_ptr", ctypes.c_uint64),
                 ("prop_values_ptr", ctypes.c_uint64),
             ]
 
@@ -919,10 +1162,12 @@ def _drm_dpms_control(name, on):
             res = ctypes.cast(res_ptr, ctypes.POINTER(DrmModeRes)).contents
             if res.count_connectors <= 0 or not res.connector_id_ptr:
                 return False, "no connectors found"
-            conn_ids = list(ctypes.cast(
-                ctypes.c_void_p(res.connector_id_ptr),
-                ctypes.POINTER(ctypes.c_uint32 * res.count_connectors),
-            ).contents)
+            conn_ids = list(
+                ctypes.cast(
+                    ctypes.c_void_p(res.connector_id_ptr),
+                    ctypes.POINTER(ctypes.c_uint32 * res.count_connectors),
+                ).contents
+            )
         finally:
             libdrm.drmModeFreeResources(res_ptr)
 
@@ -939,7 +1184,9 @@ def _drm_dpms_control(name, on):
         for cid in conn_ids:
             if target_cid is not None and cid != target_cid:
                 continue
-            props_ptr = libdrm.drmModeObjectGetProperties(fd, cid, DRM_MODE_OBJECT_CONNECTOR)
+            props_ptr = libdrm.drmModeObjectGetProperties(
+                fd, cid, DRM_MODE_OBJECT_CONNECTOR
+            )
             if not props_ptr:
                 continue
             try:
@@ -955,7 +1202,9 @@ def _drm_dpms_control(name, on):
                     if not prop_ptr:
                         continue
                     try:
-                        prop = ctypes.cast(prop_ptr, ctypes.POINTER(DrmModeProp)).contents
+                        prop = ctypes.cast(
+                            prop_ptr, ctypes.POINTER(DrmModeProp)
+                        ).contents
                         pname = prop.name.decode("utf-8", errors="replace")
                         if pname == "DPMS":
                             dpms_prop_id = prop_ids[i]
@@ -973,11 +1222,16 @@ def _drm_dpms_control(name, on):
 
         dpms_value = 0 if on else 3
         dpms_label = "On" if on else "Off"
-        ret = libdrm.drmModeConnectorSetProperty(fd, target_conn_id, dpms_prop_id, dpms_value)
+        ret = libdrm.drmModeConnectorSetProperty(
+            fd, target_conn_id, dpms_prop_id, dpms_value
+        )
         if ret != 0:
             if not is_master:
                 return False, "drmSetMaster failed"
-            return False, f"drmModeConnectorSetProperty(DPMS={dpms_label}) returned {ret}"
+            return (
+                False,
+                f"drmModeConnectorSetProperty(DPMS={dpms_label}) returned {ret}",
+            )
 
         if on:
             _drm_force_connector(name, True)
@@ -1060,12 +1314,16 @@ def save_display(data):
     target_on = action == "on"
     if not target_on:
         _display_set_forced_off(name, True)
-    any_ok, last_err = _display_apply_power(name, target_on, repeat=4 if not target_on else 1)
+    any_ok, last_err = _display_apply_power(
+        name, target_on, repeat=4 if not target_on else 1
+    )
     if not any_ok and not target_on:
         _display_set_forced_off(name, False)
         if last_err:
             raise RuntimeError(last_err)
-        raise RuntimeError("No available method to control display power (need DRM DPMS, DRM debugfs, backlight, or fbdev)")
+        raise RuntimeError(
+            "No available method to control display power (need DRM DPMS, DRM debugfs, backlight, or fbdev)"
+        )
     if target_on:
         _display_set_forced_off(name, False)
     write_display_service()
@@ -1098,9 +1356,12 @@ for name in off_names:
 """
         DISPLAY_APPLY.write_text(script, encoding="utf-8")
     else:
-        DISPLAY_APPLY.write_text("#!/bin/sh\n# No displays forced off\n", encoding="utf-8")
+        DISPLAY_APPLY.write_text(
+            "#!/bin/sh\n# No displays forced off\n", encoding="utf-8"
+        )
     os.chmod(DISPLAY_APPLY, 0o755)
-    DISPLAY_SERVICE.write_text("""[Unit]
+    DISPLAY_SERVICE.write_text(
+        """[Unit]
 Description=Apply fn advanced display DPMS settings
 After=sysinit.target display-manager.service graphical.target
 
@@ -1111,7 +1372,9 @@ RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     if shutil_which("systemctl"):
         run(["systemctl", "daemon-reload"], timeout=15)
         run(["systemctl", "enable", "fn-advancedsettings-display.service"], timeout=15)
@@ -1120,7 +1383,9 @@ WantedBy=multi-user.target
 def read_cpu():
     cpus = []
     policies = []
-    for cpu in sorted(Path("/sys/devices/system/cpu").glob("cpu[0-9]*"), key=lambda p: int(p.name[3:])):
+    for cpu in sorted(
+        Path("/sys/devices/system/cpu").glob("cpu[0-9]*"), key=lambda p: int(p.name[3:])
+    ):
         gov_path = cpu / "cpufreq/scaling_governor"
         if gov_path.exists():
             cpu_info = {
@@ -1129,13 +1394,21 @@ def read_cpu():
                 "max_freq": read_text(cpu / "cpufreq/scaling_max_freq").strip(),
                 "cur_freq": read_text(cpu / "cpufreq/scaling_cur_freq").strip(),
                 "governor": read_text(gov_path).strip(),
-                "available_governors": read_text(cpu / "cpufreq/scaling_available_governors").strip().split(),
+                "available_governors": read_text(
+                    cpu / "cpufreq/scaling_available_governors"
+                )
+                .strip()
+                .split(),
                 "scaling_driver": read_text(cpu / "cpufreq/scaling_driver").strip(),
             }
             epp_path = cpu / "cpufreq/energy_performance_preference"
             if epp_path.exists():
                 cpu_info["epp"] = read_text(epp_path).strip()
-                cpu_info["available_epp"] = read_text(cpu / "cpufreq/energy_performance_available_preferences").strip().split()
+                cpu_info["available_epp"] = (
+                    read_text(cpu / "cpufreq/energy_performance_available_preferences")
+                    .strip()
+                    .split()
+                )
             boost_path = cpu / "cpufreq/boost"
             if boost_path.exists():
                 cpu_info["boost"] = read_text(boost_path).strip()
@@ -1146,15 +1419,22 @@ def read_cpu():
             "name": policy.name,
             "min_freq": read_text(policy / "scaling_min_freq").strip(),
             "max_freq": read_text(policy / "scaling_max_freq").strip(),
-            "cur_freq": read_text(policy / "scaling_cur_freq").strip() or read_text(policy / "cpuinfo_cur_freq").strip(),
+            "cur_freq": read_text(policy / "scaling_cur_freq").strip()
+            or read_text(policy / "cpuinfo_cur_freq").strip(),
             "governor": read_text(policy / "scaling_governor").strip(),
-            "available_governors": read_text(policy / "scaling_available_governors").strip().split(),
+            "available_governors": read_text(policy / "scaling_available_governors")
+            .strip()
+            .split(),
             "scaling_driver": read_text(policy / "scaling_driver").strip(),
         }
         epp_path = policy / "energy_performance_preference"
         if epp_path.exists():
             policy_info["epp"] = read_text(epp_path).strip()
-            policy_info["available_epp"] = read_text(policy / "energy_performance_available_preferences").strip().split()
+            policy_info["available_epp"] = (
+                read_text(policy / "energy_performance_available_preferences")
+                .strip()
+                .split()
+            )
         boost_path = policy / "boost"
         if boost_path.exists():
             policy_info["boost"] = read_text(boost_path).strip()
@@ -1182,10 +1462,15 @@ def read_cpu():
 
 def save_cpu(data):
     settings = data.get("settings") or {}
-    targets = list(Path("/sys/devices/system/cpu/cpufreq").glob("policy*")) or [p / "cpufreq" for p in Path("/sys/devices/system/cpu").glob("cpu[0-9]*")]
+    targets = list(Path("/sys/devices/system/cpu/cpufreq").glob("policy*")) or [
+        p / "cpufreq" for p in Path("/sys/devices/system/cpu").glob("cpu[0-9]*")
+    ]
     errors = []
     for target in targets:
-        for key, path_name in (("min_freq", "scaling_min_freq"), ("max_freq", "scaling_max_freq")):
+        for key, path_name in (
+            ("min_freq", "scaling_min_freq"),
+            ("max_freq", "scaling_max_freq"),
+        ):
             if settings.get(key):
                 ok, msg = write_sysfs(target / path_name, settings[key])
                 if not ok:
@@ -1195,7 +1480,9 @@ def save_cpu(data):
             if not ok:
                 errors.append(f"{target}: {msg}")
         if settings.get("epp") and (target / "energy_performance_preference").exists():
-            ok, msg = write_sysfs(target / "energy_performance_preference", settings["epp"])
+            ok, msg = write_sysfs(
+                target / "energy_performance_preference", settings["epp"]
+            )
             if not ok:
                 errors.append(f"{target} epp: {msg}")
     if settings.get("boost") is not None:
@@ -1226,29 +1513,53 @@ def save_cpu(data):
 
 
 def write_cpu_service(settings):
-    lines = ["#!/bin/sh", "set -eu", "targets=\"/sys/devices/system/cpu/cpufreq/policy*\"", "found=0"]
-    lines.append("for target in $targets; do [ -d \"$target\" ] && found=1 && break; done")
-    lines.append("if [ \"$found\" -eq 0 ]; then targets=\"/sys/devices/system/cpu/cpu[0-9]*/cpufreq\"; fi")
+    lines = [
+        "#!/bin/sh",
+        "set -eu",
+        'targets="/sys/devices/system/cpu/cpufreq/policy*"',
+        "found=0",
+    ]
+    lines.append(
+        'for target in $targets; do [ -d "$target" ] && found=1 && break; done'
+    )
+    lines.append(
+        'if [ "$found" -eq 0 ]; then targets="/sys/devices/system/cpu/cpu[0-9]*/cpufreq"; fi'
+    )
     lines.append("for target in $targets; do")
-    lines.append("  [ -d \"$target\" ] || continue")
+    lines.append('  [ -d "$target" ] || continue')
     if settings.get("min_freq"):
-        lines.append(f"  [ -w \"$target/scaling_min_freq\" ] && printf '%s' {shell_quote(settings['min_freq'])} > \"$target/scaling_min_freq\" || true")
+        lines.append(
+            f"  [ -w \"$target/scaling_min_freq\" ] && printf '%s' {shell_quote(settings['min_freq'])} > \"$target/scaling_min_freq\" || true"
+        )
     if settings.get("max_freq"):
-        lines.append(f"  [ -w \"$target/scaling_max_freq\" ] && printf '%s' {shell_quote(settings['max_freq'])} > \"$target/scaling_max_freq\" || true")
+        lines.append(
+            f"  [ -w \"$target/scaling_max_freq\" ] && printf '%s' {shell_quote(settings['max_freq'])} > \"$target/scaling_max_freq\" || true"
+        )
     if settings.get("governor"):
-        lines.append(f"  [ -w \"$target/scaling_governor\" ] && printf '%s' {shell_quote(settings['governor'])} > \"$target/scaling_governor\" || true")
+        lines.append(
+            f"  [ -w \"$target/scaling_governor\" ] && printf '%s' {shell_quote(settings['governor'])} > \"$target/scaling_governor\" || true"
+        )
     if settings.get("epp"):
-        lines.append(f"  [ -w \"$target/energy_performance_preference\" ] && printf '%s' {shell_quote(settings['epp'])} > \"$target/energy_performance_preference\" || true")
+        lines.append(
+            f"  [ -w \"$target/energy_performance_preference\" ] && printf '%s' {shell_quote(settings['epp'])} > \"$target/energy_performance_preference\" || true"
+        )
     lines.append("done")
     if settings.get("boost") is not None:
-        lines.append(f"[ -w /sys/devices/system/cpu/cpufreq/boost ] && printf '%s' {shell_quote(str(settings['boost']))} > /sys/devices/system/cpu/cpufreq/boost || true")
+        lines.append(
+            f"[ -w /sys/devices/system/cpu/cpufreq/boost ] && printf '%s' {shell_quote(str(settings['boost']))} > /sys/devices/system/cpu/cpufreq/boost || true"
+        )
     if settings.get("no_turbo") is not None:
-        lines.append(f"[ -w /sys/devices/system/cpu/intel_pstate/no_turbo ] && printf '%s' {shell_quote(str(settings['no_turbo']))} > /sys/devices/system/cpu/intel_pstate/no_turbo || true")
+        lines.append(
+            f"[ -w /sys/devices/system/cpu/intel_pstate/no_turbo ] && printf '%s' {shell_quote(str(settings['no_turbo']))} > /sys/devices/system/cpu/intel_pstate/no_turbo || true"
+        )
     if settings.get("amd_pstate_prefcore") is not None:
-        lines.append(f"[ -w /sys/devices/system/cpu/amd_pstate/prefcore ] && printf '%s' {shell_quote(str(settings['amd_pstate_prefcore']))} > /sys/devices/system/cpu/amd_pstate/prefcore || true")
+        lines.append(
+            f"[ -w /sys/devices/system/cpu/amd_pstate/prefcore ] && printf '%s' {shell_quote(str(settings['amd_pstate_prefcore']))} > /sys/devices/system/cpu/amd_pstate/prefcore || true"
+        )
     CPU_APPLY.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.chmod(CPU_APPLY, 0o755)
-    CPU_SERVICE.write_text("""[Unit]
+    CPU_SERVICE.write_text(
+        """[Unit]
 Description=Apply fn advanced CPU settings
 After=sysinit.target
 
@@ -1259,7 +1570,9 @@ RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     if shutil_which("systemctl"):
         run(["systemctl", "daemon-reload"], timeout=15)
         run(["systemctl", "enable", "fn-advancedsettings-cpu.service"], timeout=15)
@@ -1291,7 +1604,9 @@ def ethtool_value(iface, flag):
     result = run(["ethtool", iface], timeout=8)
     if result["rc"] != 0:
         return ""
-    match = re.search(rf"^\s*{re.escape(flag)}:\s*(.+)$", result["stdout"], re.MULTILINE)
+    match = re.search(
+        rf"^\s*{re.escape(flag)}:\s*(.+)$", result["stdout"], re.MULTILINE
+    )
     return match.group(1).strip() if match else ""
 
 
@@ -1306,7 +1621,9 @@ def ethtool_info(iface):
     for key in ["Speed", "Duplex", "Auto-negotiation", "Wake-on", "Supports Wake-on"]:
         match = re.search(rf"^\s*{re.escape(key)}:\s*(.+)$", text, re.MULTILINE)
         info[key] = match.group(1).strip() if match else ""
-    modes = parse_ethtool_link_modes(text, "Supported link modes") or parse_ethtool_link_modes(text, "Advertised link modes")
+    modes = parse_ethtool_link_modes(
+        text, "Supported link modes"
+    ) or parse_ethtool_link_modes(text, "Advertised link modes")
     info["supported_link_modes"] = modes
     return info
 
@@ -1337,7 +1654,25 @@ def read_tcp():
     if cc_path.exists():
         tcp["congestion_control"] = read_text(cc_path).strip()
     if avail_path.exists():
-        for mod in [] if TCP_MODULES_PROBED else ["tcp_bbr", "tcp_bbr2", "tcp_dctcp", "tcp_cdg", "tcp_nv", "tcp_veno", "tcp_westwood", "tcp_htcp", "tcp_hybla", "tcp_scalable", "tcp_lp", "tcp_yeah", "tcp_illinois"]:
+        for mod in (
+            []
+            if TCP_MODULES_PROBED
+            else [
+                "tcp_bbr",
+                "tcp_bbr2",
+                "tcp_dctcp",
+                "tcp_cdg",
+                "tcp_nv",
+                "tcp_veno",
+                "tcp_westwood",
+                "tcp_htcp",
+                "tcp_hybla",
+                "tcp_scalable",
+                "tcp_lp",
+                "tcp_yeah",
+                "tcp_illinois",
+            ]
+        ):
             if shutil_which("modprobe"):
                 run(["modprobe", mod], timeout=5)
         TCP_MODULES_PROBED = True
@@ -1384,23 +1719,44 @@ def list_network():
         if iface.name == "lo":
             continue
         ethtool = ethtool_info(iface.name)
-        speed = (ethtool.get("Speed") or "").replace("Mb/s", "").strip() or read_text(iface / "speed").strip()
-        items.append({
-            "name": iface.name,
-            "mac": read_text(iface / "address").strip(),
-            "mtu": read_text(iface / "mtu").strip(),
-            "operstate": read_text(iface / "operstate").strip(),
-            "speed": speed,
-            "duplex": (ethtool.get("Duplex") or "").lower(),
-            "autoneg": "on" if (ethtool.get("Auto-negotiation") or "").lower() == "on" else "off",
-            "wol": ethtool.get("Wake-on") or "",
-            "supported_wol": ethtool.get("Supports Wake-on") or "",
-            "supported_link_modes": ethtool.get("supported_link_modes") or [],
-        })
-    return {"interfaces": items, "saved": saved, "saved_bridges": bridges, "bridges": read_bridges(), "available_ifaces": [i["name"] for i in items], "tcp": read_tcp()}
+        speed = (ethtool.get("Speed") or "").replace("Mb/s", "").strip() or read_text(
+            iface / "speed"
+        ).strip()
+        items.append(
+            {
+                "name": iface.name,
+                "mac": read_text(iface / "address").strip(),
+                "mtu": read_text(iface / "mtu").strip(),
+                "operstate": read_text(iface / "operstate").strip(),
+                "speed": speed,
+                "duplex": (ethtool.get("Duplex") or "").lower(),
+                "autoneg": (
+                    "on"
+                    if (ethtool.get("Auto-negotiation") or "").lower() == "on"
+                    else "off"
+                ),
+                "wol": ethtool.get("Wake-on") or "",
+                "supported_wol": ethtool.get("Supports Wake-on") or "",
+                "supported_link_modes": ethtool.get("supported_link_modes") or [],
+            }
+        )
+    return {
+        "interfaces": items,
+        "saved": saved,
+        "saved_bridges": bridges,
+        "bridges": read_bridges(),
+        "available_ifaces": [i["name"] for i in items],
+        "tcp": read_tcp(),
+    }
 
 
-BRIDGE_PORT_STATES = {0: "disabled", 1: "listening", 2: "learning", 3: "forwarding", 4: "blocking"}
+BRIDGE_PORT_STATES = {
+    0: "disabled",
+    1: "listening",
+    2: "learning",
+    3: "forwarding",
+    4: "blocking",
+}
 
 
 def read_ovs_bridges():
@@ -1418,7 +1774,9 @@ def read_ovs_bridges():
                 continue
             stp = False
             try:
-                stp_result = run([ovs_vsctl, "get", "Bridge", name, "stp_enable"], timeout=5)
+                stp_result = run(
+                    [ovs_vsctl, "get", "Bridge", name, "stp_enable"], timeout=5
+                )
                 stp = stp_result.get("stdout", "").strip().lower() == "true"
             except Exception:
                 pass
@@ -1428,21 +1786,30 @@ def read_ovs_bridges():
                 for pname in (port_result.get("stdout") or "").splitlines():
                     pname = pname.strip()
                     if pname:
-                        members.append({"name": pname, "state": "forwarding", "priority": "-", "cost": "-"})
+                        members.append(
+                            {
+                                "name": pname,
+                                "state": "forwarding",
+                                "priority": "-",
+                                "cost": "-",
+                            }
+                        )
             except Exception:
                 pass
-            bridges.append({
-                "name": name,
-                "type": "ovs",
-                "stp": stp,
-                "forward_delay": "-",
-                "hello_time": "-",
-                "max_age": "-",
-                "vlan_filtering": False,
-                "default_pvid": "1",
-                "members": members,
-                "addrs": read_iface_addrs(name),
-            })
+            bridges.append(
+                {
+                    "name": name,
+                    "type": "ovs",
+                    "stp": stp,
+                    "forward_delay": "-",
+                    "hello_time": "-",
+                    "max_age": "-",
+                    "vlan_filtering": False,
+                    "default_pvid": "1",
+                    "members": members,
+                    "addrs": read_iface_addrs(name),
+                }
+            )
     except Exception:
         pass
     return bridges
@@ -1459,8 +1826,16 @@ def read_bridges():
         forward_delay = read_text(bridge_dir / "forward_delay").strip()
         hello_time = read_text(bridge_dir / "hello_time").strip()
         max_age = read_text(bridge_dir / "max_age").strip()
-        vlan_filtering = read_text(bridge_dir / "vlan_filtering").strip() if (bridge_dir / "vlan_filtering").exists() else "0"
-        default_pvid = read_text(bridge_dir / "default_pvid").strip() if (bridge_dir / "default_pvid").exists() else "1"
+        vlan_filtering = (
+            read_text(bridge_dir / "vlan_filtering").strip()
+            if (bridge_dir / "vlan_filtering").exists()
+            else "0"
+        )
+        default_pvid = (
+            read_text(bridge_dir / "default_pvid").strip()
+            if (bridge_dir / "default_pvid").exists()
+            else "1"
+        )
         members = []
         brif_dir = iface_dir / "brif"
         if brif_dir.exists():
@@ -1468,23 +1843,47 @@ def read_bridges():
                 if not member_dir.is_dir():
                     continue
                 mname = member_dir.name
-                state_val = read_text(member_dir / "state").strip() if (member_dir / "state").exists() else ""
-                state_name = BRIDGE_PORT_STATES.get(int(state_val) if state_val.isdigit() else -1, state_val or "unknown")
-                priority = read_text(member_dir / "priority").strip() if (member_dir / "priority").exists() else "32"
-                cost = read_text(member_dir / "path_cost").strip() if (member_dir / "path_cost").exists() else "0"
-                members.append({"name": mname, "state": state_name, "priority": priority, "cost": cost})
-        bridges.append({
-            "name": name,
-            "type": "linux",
-            "stp": stp == "1",
-            "forward_delay": forward_delay,
-            "hello_time": hello_time,
-            "max_age": max_age,
-            "vlan_filtering": vlan_filtering == "1",
-            "default_pvid": default_pvid,
-            "members": members,
-            "addrs": read_iface_addrs(name),
-        })
+                state_val = (
+                    read_text(member_dir / "state").strip()
+                    if (member_dir / "state").exists()
+                    else ""
+                )
+                state_name = BRIDGE_PORT_STATES.get(
+                    int(state_val) if state_val.isdigit() else -1,
+                    state_val or "unknown",
+                )
+                priority = (
+                    read_text(member_dir / "priority").strip()
+                    if (member_dir / "priority").exists()
+                    else "32"
+                )
+                cost = (
+                    read_text(member_dir / "path_cost").strip()
+                    if (member_dir / "path_cost").exists()
+                    else "0"
+                )
+                members.append(
+                    {
+                        "name": mname,
+                        "state": state_name,
+                        "priority": priority,
+                        "cost": cost,
+                    }
+                )
+        bridges.append(
+            {
+                "name": name,
+                "type": "linux",
+                "stp": stp == "1",
+                "forward_delay": forward_delay,
+                "hello_time": hello_time,
+                "max_age": max_age,
+                "vlan_filtering": vlan_filtering == "1",
+                "default_pvid": default_pvid,
+                "members": members,
+                "addrs": read_iface_addrs(name),
+            }
+        )
     for ovs_bridge in read_ovs_bridges():
         if ovs_bridge["name"] not in linux_names:
             bridges.append(ovs_bridge)
@@ -1513,10 +1912,17 @@ def save_bridge(data):
             results.append(run([ovs_vsctl, "add-br", name], timeout=15))
             stp = bool(data.get("stp"))
             if stp:
-                results.append(run([ovs_vsctl, "set", "Bridge", name, "stp_enable=true"], timeout=10))
+                results.append(
+                    run(
+                        [ovs_vsctl, "set", "Bridge", name, "stp_enable=true"],
+                        timeout=10,
+                    )
+                )
             results.append(run(["ip", "link", "set", name, "up"], timeout=10))
         else:
-            results.append(run(["ip", "link", "add", "name", name, "type", "bridge"], timeout=15))
+            results.append(
+                run(["ip", "link", "add", "name", name, "type", "bridge"], timeout=15)
+            )
             stp = bool(data.get("stp"))
             if stp:
                 stp_path = Path(f"/sys/class/net/{name}/bridge/stp_state")
@@ -1524,7 +1930,21 @@ def save_bridge(data):
                     try:
                         stp_path.write_text("1", encoding="utf-8")
                     except Exception:
-                        results.append(run(["ip", "link", "set", name, "type", "bridge", "stp_state", "1"], timeout=10))
+                        results.append(
+                            run(
+                                [
+                                    "ip",
+                                    "link",
+                                    "set",
+                                    name,
+                                    "type",
+                                    "bridge",
+                                    "stp_state",
+                                    "1",
+                                ],
+                                timeout=10,
+                            )
+                        )
             results.append(run(["ip", "link", "set", name, "up"], timeout=10))
         bridges[name] = {
             "bridge_type": bridge_type,
@@ -1548,9 +1968,18 @@ def save_bridge(data):
         if not name:
             raise RuntimeError("Bridge name is required")
         saved_cfg = bridges.get(name, {})
-        bridge_type = saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        bridge_type = (
+            saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        )
         if bridge_type not in ("linux", "ovs"):
-            bridge_type = "ovs" if (Path(f"/sys/class/net/{name}/bridge").exists() is False and shutil_which("ovs-vsctl")) else "linux"
+            bridge_type = (
+                "ovs"
+                if (
+                    Path(f"/sys/class/net/{name}/bridge").exists() is False
+                    and shutil_which("ovs-vsctl")
+                )
+                else "linux"
+            )
         if bridge_type == "ovs" and shutil_which("ovs-vsctl"):
             results.append(run(["ip", "link", "set", name, "down"], timeout=10))
             results.append(run([shutil_which("ovs-vsctl"), "del-br", name], timeout=15))
@@ -1564,14 +1993,27 @@ def save_bridge(data):
         if not valid_bridge_name(name) or not valid_iface_name(member):
             raise RuntimeError("Bridge name and member are required")
         saved_cfg = bridges.get(name, {})
-        bridge_type = saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        bridge_type = (
+            saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        )
         if bridge_type not in ("linux", "ovs"):
-            bridge_type = "ovs" if (Path(f"/sys/class/net/{name}/bridge").exists() is False and shutil_which("ovs-vsctl")) else "linux"
+            bridge_type = (
+                "ovs"
+                if (
+                    Path(f"/sys/class/net/{name}/bridge").exists() is False
+                    and shutil_which("ovs-vsctl")
+                )
+                else "linux"
+            )
         if bridge_type == "ovs" and shutil_which("ovs-vsctl"):
             results.append(run(["ip", "link", "set", member, "up"], timeout=10))
-            results.append(run([shutil_which("ovs-vsctl"), "add-port", name, member], timeout=10))
+            results.append(
+                run([shutil_which("ovs-vsctl"), "add-port", name, member], timeout=10)
+            )
         else:
-            results.append(run(["ip", "link", "set", member, "master", name], timeout=10))
+            results.append(
+                run(["ip", "link", "set", member, "master", name], timeout=10)
+            )
         if name in bridges:
             members = bridges[name].setdefault("members", [])
             if member not in members:
@@ -1582,11 +2024,22 @@ def save_bridge(data):
         if not valid_bridge_name(name) or not valid_iface_name(member):
             raise RuntimeError("Bridge name and member are required")
         saved_cfg = bridges.get(name, {})
-        bridge_type = saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        bridge_type = (
+            saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        )
         if bridge_type not in ("linux", "ovs"):
-            bridge_type = "ovs" if (Path(f"/sys/class/net/{name}/bridge").exists() is False and shutil_which("ovs-vsctl")) else "linux"
+            bridge_type = (
+                "ovs"
+                if (
+                    Path(f"/sys/class/net/{name}/bridge").exists() is False
+                    and shutil_which("ovs-vsctl")
+                )
+                else "linux"
+            )
         if bridge_type == "ovs" and shutil_which("ovs-vsctl"):
-            results.append(run([shutil_which("ovs-vsctl"), "del-port", name, member], timeout=10))
+            results.append(
+                run([shutil_which("ovs-vsctl"), "del-port", name, member], timeout=10)
+            )
         else:
             results.append(run(["ip", "link", "set", member, "nomaster"], timeout=10))
         if name in bridges:
@@ -1614,30 +2067,106 @@ def save_bridge(data):
         ip6_dns = str(data.get("ip6_dns") or "").strip()
         stp = data.get("stp")
         saved_cfg = bridges.get(name, {})
-        bridge_type = saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        bridge_type = (
+            saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        )
         if bridge_type not in ("linux", "ovs"):
-            bridge_type = "ovs" if (Path(f"/sys/class/net/{name}/bridge").exists() is False and shutil_which("ovs-vsctl")) else "linux"
+            bridge_type = (
+                "ovs"
+                if (
+                    Path(f"/sys/class/net/{name}/bridge").exists() is False
+                    and shutil_which("ovs-vsctl")
+                )
+                else "linux"
+            )
         if stp is not None:
             stp = bool(stp)
             if bridge_type == "ovs" and shutil_which("ovs-vsctl"):
-                results.append(run([shutil_which("ovs-vsctl"), "set", "Bridge", name, f"stp_enable={'true' if stp else 'false'}"], timeout=10))
+                results.append(
+                    run(
+                        [
+                            shutil_which("ovs-vsctl"),
+                            "set",
+                            "Bridge",
+                            name,
+                            f"stp_enable={'true' if stp else 'false'}",
+                        ],
+                        timeout=10,
+                    )
+                )
             else:
                 stp_path = Path(f"/sys/class/net/{name}/bridge/stp_state")
                 if stp_path.exists():
                     try:
                         stp_path.write_text("1" if stp else "0", encoding="utf-8")
                     except Exception:
-                        results.append(run(["ip", "link", "set", name, "type", "bridge", "stp_state", "1" if stp else "0"], timeout=10))
+                        results.append(
+                            run(
+                                [
+                                    "ip",
+                                    "link",
+                                    "set",
+                                    name,
+                                    "type",
+                                    "bridge",
+                                    "stp_state",
+                                    "1" if stp else "0",
+                                ],
+                                timeout=10,
+                            )
+                        )
                 else:
-                    results.append(run(["ip", "link", "set", name, "type", "bridge", "stp_state", "1" if stp else "0"], timeout=10))
-        results.append(run(["ip", "addr", "flush", "dev", name, "scope", "global"], timeout=10))
+                    results.append(
+                        run(
+                            [
+                                "ip",
+                                "link",
+                                "set",
+                                name,
+                                "type",
+                                "bridge",
+                                "stp_state",
+                                "1" if stp else "0",
+                            ],
+                            timeout=10,
+                        )
+                    )
+        results.append(
+            run(["ip", "addr", "flush", "dev", name, "scope", "global"], timeout=10)
+        )
         if ip_mtu:
             results.append(run(["ip", "link", "set", name, "mtu", ip_mtu], timeout=10))
         if ip4_type == "static":
             if ip_address:
-                results.append(run(["ip", "addr", "add", f"{ip_address}/{ip_prefixlen or '24'}", "dev", name], timeout=10))
+                results.append(
+                    run(
+                        [
+                            "ip",
+                            "addr",
+                            "add",
+                            f"{ip_address}/{ip_prefixlen or '24'}",
+                            "dev",
+                            name,
+                        ],
+                        timeout=10,
+                    )
+                )
             if ip_gateway:
-                results.append(run(["ip", "route", "replace", "default", "via", ip_gateway, "dev", name], timeout=10))
+                results.append(
+                    run(
+                        [
+                            "ip",
+                            "route",
+                            "replace",
+                            "default",
+                            "via",
+                            ip_gateway,
+                            "dev",
+                            name,
+                        ],
+                        timeout=10,
+                    )
+                )
         elif ip4_type == "dhcp":
             if shutil_which("dhclient"):
                 results.append(run(["dhclient", "-1", "-4", name], timeout=30))
@@ -1645,9 +2174,36 @@ def save_bridge(data):
                 results.append(run(["udhcpc", "-i", name, "-n", "-q"], timeout=30))
         if ip6_type == "static":
             if ip6_address:
-                results.append(run(["ip", "addr", "add", f"{ip6_address}/{ip6_prefixlen or '64'}", "dev", name], timeout=10))
+                results.append(
+                    run(
+                        [
+                            "ip",
+                            "addr",
+                            "add",
+                            f"{ip6_address}/{ip6_prefixlen or '64'}",
+                            "dev",
+                            name,
+                        ],
+                        timeout=10,
+                    )
+                )
             if ip6_gateway:
-                results.append(run(["ip", "-6", "route", "replace", "default", "via", ip6_gateway, "dev", name], timeout=10))
+                results.append(
+                    run(
+                        [
+                            "ip",
+                            "-6",
+                            "route",
+                            "replace",
+                            "default",
+                            "via",
+                            ip6_gateway,
+                            "dev",
+                            name,
+                        ],
+                        timeout=10,
+                    )
+                )
         elif ip6_type == "dhcp":
             if shutil_which("dhclient"):
                 results.append(run(["dhclient", "-1", "-6", name], timeout=30))
@@ -1665,13 +2221,31 @@ def save_bridge(data):
                 if ns:
                     dns_servers.append(ns)
         if dns_servers:
-            resolv_content = "\n".join([f"nameserver {ns}" for ns in dns_servers]) + "\n"
+            resolv_content = (
+                "\n".join([f"nameserver {ns}" for ns in dns_servers]) + "\n"
+            )
             try:
                 Path("/etc/resolv.conf").write_text(resolv_content, encoding="utf-8")
             except Exception:
                 pass
         if name not in bridges:
-            bridges[name] = {"bridge_type": bridge_type, "stp": False, "members": [], "ip_type": "", "ip4_type": "", "ip6_type": "", "ip_address": "", "ip_prefixlen": "", "ip_gateway": "", "ip_dns": "", "ip_mtu": "", "ip6_address": "", "ip6_prefixlen": "", "ip6_gateway": "", "ip6_dns": ""}
+            bridges[name] = {
+                "bridge_type": bridge_type,
+                "stp": False,
+                "members": [],
+                "ip_type": "",
+                "ip4_type": "",
+                "ip6_type": "",
+                "ip_address": "",
+                "ip_prefixlen": "",
+                "ip_gateway": "",
+                "ip_dns": "",
+                "ip_mtu": "",
+                "ip6_address": "",
+                "ip6_prefixlen": "",
+                "ip6_gateway": "",
+                "ip6_dns": "",
+            }
         if stp is not None:
             bridges[name]["stp"] = stp
         bridges[name]["bridge_type"] = bridge_type
@@ -1693,30 +2267,87 @@ def save_bridge(data):
         if not valid_bridge_name(name):
             raise RuntimeError("Bridge name is required")
         saved_cfg = bridges.get(name, {})
-        bridge_type = saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        bridge_type = (
+            saved_cfg.get("bridge_type") or str(data.get("bridge_type") or "").strip()
+        )
         if bridge_type not in ("linux", "ovs"):
-            bridge_type = "ovs" if (Path(f"/sys/class/net/{name}/bridge").exists() is False and shutil_which("ovs-vsctl")) else "linux"
+            bridge_type = (
+                "ovs"
+                if (
+                    Path(f"/sys/class/net/{name}/bridge").exists() is False
+                    and shutil_which("ovs-vsctl")
+                )
+                else "linux"
+            )
         if bridge_type == "ovs" and shutil_which("ovs-vsctl"):
-            results.append(run([shutil_which("ovs-vsctl"), "set", "Bridge", name, f"stp_enable={'true' if stp else 'false'}"], timeout=10))
+            results.append(
+                run(
+                    [
+                        shutil_which("ovs-vsctl"),
+                        "set",
+                        "Bridge",
+                        name,
+                        f"stp_enable={'true' if stp else 'false'}",
+                    ],
+                    timeout=10,
+                )
+            )
         else:
             stp_path = Path(f"/sys/class/net/{name}/bridge/stp_state")
             if stp_path.exists():
                 try:
                     stp_path.write_text("1" if stp else "0", encoding="utf-8")
                 except Exception:
-                    results.append(run(["ip", "link", "set", name, "type", "bridge", "stp_state", "1" if stp else "0"], timeout=10))
+                    results.append(
+                        run(
+                            [
+                                "ip",
+                                "link",
+                                "set",
+                                name,
+                                "type",
+                                "bridge",
+                                "stp_state",
+                                "1" if stp else "0",
+                            ],
+                            timeout=10,
+                        )
+                    )
             else:
-                results.append(run(["ip", "link", "set", name, "type", "bridge", "stp_state", "1" if stp else "0"], timeout=10))
+                results.append(
+                    run(
+                        [
+                            "ip",
+                            "link",
+                            "set",
+                            name,
+                            "type",
+                            "bridge",
+                            "stp_state",
+                            "1" if stp else "0",
+                        ],
+                        timeout=10,
+                    )
+                )
         if name in bridges:
             bridges[name]["stp"] = bool(stp)
     state["bridges"] = bridges
     save_state(state)
     write_bridge_service(bridges)
     if results:
-        errors = [f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}' for r in results if r.get("rc") != 0]
+        errors = [
+            f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}'
+            for r in results
+            if r.get("rc") != 0
+        ]
         if errors:
             raise RuntimeError("; ".join(errors))
-    return {"bridges": read_bridges(), "saved_bridges": bridges, "available_ifaces": [i["name"] for i in list_network()["interfaces"]], "results": results}
+    return {
+        "bridges": read_bridges(),
+        "saved_bridges": bridges,
+        "available_ifaces": [i["name"] for i in list_network()["interfaces"]],
+        "results": results,
+    }
 
 
 def write_network_service(network):
@@ -1727,20 +2358,31 @@ def write_network_service(network):
             continue
         if cfg.get("mac"):
             lines.append(f"ip link set dev {safe_iface} down || true")
-            lines.append(f"ip link set dev {safe_iface} address {shell_quote(cfg['mac'])} || true")
+            lines.append(
+                f"ip link set dev {safe_iface} address {shell_quote(cfg['mac'])} || true"
+            )
             lines.append(f"ip link set dev {safe_iface} up || true")
         if cfg.get("mtu"):
-            lines.append(f"ip link set dev {safe_iface} mtu {shell_quote(cfg['mtu'])} || true")
+            lines.append(
+                f"ip link set dev {safe_iface} mtu {shell_quote(cfg['mtu'])} || true"
+            )
         if cfg.get("wol") and cfg["wol"] != "keep":
-            lines.append(f"command -v ethtool >/dev/null 2>&1 && ethtool -s {safe_iface} wol {shell_quote(cfg['wol'])} || true")
+            lines.append(
+                f"command -v ethtool >/dev/null 2>&1 && ethtool -s {safe_iface} wol {shell_quote(cfg['wol'])} || true"
+            )
         if cfg.get("autoneg") == "on" and not cfg.get("speed"):
-            lines.append(f"command -v ethtool >/dev/null 2>&1 && ethtool -s {safe_iface} autoneg on || true")
+            lines.append(
+                f"command -v ethtool >/dev/null 2>&1 && ethtool -s {safe_iface} autoneg on || true"
+            )
         elif cfg.get("speed"):
             autoneg = "on" if cfg.get("autoneg", "off") == "on" else "off"
-            lines.append(f"command -v ethtool >/dev/null 2>&1 && ethtool -s {safe_iface} speed {shell_quote(cfg['speed'])} duplex {shell_quote(cfg.get('duplex') or 'full')} autoneg {autoneg} || true")
+            lines.append(
+                f"command -v ethtool >/dev/null 2>&1 && ethtool -s {safe_iface} speed {shell_quote(cfg['speed'])} duplex {shell_quote(cfg.get('duplex') or 'full')} autoneg {autoneg} || true"
+            )
     NETWORK_APPLY.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.chmod(NETWORK_APPLY, 0o755)
-    NETWORK_SERVICE.write_text("""[Unit]
+    NETWORK_SERVICE.write_text(
+        """[Unit]
 Description=Apply fn advanced network settings
 After=network-pre.target
 Before=network-online.target
@@ -1752,7 +2394,9 @@ RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     if shutil_which("systemctl"):
         run(["systemctl", "daemon-reload"], timeout=15)
         run(["systemctl", "enable", "fn-advancedsettings-network.service"], timeout=15)
@@ -1768,22 +2412,34 @@ def write_bridge_service(bridges):
         if bridge_type == "ovs":
             lines.append(f"command -v ovs-vsctl >/dev/null 2>&1 || true")
             lines.append(f"ovs-vsctl add-br {safe_bname} 2>/dev/null || true")
-            lines.append(f"ovs-vsctl set Bridge {safe_bname} stp_enable={'true' if bcfg.get('stp') else 'false'} 2>/dev/null || true")
+            lines.append(
+                f"ovs-vsctl set Bridge {safe_bname} stp_enable={'true' if bcfg.get('stp') else 'false'} 2>/dev/null || true"
+            )
         else:
-            lines.append(f"ip link add name {safe_bname} type bridge 2>/dev/null || true")
-            lines.append(f"ip link set {safe_bname} type bridge stp_state {'1' if bcfg.get('stp') else '0'} 2>/dev/null || true")
+            lines.append(
+                f"ip link add name {safe_bname} type bridge 2>/dev/null || true"
+            )
+            lines.append(
+                f"ip link set {safe_bname} type bridge stp_state {'1' if bcfg.get('stp') else '0'} 2>/dev/null || true"
+            )
         ip_mtu = bcfg.get("ip_mtu", "")
         if ip_mtu:
-            lines.append(f"ip link set {safe_bname} mtu {shell_quote(ip_mtu)} 2>/dev/null || true")
+            lines.append(
+                f"ip link set {safe_bname} mtu {shell_quote(ip_mtu)} 2>/dev/null || true"
+            )
         lines.append(f"ip link set {safe_bname} up || true")
         for member in bcfg.get("members") or []:
             safe_member = clean_iface_name(member)
             if safe_member:
                 lines.append(f"ip link set {safe_member} up || true")
                 if bridge_type == "ovs":
-                    lines.append(f"ovs-vsctl add-port {safe_bname} {safe_member} 2>/dev/null || true")
+                    lines.append(
+                        f"ovs-vsctl add-port {safe_bname} {safe_member} 2>/dev/null || true"
+                    )
                 else:
-                    lines.append(f"ip link set {safe_member} master {safe_bname} || true")
+                    lines.append(
+                        f"ip link set {safe_member} master {safe_bname} || true"
+                    )
         ip4_type = bcfg.get("ip4_type", "")
         ip6_type = bcfg.get("ip6_type", "")
         if ip4_type == "static":
@@ -1792,24 +2448,40 @@ def write_bridge_service(bridges):
             ip_gw = bcfg.get("ip_gateway", "")
             ip_dns = bcfg.get("ip_dns", "")
             if ip_addr:
-                lines.append(f"ip addr add {shell_quote(ip_addr + '/' + ip_prefix)} dev {safe_bname} 2>/dev/null || true")
+                lines.append(
+                    f"ip addr add {shell_quote(ip_addr + '/' + ip_prefix)} dev {safe_bname} 2>/dev/null || true"
+                )
             if ip_gw:
-                lines.append(f"ip route replace default via {shell_quote(ip_gw)} dev {safe_bname} 2>/dev/null || true")
+                lines.append(
+                    f"ip route replace default via {shell_quote(ip_gw)} dev {safe_bname} 2>/dev/null || true"
+                )
         elif ip4_type == "dhcp":
-            lines.append(f"command -v dhclient >/dev/null 2>&1 && dhclient -1 -4 {safe_bname} || true")
-            lines.append(f"command -v udhcpc >/dev/null 2>&1 && udhcpc -i {safe_bname} -n -q || true")
+            lines.append(
+                f"command -v dhclient >/dev/null 2>&1 && dhclient -1 -4 {safe_bname} || true"
+            )
+            lines.append(
+                f"command -v udhcpc >/dev/null 2>&1 && udhcpc -i {safe_bname} -n -q || true"
+            )
         if ip6_type == "static":
             ip6_addr = bcfg.get("ip6_address", "")
             ip6_prefix = bcfg.get("ip6_prefixlen", "64") or "64"
             ip6_gw = bcfg.get("ip6_gateway", "")
             ip6_dns = bcfg.get("ip6_dns", "")
             if ip6_addr:
-                lines.append(f"ip addr add {shell_quote(ip6_addr + '/' + ip6_prefix)} dev {safe_bname} 2>/dev/null || true")
+                lines.append(
+                    f"ip addr add {shell_quote(ip6_addr + '/' + ip6_prefix)} dev {safe_bname} 2>/dev/null || true"
+                )
             if ip6_gw:
-                lines.append(f"ip -6 route replace default via {shell_quote(ip6_gw)} dev {safe_bname} 2>/dev/null || true")
+                lines.append(
+                    f"ip -6 route replace default via {shell_quote(ip6_gw)} dev {safe_bname} 2>/dev/null || true"
+                )
         elif ip6_type == "dhcp":
-            lines.append(f"command -v dhclient >/dev/null 2>&1 && dhclient -1 -6 {safe_bname} || true")
-            lines.append(f"command -v udhcpc >/dev/null 2>&1 && udhcpc -i {safe_bname} -n -q || true")
+            lines.append(
+                f"command -v dhclient >/dev/null 2>&1 && dhclient -1 -6 {safe_bname} || true"
+            )
+            lines.append(
+                f"command -v udhcpc >/dev/null 2>&1 && udhcpc -i {safe_bname} -n -q || true"
+            )
         dns_entries = []
         if ip4_type == "static":
             for ns in bcfg.get("ip_dns", "").split(","):
@@ -1823,10 +2495,13 @@ def write_bridge_service(bridges):
                     dns_entries.append(ns)
         if dns_entries:
             resolv_content = "\\n".join([f"nameserver {ns}" for ns in dns_entries])
-            lines.append(f"printf '{resolv_content}\\n' > /etc/resolv.conf 2>/dev/null || true")
+            lines.append(
+                f"printf '{resolv_content}\\n' > /etc/resolv.conf 2>/dev/null || true"
+            )
     BRIDGE_APPLY.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.chmod(BRIDGE_APPLY, 0o755)
-    BRIDGE_SERVICE.write_text("""[Unit]
+    BRIDGE_SERVICE.write_text(
+        """[Unit]
 Description=Apply fn advanced bridge settings
 After=fn-advancedsettings-network.service network-pre.target
 Before=network-online.target
@@ -1838,7 +2513,9 @@ RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     if shutil_which("systemctl"):
         run(["systemctl", "daemon-reload"], timeout=15)
         run(["systemctl", "enable", "fn-advancedsettings-bridge.service"], timeout=15)
@@ -1868,7 +2545,9 @@ def save_network(data):
     write_bridge_service(state.get("bridges", {}))
     result = run([str(NETWORK_APPLY)], timeout=30)
     if result.get("rc") != 0:
-        raise RuntimeError(f'{result["cmd"]}: {result["stderr"] or result["stdout"] or "failed"}')
+        raise RuntimeError(
+            f'{result["cmd"]}: {result["stderr"] or result["stdout"] or "failed"}'
+        )
     return {"network": list_network(), "results": [result]}
 
 
@@ -1886,12 +2565,21 @@ TCP_SYSCTL_MAP = {
 }
 
 TCP_CC_MODULES = {
-    "bbr": "tcp_bbr", "bbr2": "tcp_bbr2", "dctcp": "tcp_dctcp",
-    "cdg": "tcp_cdg", "nv": "tcp_nv", "veno": "tcp_veno",
-    "westwood": "tcp_westwood", "htcp": "tcp_htcp", "hybla": "tcp_hybla",
-    "scalable": "tcp_scalable", "lp": "tcp_lp", "yeah": "tcp_yeah",
+    "bbr": "tcp_bbr",
+    "bbr2": "tcp_bbr2",
+    "dctcp": "tcp_dctcp",
+    "cdg": "tcp_cdg",
+    "nv": "tcp_nv",
+    "veno": "tcp_veno",
+    "westwood": "tcp_westwood",
+    "htcp": "tcp_htcp",
+    "hybla": "tcp_hybla",
+    "scalable": "tcp_scalable",
+    "lp": "tcp_lp",
+    "yeah": "tcp_yeah",
     "illinois": "tcp_illinois",
 }
+
 
 def apply_tcp(tcp):
     sysctl_lines = ["# Managed by fn-advancedsettings"]
@@ -1915,7 +2603,10 @@ def apply_tcp(tcp):
         except FileNotFoundError:
             pass
     if modules:
-        TCP_MODULES_LOAD.write_text("\n".join(["# Managed by fn-advancedsettings"] + modules) + "\n", encoding="utf-8")
+        TCP_MODULES_LOAD.write_text(
+            "\n".join(["# Managed by fn-advancedsettings"] + modules) + "\n",
+            encoding="utf-8",
+        )
     else:
         try:
             TCP_MODULES_LOAD.unlink()
@@ -1936,11 +2627,15 @@ def normalize_proxy_values(values):
             proxy[key] = ""
             continue
         if key == "no_proxy":
-            proxy[key] = ",".join([item.strip() for item in re.split(r"[,\s]+", value) if item.strip()])
+            proxy[key] = ",".join(
+                [item.strip() for item in re.split(r"[,\s]+", value) if item.strip()]
+            )
             continue
         parsed = urllib.parse.urlparse(value)
         if parsed.scheme not in ("http", "https", "socks4", "socks5", "socks5h"):
-            raise RuntimeError(f"{key} must start with http://, https://, socks4://, socks5://, or socks5h://")
+            raise RuntimeError(
+                f"{key} must start with http://, https://, socks4://, socks5://, or socks5h://"
+            )
         if not parsed.netloc:
             raise RuntimeError(f"{key} is missing host")
         proxy[key] = value
@@ -1969,7 +2664,11 @@ def write_environment_proxy(proxy):
         if match and match.group(1) in proxy_keys:
             continue
         kept_lines.append(line)
-    proxy_lines = [f'{key}="{quote_double(existing[key])}"' for key in sorted(proxy_keys) if existing.get(key)]
+    proxy_lines = [
+        f'{key}="{quote_double(existing[key])}"'
+        for key in sorted(proxy_keys)
+        if existing.get(key)
+    ]
     lines = kept_lines
     if lines and proxy_lines and lines[-1].strip():
         lines.append("")
@@ -1995,9 +2694,13 @@ def save_proxy(data):
     if targets.get("apt"):
         apt_lines = []
         if proxy.get("http_proxy"):
-            apt_lines.append(f'Acquire::http::Proxy "{quote_double(proxy["http_proxy"])}";')
+            apt_lines.append(
+                f'Acquire::http::Proxy "{quote_double(proxy["http_proxy"])}";'
+            )
         if proxy.get("https_proxy"):
-            apt_lines.append(f'Acquire::https::Proxy "{quote_double(proxy["https_proxy"])}";')
+            apt_lines.append(
+                f'Acquire::https::Proxy "{quote_double(proxy["https_proxy"])}";'
+            )
         if apt_lines:
             PROXY_APT.write_text("\n".join(apt_lines) + "\n", encoding="utf-8")
         elif PROXY_APT.exists():
@@ -2009,16 +2712,30 @@ def save_proxy(data):
         PROXY_DOCKER_DIR.mkdir(parents=True, exist_ok=True)
         docker_lines = ["[Service]"]
         if proxy.get("http_proxy"):
-            docker_lines.append(f'Environment="HTTP_PROXY={quote_double(proxy["http_proxy"])}"')
-            docker_lines.append(f'Environment="http_proxy={quote_double(proxy["http_proxy"])}"')
+            docker_lines.append(
+                f'Environment="HTTP_PROXY={quote_double(proxy["http_proxy"])}"'
+            )
+            docker_lines.append(
+                f'Environment="http_proxy={quote_double(proxy["http_proxy"])}"'
+            )
         if proxy.get("https_proxy"):
-            docker_lines.append(f'Environment="HTTPS_PROXY={quote_double(proxy["https_proxy"])}"')
-            docker_lines.append(f'Environment="https_proxy={quote_double(proxy["https_proxy"])}"')
+            docker_lines.append(
+                f'Environment="HTTPS_PROXY={quote_double(proxy["https_proxy"])}"'
+            )
+            docker_lines.append(
+                f'Environment="https_proxy={quote_double(proxy["https_proxy"])}"'
+            )
         if proxy.get("no_proxy"):
-            docker_lines.append(f'Environment="NO_PROXY={quote_double(proxy["no_proxy"])}"')
-            docker_lines.append(f'Environment="no_proxy={quote_double(proxy["no_proxy"])}"')
+            docker_lines.append(
+                f'Environment="NO_PROXY={quote_double(proxy["no_proxy"])}"'
+            )
+            docker_lines.append(
+                f'Environment="no_proxy={quote_double(proxy["no_proxy"])}"'
+            )
         if len(docker_lines) > 1:
-            PROXY_DOCKER_CONF.write_text("\n".join(docker_lines) + "\n", encoding="utf-8")
+            PROXY_DOCKER_CONF.write_text(
+                "\n".join(docker_lines) + "\n", encoding="utf-8"
+            )
         elif PROXY_DOCKER_CONF.exists():
             PROXY_DOCKER_CONF.unlink()
         run(["systemctl", "daemon-reload"], timeout=15)
@@ -2054,13 +2771,20 @@ def save_proxy(data):
             PROXY_NPM.unlink()
     if targets.get("git"):
         git_lines = ["[http]"]
-        git_proxy = proxy.get("http_proxy") or proxy.get("https_proxy") or proxy.get("socks_proxy") or ""
+        git_proxy = (
+            proxy.get("http_proxy")
+            or proxy.get("https_proxy")
+            or proxy.get("socks_proxy")
+            or ""
+        )
         if git_proxy:
             git_lines.append(f"\tproxy = {git_proxy}")
         if proxy.get("https_proxy"):
             git_lines.append(f"\tsslProxy = {proxy['https_proxy']}")
         if proxy.get("no_proxy"):
-            no_proxy_list = ",".join(item.strip() for item in proxy["no_proxy"].split(",") if item.strip())
+            no_proxy_list = ",".join(
+                item.strip() for item in proxy["no_proxy"].split(",") if item.strip()
+            )
             if no_proxy_list:
                 git_lines.append(f"\tnoProxy = {no_proxy_list}")
         if len(git_lines) > 1:
@@ -2112,9 +2836,23 @@ def save_identity(data):
         chattr(path, "+i")
     results = []
     if data.get("apply") and shutil_which("systemctl"):
-        results.append(run(["systemctl", "restart", "sysinfo_service.service", "trim_main.service"], timeout=30))
+        results.append(
+            run(
+                [
+                    "systemctl",
+                    "restart",
+                    "sysinfo_service.service",
+                    "trim_main.service",
+                ],
+                timeout=30,
+            )
+        )
     if results:
-        errors = [f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}' for r in results if r.get("rc") != 0]
+        errors = [
+            f'{r["cmd"]}: {r["stderr"] or r["stdout"] or "failed"}'
+            for r in results
+            if r.get("rc") != 0
+        ]
         if errors:
             raise RuntimeError("; ".join(errors))
     return {"identity": read_identity(), "results": results}
@@ -2122,7 +2860,11 @@ def save_identity(data):
 
 def read_identity():
     path = PATHS["device_id"]
-    return {"device_id": read_text(path).strip(), "backup": read_text(str(path) + ".bak").strip(), "backup_exists": Path(str(path) + ".bak").exists()}
+    return {
+        "device_id": read_text(path).strip(),
+        "backup": read_text(str(path) + ".bak").strip(),
+        "backup_exists": Path(str(path) + ".bak").exists(),
+    }
 
 
 def read_device():
@@ -2160,7 +2902,10 @@ def read_device():
                 class_id = ""
                 desc = line
                 vendor_device = ""
-                match = re.match(r"^([0-9a-f:.]+)\s+(.+?)\s*\[([0-9a-f]{4})\]\s*:\s*(.+?)\s*\[([0-9a-f]{4}:[0-9a-f]{4})\]\s*(?:\(rev\s+\S+\))?\s*$", line)
+                match = re.match(
+                    r"^([0-9a-f:.]+)\s+(.+?)\s*\[([0-9a-f]{4})\]\s*:\s*(.+?)\s*\[([0-9a-f]{4}:[0-9a-f]{4})\]\s*(?:\(rev\s+\S+\))?\s*$",
+                    line,
+                )
                 if match:
                     slot = match.group(1)
                     cls = match.group(2).strip()
@@ -2168,7 +2913,9 @@ def read_device():
                     vendor_device = match.group(5)
                     desc = match.group(4).strip()
                 else:
-                    match2 = re.match(r"^([0-9a-f:.]+)\s+(.+?)\s*\[([0-9a-f]{4})\]\s*:\s*(.+)$", line)
+                    match2 = re.match(
+                        r"^([0-9a-f:.]+)\s+(.+?)\s*\[([0-9a-f]{4})\]\s*:\s*(.+)$", line
+                    )
                     if match2:
                         slot = match2.group(1)
                         cls = match2.group(2).strip()
@@ -2180,7 +2927,16 @@ def read_device():
                             slot = match3.group(1)
                             desc = match3.group(2).strip()
                 driver = pci_driver_map.get(slot, "")
-                pci.append({"slot": slot, "class": cls, "class_id": class_id, "device_id": vendor_device, "description": desc, "driver": driver})
+                pci.append(
+                    {
+                        "slot": slot,
+                        "class": cls,
+                        "class_id": class_id,
+                        "device_id": vendor_device,
+                        "description": desc,
+                        "driver": driver,
+                    }
+                )
 
     usb = []
     usb_sysfs_drivers = {}
@@ -2230,14 +2986,25 @@ def read_device():
                 device = ""
                 id_vendor = ""
                 desc = line
-                match = re.match(r"^Bus\s+(\d+)\s+Device\s+(\d+):\s+ID\s+([0-9a-f]{4}:[0-9a-f]{4})\s*(.*)$", line)
+                match = re.match(
+                    r"^Bus\s+(\d+)\s+Device\s+(\d+):\s+ID\s+([0-9a-f]{4}:[0-9a-f]{4})\s*(.*)$",
+                    line,
+                )
                 if match:
                     bus = match.group(1)
                     device = match.group(2)
                     id_vendor = match.group(3)
                     desc = match.group(4).strip()
                 driver = usb_sysfs_drivers.get(id_vendor, "")
-                usb.append({"bus": bus, "device": device, "id": id_vendor, "description": desc, "driver": driver})
+                usb.append(
+                    {
+                        "bus": bus,
+                        "device": device,
+                        "id": id_vendor,
+                        "description": desc,
+                        "driver": driver,
+                    }
+                )
 
     return {"pci": pci, "usb": usb}
 
@@ -2264,25 +3031,27 @@ def parse_ss_output(text, proto):
         process_name = ""
         process_pid = ""
         if process:
-            pid_match = re.search(r'pid=(\d+)', process)
+            pid_match = re.search(r"pid=(\d+)", process)
             name_match = re.search(r'\("([^"]+)"', process)
             if pid_match:
                 process_pid = pid_match.group(1)
             if name_match:
                 process_name = name_match.group(1)
-        entries.append({
-            "proto": proto,
-            "state": state_val,
-            "local_address": local_addr,
-            "addr": addr,
-            "port": port,
-            "peer_address": peer_addr,
-            "process": process,
-            "process_name": process_name,
-            "process_pid": process_pid,
-            "recv_q": recv_q,
-            "send_q": send_q,
-        })
+        entries.append(
+            {
+                "proto": proto,
+                "state": state_val,
+                "local_address": local_addr,
+                "addr": addr,
+                "port": port,
+                "peer_address": peer_addr,
+                "process": process,
+                "process_name": process_name,
+                "process_pid": process_pid,
+                "recv_q": recv_q,
+                "send_q": send_q,
+            }
+        )
     return entries
 
 
@@ -2306,7 +3075,9 @@ def read_port():
     return {"tcp": tcp, "udp": udp}
 
 
-def diag_stream_start(target, tool, count=4, server=None, ipv6=False):
+def diag_stream_start(
+    target, tool, count=4, server=None, ipv6=False
+) -> tuple[subprocess.Popen | None, str]:
     if tool == "ping":
         if ipv6:
             if shutil_which("ping6"):
@@ -2370,7 +3141,9 @@ def diag_stream_start(target, tool, count=4, server=None, ipv6=False):
     else:
         return None, "unknown tool"
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+        )
         return proc, ""
     except Exception as exc:
         return None, str(exc)
@@ -2446,7 +3219,8 @@ def dispatch():
                 except Exception:
                     pass
                 try:
-                    _diag_proc.stdout.close()
+                    if _diag_proc.stdout:
+                        _diag_proc.stdout.close()
                 except Exception:
                     pass
             _diag_proc = None
@@ -2454,9 +3228,12 @@ def dispatch():
         if err:
             json_response({"ok": False, "message": err}, 400)
             return
+        assert proc is not None
+        assert proc.stdout is not None
         with _diag_lock:
             _diag_proc = proc
         wfile = sse_response()
+        assert wfile is not None
         try:
             for line in proc.stdout:
                 sse_send(wfile, "data", {"line": line.rstrip("\n")})
@@ -2469,7 +3246,8 @@ def dispatch():
             except Exception:
                 pass
         finally:
-            proc.stdout.close()
+            if proc.stdout:
+                proc.stdout.close()
             try:
                 wfile.close()
             except Exception:
@@ -2487,7 +3265,8 @@ def dispatch():
                 except Exception:
                     stopped = True
                 try:
-                    _diag_proc.stdout.close()
+                    if _diag_proc.stdout:
+                        _diag_proc.stdout.close()
                 except Exception:
                     pass
                 _diag_proc = None
@@ -2504,7 +3283,9 @@ def main():
     args = parser.parse_args()
     if os.path.exists(args.unix_socket):
         os.unlink(args.unix_socket)
-    server = ThreadingUnixHTTPServer(args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root)
+    server = ThreadingUnixHTTPServer(
+        args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root
+    )
 
     def shutdown(_signum, _frame):
         server.server_close()

@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import json
 import mimetypes
@@ -117,10 +124,13 @@ def request_context(method, query="", headers=None, body=b"", handler=None):
 
 
 def current_request():
-    return getattr(REQUEST_CONTEXT, "value", None)
+    return getattr(REQUEST_CONTEXT, "value", {})
 
 
-class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+class ThreadingUnixHTTPServer(
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
+):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -129,10 +139,11 @@ class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStre
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -150,21 +161,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self.route()
 
-    def log_message(self, fmt, *args):
+    def log_message(self, format, *args):
         sys.stdout.write(
             "%s - - [%s] %s\n"
-            % (self.client_address, self.log_date_time_string(), fmt % args)
+            % (self.client_address, self.log_date_time_string(), format % args)
         )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            location = self.server.base_path + "/"
-            if parsed.query:
-                location += "?" + parsed.query
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", location)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
@@ -186,28 +199,25 @@ class Handler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
-        content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        content_type = (
+            mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        )
         if content_type.startswith("text/") or content_type in {
             "application/javascript",
             "application/json",
         }:
             content_type = f"{content_type}; charset=utf-8"
-        size = target.stat().st_size
+        data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(size))
+        self.send_header("Content-Length", str(len(data)))
         self.send_header(
             "Cache-Control",
             "no-store" if target.name == "index.html" else "public, max-age=60",
         )
         self.end_headers()
         if self.command != "HEAD":
-            with target.open("rb") as handle:
-                while True:
-                    chunk = handle.read(1024 * 256)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
+            self.wfile.write(data)
 
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
@@ -258,10 +268,12 @@ def normalize_status(status):
 
 
 def json_response(payload, status=200):
-    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
     code, _status_text = normalize_status(status)
     request = current_request()
-    handler = request.get("handler") if request else None
+    handler = request.get("handler", None)
     if handler is not None:
         handler.send_response(code)
         handler.send_header("Content-Type", "application/json; charset=utf-8")
@@ -277,7 +289,7 @@ def json_response(payload, status=200):
 
 def request_body():
     request = current_request()
-    if request:
+    if request != {}:
         method = request.get("method", "GET").upper()
         body = request.get("body", b"") or b""
         query_string = request.get("query", "") or ""
@@ -304,15 +316,13 @@ def api_query_action(query):
 
 def query_value(name, default=""):
     request = current_request()
-    parsed = urllib.parse.parse_qs(
-        (request or {}).get("query", "") or "", keep_blank_values=True
-    )
+    parsed = urllib.parse.parse_qs(request.get("query", ""), keep_blank_values=True)
     return (parsed.get(name) or [default])[-1]
 
 
 def send_binary_response(data, content_type, status=200):
     request = current_request()
-    handler = request.get("handler") if request else None
+    handler = request.get("handler", None)
     if handler is None:
         return
     code, _status_text = normalize_status(status)
@@ -327,7 +337,21 @@ def send_binary_response(data, content_type, status=200):
 
 def run_sql(sql):
     proc = subprocess.run(
-        ["psql", "-U", DB_USER, "-d", DB_NAME, "-X", "-v", "ON_ERROR_STOP=1", "-q", "-t", "-A", "-c", sql],
+        [
+            "psql",
+            "-U",
+            DB_USER,
+            "-d",
+            DB_NAME,
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-q",
+            "-t",
+            "-A",
+            "-c",
+            sql,
+        ],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -374,7 +398,11 @@ def text_array_sql(value):
         try:
             items = json.loads(text)
             if isinstance(items, list):
-                text = "{" + ",".join(str(item).replace('"', '\\"') for item in items) + "}"
+                text = (
+                    "{"
+                    + ",".join(str(item).replace('"', '\\"') for item in items)
+                    + "}"
+                )
         except Exception:
             text = "{}"
     return f"{sql_quote(text)}::text[]"
@@ -429,7 +457,7 @@ def read_run_as(app):
         data = json.loads(target.read_text(encoding="utf-8", errors="replace") or "{}")
     except Exception:
         return "root"
-    run_as = ((data.get("defaults") or {}).get("run-as") or "root")
+    run_as = (data.get("defaults") or {}).get("run-as") or "root"
     return "package" if run_as == "package" else "root"
 
 
@@ -438,7 +466,11 @@ def write_run_as(app_id, run_as):
     if not target:
         raise RuntimeError("missing app path for privilege")
     try:
-        data = json.loads(target.read_text(encoding="utf-8") or "{}") if target.is_file() else {}
+        data = (
+            json.loads(target.read_text(encoding="utf-8") or "{}")
+            if target.is_file()
+            else {}
+        )
     except Exception:
         data = {}
     if not isinstance(data, dict):
@@ -449,7 +481,9 @@ def write_run_as(app_id, run_as):
         data["defaults"] = defaults
     defaults["run-as"] = "package" if run_as == "package" else "root"
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    target.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def header_value(headers, name):
@@ -461,8 +495,8 @@ def header_value(headers, name):
 
 
 def current_auth_token():
-    request = current_request() or {}
-    headers = request.get("headers") or {}
+    request = current_request()
+    headers = request.get("headers", {})
     auth = header_value(headers, "Authorization") or os.environ.get("Authorization", "")
     if isinstance(auth, str) and auth.lower().startswith("trim "):
         return auth.split(None, 1)[1].strip()
@@ -490,7 +524,7 @@ def decode_chunked(data):
         index = line_end + 2
         if size == 0:
             break
-        output.extend(data[index:index + size])
+        output.extend(data[index : index + size])
         index += size + 2
     return bytes(output)
 
@@ -512,10 +546,15 @@ def app_center_socket_request(method, path, payload=None, timeout=20):
     ]
     if payload is not None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers.extend(["Content-Type: application/json", f"Content-Length: {len(body)}"])
+        headers.extend(
+            ["Content-Type: application/json", f"Content-Length: {len(body)}"]
+        )
 
     request = ("\r\n".join(headers) + "\r\n\r\n").encode("utf-8") + body
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    with socket.socket(
+        socket.AF_UNIX,  # pyright: ignore[reportAttributeAccessIssue]
+        socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
+    ) as client:
         client.settimeout(timeout)
         client.connect(APP_CENTER_SOCKET)
         client.sendall(request)
@@ -529,7 +568,9 @@ def app_center_socket_request(method, path, payload=None, timeout=20):
     raw = b"".join(chunks)
     header, _, response_body = raw.partition(b"\r\n\r\n")
     header_text = header.decode("iso-8859-1", "replace")
-    status_line = header.splitlines()[0].decode("iso-8859-1", "replace") if header else ""
+    status_line = (
+        header.splitlines()[0].decode("iso-8859-1", "replace") if header else ""
+    )
     status_code = int(status_line.split()[1]) if len(status_line.split()) > 1 else 0
     if "transfer-encoding: chunked" in header_text.lower():
         response_body = decode_chunked(response_body)
@@ -676,7 +717,9 @@ def save_child(table, columns, item, app_id):
     allowed = column_map(columns)
     values = {key: item.get(key) for key in allowed if key in item}
     if item.get("_delete") and item.get("id"):
-        run_sql(f"DELETE FROM {table} WHERE id={int(item['id'])} AND app_id={int(app_id)}")
+        run_sql(
+            f"DELETE FROM {table} WHERE id={int(item['id'])} AND app_id={int(app_id)}"
+        )
         return
     if item.get("id"):
         sets = [

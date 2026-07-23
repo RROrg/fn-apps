@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import json
 import mimetypes
@@ -36,10 +43,13 @@ class ResponseDone(Exception):
 
 
 def current_request():
-    return getattr(REQUEST_CONTEXT, "value", None)
+    return getattr(REQUEST_CONTEXT, "value", {})
 
 
-class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+class ThreadingUnixHTTPServer(
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
+):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -48,7 +58,7 @@ class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStre
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 def ensure_data_dir():
@@ -61,7 +71,15 @@ def command_exists(name):
 
 def run_cmd(args, timeout=None, input_text=None, env_override=None):
     try:
-        proc = subprocess.run(args, input=input_text, capture_output=True, text=True, timeout=timeout, check=False, env=env_override)
+        proc = subprocess.run(
+            args,
+            input=input_text,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+            env=env_override,
+        )
         return proc.returncode, proc.stdout, proc.stderr
     except FileNotFoundError:
         return 127, "", f"{args[0]} not found"
@@ -70,7 +88,9 @@ def run_cmd(args, timeout=None, input_text=None, env_override=None):
 
 
 def run_ok(args, timeout=None, input_text=None, env_override=None):
-    rc, stdout, stderr = run_cmd(args, timeout=timeout, input_text=input_text, env_override=env_override)
+    rc, stdout, stderr = run_cmd(
+        args, timeout=timeout, input_text=input_text, env_override=env_override
+    )
     return rc == 0, stdout, stderr
 
 
@@ -119,9 +139,11 @@ def write_shell_state(path, mapping):
 
 def http_write(payload):
     request = current_request()
-    handler = request.get("handler") if request else None
+    handler = request.get("handler", None)
     if handler is not None:
-        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
+            "utf-8"
+        )
         handler.send_response(HTTPStatus.OK)
         handler.send_header("Content-Type", "application/json; charset=utf-8")
         handler.send_header("Cache-Control", "no-store")
@@ -130,7 +152,9 @@ def http_write(payload):
         if handler.command != "HEAD":
             handler.wfile.write(body)
         raise ResponseDone()
-    sys.stdout.write("Status: 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\n\r\n")
+    sys.stdout.write(
+        "Status: 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\n\r\n"
+    )
     sys.stdout.write(json.dumps(payload, ensure_ascii=False))
     sys.stdout.write("\n")
     raise SystemExit(0)
@@ -138,9 +162,9 @@ def http_write(payload):
 
 def first_query_value(name):
     request = current_request()
-    query = request.get("query") if request else QUERY
-    values = query.get(name)
-    return values[0] if values else ""
+    query = request.get("query", QUERY)
+    values = query.get(name, [""])
+    return values[0]
 
 
 def ui_lang():
@@ -313,7 +337,11 @@ def humanize_connect_error(dbus_err, btctl_err):
     translated = translate_bluez_error(combined)
     if translated != combined:
         return translated
-    if "page-timeout" in combined or "timed out" in combined.lower() or "timeout" in combined.lower():
+    if (
+        "page-timeout" in combined
+        or "timed out" in combined.lower()
+        or "timeout" in combined.lower()
+    ):
         return "device not responding, may be offline or out of range"
     if "busy" in combined.lower() or "InProgress" in combined:
         return "connection busy, please retry later"
@@ -331,7 +359,11 @@ def humanize_pair_error(dbus_err, btctl_err):
     translated = translate_bluez_error(combined)
     if translated != combined:
         return translated
-    if "page-timeout" in combined or "timed out" in combined.lower() or "timeout" in combined.lower():
+    if (
+        "page-timeout" in combined
+        or "timed out" in combined.lower()
+        or "timeout" in combined.lower()
+    ):
         return "device not responding, may be offline or out of range"
     if "Authentication" in combined:
         return "authentication failed, please retry"
@@ -343,7 +375,13 @@ def humanize_pair_error(dbus_err, btctl_err):
 
 
 def error_response(http_status, message):
-    http_write({"ok": False, "error": sanitize_text(localize_msg(message or "")), "http_status": http_status})
+    http_write(
+        {
+            "ok": False,
+            "error": sanitize_text(localize_msg(message or "")),
+            "http_status": http_status,
+        }
+    )
 
 
 def ok_response(payload=None):
@@ -355,8 +393,8 @@ def ok_response(payload=None):
 
 def parse_form_body():
     request = current_request()
-    if request:
-        return request.get("body") or {}
+    if request != {}:
+        return request.get("body", {})
     method = (os.environ.get("REQUEST_METHOD") or "GET").upper()
     if method != "POST":
         return {}
@@ -372,9 +410,9 @@ def parse_form_body():
 
 def first_form_value(name):
     request = current_request()
-    body = request.get("body") if request else BODY
-    values = body.get(name)
-    return values[0] if values else ""
+    body = request.get("body", BODY)
+    values = body.get(name, [""])
+    return values[0]
 
 
 def is_valid_bdaddr(addr):
@@ -412,7 +450,9 @@ def parse_btctl_devices(output):
             devices.append(current)
             continue
         if current:
-            m = re.match(r"(Paired|Trusted|Connected|Blocked):\s*(yes|no)", line, re.IGNORECASE)
+            m = re.match(
+                r"(Paired|Trusted|Connected|Blocked):\s*(yes|no)", line, re.IGNORECASE
+            )
             if m:
                 current[m.group(1).lower()] = m.group(2).lower() == "yes"
                 continue
@@ -441,7 +481,16 @@ def get_adapter_info():
     rc, stdout, _ = btctl_exec(["show"], timeout=10)
     if rc != 0 and not stdout.strip():
         return None
-    info = {"address": "", "name": "", "alias": "", "powered": False, "discoverable": False, "pairable": False, "discovering": False, "class": ""}
+    info = {
+        "address": "",
+        "name": "",
+        "alias": "",
+        "powered": False,
+        "discoverable": False,
+        "pairable": False,
+        "discovering": False,
+        "class": "",
+    }
     for line in stdout.splitlines():
         line = line.strip()
         m = re.match(r"Controller\s+([0-9A-Fa-f:]{17})\s+(.*)", line)
@@ -502,7 +551,23 @@ def classify_device_icon(device):
     cod_icon = classify_cod_icon(device.get("class", ""))
     if cod_icon:
         return cod_icon
-    if any(kw in name for kw in ["audio", "headphone", "speaker", "earphone", "headset", "airpods", "airpod", "freebuds", "jbl", "bose", "sony", "marshall"]):
+    if any(
+        kw in name
+        for kw in [
+            "audio",
+            "headphone",
+            "speaker",
+            "earphone",
+            "headset",
+            "airpods",
+            "airpod",
+            "freebuds",
+            "jbl",
+            "bose",
+            "sony",
+            "marshall",
+        ]
+    ):
         return "audio-headset"
     if "keyboard" in name:
         return "input-keyboard"
@@ -518,7 +583,17 @@ def classify_device_icon(device):
         return "printer"
     if "camera" in name:
         return "camera-photo"
-    if any(kw in name for kw in ["gamepad", "controller", "joystick", "xbox", "playstation", "dualsense"]):
+    if any(
+        kw in name
+        for kw in [
+            "gamepad",
+            "controller",
+            "joystick",
+            "xbox",
+            "playstation",
+            "dualsense",
+        ]
+    ):
         return "input-gaming"
     return ""
 
@@ -530,15 +605,23 @@ def classify_cod_icon(cod_str):
         cod = int(cod_str, 16)
     except (ValueError, TypeError):
         return ""
-    major_service = (cod >> 13) & 0x1f
-    major_class = (cod >> 8) & 0x1f
-    minor_class = (cod >> 2) & 0x3f
+    major_service = (cod >> 13) & 0x1F
+    major_class = (cod >> 8) & 0x1F
+    minor_class = (cod >> 2) & 0x3F
     if major_class == 1:
         return "computer"
     if major_class == 2:
         return "phone"
     if major_class == 3:
-        return "input-keyboard" if minor_class == 0x10 else "input-mouse" if minor_class == 0x20 else "input-gaming" if minor_class == 0x30 else "input-keyboard"
+        return (
+            "input-keyboard"
+            if minor_class == 0x10
+            else (
+                "input-mouse"
+                if minor_class == 0x20
+                else "input-gaming" if minor_class == 0x30 else "input-keyboard"
+            )
+        )
     if major_class == 4:
         return "audio-headset"
     if major_class == 5:
@@ -553,9 +636,19 @@ def classify_cod_icon(cod_str):
 def classify_device_type(device):
     icon = classify_device_icon(device)
     type_map = {
-        "audio-headset": "audio", "audio-card": "audio", "audio-speakers": "audio", "audio-headphones": "audio",
-        "input-keyboard": "keyboard", "input-mouse": "mouse", "input-tablet": "tablet", "input-gaming": "gamepad",
-        "video-display": "display", "phone": "phone", "computer": "computer", "printer": "printer", "camera-photo": "camera",
+        "audio-headset": "audio",
+        "audio-card": "audio",
+        "audio-speakers": "audio",
+        "audio-headphones": "audio",
+        "input-keyboard": "keyboard",
+        "input-mouse": "mouse",
+        "input-tablet": "tablet",
+        "input-gaming": "gamepad",
+        "video-display": "display",
+        "phone": "phone",
+        "computer": "computer",
+        "printer": "printer",
+        "camera-photo": "camera",
     }
     return type_map.get(icon, "other")
 
@@ -566,13 +659,16 @@ def get_audio_env():
         del env["PULSE_SERVER"]
     if "PULSE_SERVER" not in env:
         system_socket = "/var/run/pulse/native"
-        user_socket = f"/run/user/{os.getuid()}/pulse/native"
+        user_socket = f"/run/user/{os.getuid()}/pulse/native"  # pyright: ignore[reportAttributeAccessIssue]
         if os.path.exists(system_socket):
             env["PULSE_SERVER"] = system_socket
         elif os.path.exists(user_socket):
             env["PULSE_SERVER"] = user_socket
     if "XDG_RUNTIME_DIR" not in env:
-        for d in [f"/run/user/{os.getuid()}", "/run/user/0"]:
+        for d in [
+            f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+            "/run/user/0",
+        ]:
             if os.path.isdir(d):
                 env["XDG_RUNTIME_DIR"] = d
                 break
@@ -582,7 +678,9 @@ def get_audio_env():
 def _pactl_available(audio_env=None):
     if not command_exists("pactl"):
         return False
-    ok, _, _ = run_ok(["pactl", "info"], timeout=5, env_override=audio_env or get_audio_env())
+    ok, _, _ = run_ok(
+        ["pactl", "info"], timeout=5, env_override=audio_env or get_audio_env()
+    )
     return ok
 
 
@@ -591,7 +689,11 @@ def ensure_audio_service():
     if _pactl_available(audio_env):
         return True
     if command_exists("pulseaudio"):
-        run_ok(["pulseaudio", "--start", "--log-target=stderr"], timeout=8, env_override=audio_env)
+        run_ok(
+            ["pulseaudio", "--start", "--log-target=stderr"],
+            timeout=8,
+            env_override=audio_env,
+        )
         for _ in range(20):
             audio_env = get_audio_env()
             if _pactl_available(audio_env):
@@ -605,7 +707,9 @@ def ensure_audio_service():
 
 
 def _load_pulse_module(module_name, audio_env):
-    ok, stdout, _ = run_ok(["pactl", "list", "short", "modules"], timeout=5, env_override=audio_env)
+    ok, stdout, _ = run_ok(
+        ["pactl", "list", "short", "modules"], timeout=5, env_override=audio_env
+    )
     if ok and module_name in stdout:
         return
     run_ok(["pactl", "load-module", module_name], timeout=5, env_override=audio_env)
@@ -652,7 +756,11 @@ def get_audio_devices():
             for line in stdout.splitlines():
                 m = re.match(r"\s*(\d+)\.\s+(.*)", line)
                 if m:
-                    entry = {"id": m.group(1), "name": m.group(2).strip(), "displayName": m.group(2).strip()}
+                    entry = {
+                        "id": m.group(1),
+                        "name": m.group(2).strip(),
+                        "displayName": m.group(2).strip(),
+                    }
                     if "Sink" in line or "output" in line.lower():
                         entry["type"] = "sink"
                         sinks.append(entry)
@@ -664,7 +772,11 @@ def get_audio_devices():
 
 def get_connected_audio_bt_devices():
     devices = get_paired_devices()
-    return [dev for dev in devices if dev.get("connected") and classify_device_type(dev) == "audio"]
+    return [
+        dev
+        for dev in devices
+        if dev.get("connected") and classify_device_type(dev) == "audio"
+    ]
 
 
 def handle_adapter_info():
@@ -700,12 +812,16 @@ def handle_adapter_discoverable():
         ensure_agent()
         rc, _, _ = btctl_exec(["discoverable on"], timeout=10)
         if rc != 0:
-            error_response("500 Internal Server Error", "adapter discoverable on failed")
+            error_response(
+                "500 Internal Server Error", "adapter discoverable on failed"
+            )
         ok_response()
     elif action == "off":
         rc, _, _ = btctl_exec(["discoverable off"], timeout=10)
         if rc != 0:
-            error_response("500 Internal Server Error", "adapter discoverable off failed")
+            error_response(
+                "500 Internal Server Error", "adapter discoverable off failed"
+            )
         ok_response()
     else:
         error_response("400 Bad Request", "missing action")
@@ -750,9 +866,13 @@ def dbus_call(dest, path, interface, method, timeout=10, args=None):
     if not command_exists("dbus-send"):
         return 1, "", "dbus-send not found"
     cmd = [
-        "dbus-send", "--system", "--print-reply",
-        "--type=method_call", f"--dest={dest}",
-        path, f"{interface}.{method}",
+        "dbus-send",
+        "--system",
+        "--print-reply",
+        "--type=method_call",
+        f"--dest={dest}",
+        path,
+        f"{interface}.{method}",
     ]
     if args:
         cmd.extend(args)
@@ -764,11 +884,15 @@ OBEX_AGENT_PATH = "/org/bluez/obex/auto_agent"
 
 def _unregister_obex_agent():
     try:
-        import dbus
-        xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-        bus = dbus.bus.BusConnection(f"unix:path={xdg}/bus")
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
+        xdg = os.environ.get(
+            "XDG_RUNTIME_DIR",
+            f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+        )
+        bus = _dbus.bus.BusConnection(f"unix:path={xdg}/bus")
         mgr_obj = bus.get_object("org.bluez.obex", "/org/bluez/obex")
-        mgr = dbus.Interface(mgr_obj, "org.bluez.obex.AgentManager1")
+        mgr = _dbus.Interface(mgr_obj, "org.bluez.obex.AgentManager1")
         try:
             mgr.UnregisterAgent(OBEX_AGENT_PATH)
         except Exception:
@@ -783,9 +907,13 @@ def _unregister_obex_agent():
 
 def _is_obex_agent_registered():
     try:
-        import dbus
-        xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-        bus = dbus.bus.BusConnection(f"unix:path={xdg}/bus")
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
+        xdg = os.environ.get(
+            "XDG_RUNTIME_DIR",
+            f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+        )
+        bus = _dbus.bus.BusConnection(f"unix:path={xdg}/bus")
         bus.get_object("org.bluez.obex", "/org/bluez/obex")
         try:
             bus.close()
@@ -798,10 +926,14 @@ def _is_obex_agent_registered():
     if not os.path.isfile(pid_file):
         rc, _, _ = run_cmd(["pgrep", "-f", "bt_agent.py"], timeout=3)
         if rc == 0:
-            print("_is_obex_agent_registered: no pid file but bt_agent.py running via pgrep", flush=True)
+            print(
+                "_is_obex_agent_registered: no pid file but bt_agent.py running via pgrep",
+                flush=True,
+            )
             return True
         print(f"_is_obex_agent_registered: no agent.pid file at {pid_file}", flush=True)
         return False
+    pid_str = ""
     try:
         with open(pid_file, "r") as f:
             pid_str = f.read().strip()
@@ -811,7 +943,9 @@ def _is_obex_agent_registered():
         pid = int(pid_str)
         os.kill(pid, 0)
     except (ProcessLookupError, ValueError, PermissionError, OSError) as e:
-        print(f"_is_obex_agent_registered: agent pid {pid_str} not alive: {e}", flush=True)
+        print(
+            f"_is_obex_agent_registered: agent pid {pid_str} not alive: {e}", flush=True
+        )
         return False
     return True
 
@@ -861,7 +995,10 @@ def ensure_agent():
         except OSError:
             pass
     agent_script = os.path.join(ROOT_DIR, "bt_agent.py")
-    print(f"ensure_agent: agent_script={agent_script} exists={os.path.isfile(agent_script)} DATA_DIR={DATA_DIR} pid_file={pid_file}", flush=True)
+    print(
+        f"ensure_agent: agent_script={agent_script} exists={os.path.isfile(agent_script)} DATA_DIR={DATA_DIR} pid_file={pid_file}",
+        flush=True,
+    )
     if not os.path.isfile(agent_script):
         if not command_exists("bluetoothctl"):
             print("ensure_agent: no bt_agent.py and no bluetoothctl", flush=True)
@@ -875,6 +1012,8 @@ def ensure_agent():
                 start_new_session=True,
             )
             commands = "agent NoInputNoOutput\ndefault-agent\n"
+            if proc.stdin is None:
+                return False
             proc.stdin.write(commands.encode())
             proc.stdin.flush()
         except Exception:
@@ -955,7 +1094,9 @@ def stop_scan_process():
                 except (ProcessLookupError, PermissionError, OSError):
                     pass
                 try:
-                    os.killpg(int(pid), signal.SIGTERM)
+                    os.killpg(  # pyright: ignore[reportAttributeAccessIssue]
+                        int(pid), signal.SIGTERM
+                    )
                 except (ProcessLookupError, PermissionError, OSError):
                     pass
         except (ValueError, OSError):
@@ -968,9 +1109,15 @@ def stop_scan_process():
         adapter_path = get_adapter_path()
         if adapter_path:
             run_cmd(
-                ["dbus-send", "--system", "--print-reply",
-                 "--type=method_call", "--dest=org.bluez",
-                 adapter_path, "org.bluez.Adapter1.StopDiscovery"],
+                [
+                    "dbus-send",
+                    "--system",
+                    "--print-reply",
+                    "--type=method_call",
+                    "--dest=org.bluez",
+                    adapter_path,
+                    "org.bluez.Adapter1.StopDiscovery",
+                ],
                 timeout=5,
             )
     btctl_exec(["scan off"], timeout=10)
@@ -981,9 +1128,15 @@ def get_rssi_map():
     if not command_exists("dbus-send"):
         return rssi_map
     rc, stdout, _ = run_cmd(
-        ["dbus-send", "--system", "--print-reply",
-         "--dest=org.bluez", "/",
-         "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"],
+        [
+            "dbus-send",
+            "--system",
+            "--print-reply",
+            "--dest=org.bluez",
+            "/",
+            "org.freedesktop.DBus.ObjectManager",
+            "GetManagedObjects",
+        ],
         timeout=10,
     )
     if rc != 0:
@@ -1043,7 +1196,8 @@ def is_device_connected(addr):
 def is_network_connected(addr):
     dev_path = get_device_path(addr)
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         dev_obj = bus.get_object("org.bluez", dev_path)
         props = _dbus.Interface(dev_obj, "org.freedesktop.DBus.Properties")
@@ -1089,7 +1243,8 @@ def network_connect(addr, timeout=20):
     if not dev_path:
         return 1, "device path not found"
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         dev_obj = bus.get_object("org.bluez", dev_path)
         props = _dbus.Interface(dev_obj, "org.freedesktop.DBus.Properties")
@@ -1126,7 +1281,14 @@ def network_connect(addr, timeout=20):
     except ImportError:
         last_err = ""
         for profile in ("nap", "panu", "gn"):
-            rc, stdout, stderr = dbus_call("org.bluez", dev_path, "org.bluez.Network1", "Connect", timeout=timeout, args=[f"string:{profile}"])
+            rc, stdout, stderr = dbus_call(
+                "org.bluez",
+                dev_path,
+                "org.bluez.Network1",
+                "Connect",
+                timeout=timeout,
+                args=[f"string:{profile}"],
+            )
             if rc == 0:
                 if wait_for_network_stable(addr):
                     return 0, sanitize_text(stdout)
@@ -1153,7 +1315,9 @@ def refresh_device_before_connect(addr, timeout=8):
         if is_device_connected(addr):
             return
         rc, stdout, _ = btctl_exec([f"info {addr}"], timeout=5)
-        if rc == 0 and re.search(r"^(RSSI|TxPower|ManufacturerData|ServiceData):", stdout, re.MULTILINE):
+        if rc == 0 and re.search(
+            r"^(RSSI|TxPower|ManufacturerData|ServiceData):", stdout, re.MULTILINE
+        ):
             return
         time.sleep(1)
 
@@ -1161,7 +1325,9 @@ def refresh_device_before_connect(addr, timeout=8):
 def handle_scan_start():
     ok, err = start_scan_process()
     if not ok:
-        error_response("500 Internal Server Error", f"scan failed to start: {sanitize_text(err)}")
+        error_response(
+            "500 Internal Server Error", f"scan failed to start: {sanitize_text(err)}"
+        )
     ok_response()
 
 
@@ -1239,7 +1405,8 @@ def dbus_pair(addr, timeout=120):
     if not dev_path:
         return 1, "device path not found"
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         device = _dbus.Interface(
             bus.get_object("org.bluez", dev_path),
@@ -1248,7 +1415,9 @@ def dbus_pair(addr, timeout=120):
         device.Pair(timeout=timeout)
         return 0, ""
     except ImportError:
-        rc, stdout, stderr = dbus_call("org.bluez", dev_path, "org.bluez.Device1", "Pair", timeout=timeout)
+        rc, stdout, stderr = dbus_call(
+            "org.bluez", dev_path, "org.bluez.Device1", "Pair", timeout=timeout
+        )
         if rc == 0:
             return 0, ""
         return 1, sanitize_text(stderr or stdout)
@@ -1261,14 +1430,18 @@ def dbus_pair(addr, timeout=120):
 
 def kill_btctl_processes():
     try:
-        subprocess.run(["pkill", "-f", "bluetoothctl"], capture_output=True, timeout=3, check=False)
+        subprocess.run(
+            ["pkill", "-f", "bluetoothctl"], capture_output=True, timeout=3, check=False
+        )
     except Exception:
         pass
 
 
 def kill_agent_processes():
     try:
-        subprocess.run(["pkill", "-f", "bt_agent.py"], capture_output=True, timeout=3, check=False)
+        subprocess.run(
+            ["pkill", "-f", "bt_agent.py"], capture_output=True, timeout=3, check=False
+        )
     except Exception:
         pass
     time.sleep(0.3)
@@ -1278,7 +1451,7 @@ def btctl_pair_interactive(addr, timeout=30):
     if not command_exists("bluetoothctl"):
         return 1, "", "bluetoothctl not found"
     try:
-        master, slave = pty.openpty()
+        master, slave = pty.openpty()  # type: ignore[attr-defined]
     except Exception:
         return btctl_pair_fallback(addr, timeout)
     try:
@@ -1308,6 +1481,7 @@ def btctl_pair_interactive(addr, timeout=30):
     start = time.time()
     while time.time() - start < timeout:
         import select as _select
+
         r, _, _ = _select.select([master], [], [], 0.5)
         if r:
             try:
@@ -1366,6 +1540,10 @@ def btctl_pair_fallback(addr, timeout=30):
         )
     except Exception as exc:
         return 1, "", str(exc)
+    if proc.stdin is None:
+        return 1, "", "stdin not available"
+    if proc.stdout is None:
+        return 1, "", "stdout not available"
     commands = "agent on\ndefault-agent\npair {}\n".format(addr)
     try:
         proc.stdin.write(commands)
@@ -1378,6 +1556,7 @@ def btctl_pair_fallback(addr, timeout=30):
     failed = False
     while time.time() - start < timeout:
         import select as _select
+
         r, _, _ = _select.select([proc.stdout], [], [], 0.5)
         if r:
             try:
@@ -1434,7 +1613,8 @@ def _trust_device(addr):
     if not dev_path:
         return
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         dev_obj = bus.get_object("org.bluez", dev_path)
         props = _dbus.Interface(dev_obj, "org.freedesktop.DBus.Properties")
@@ -1445,10 +1625,18 @@ def _trust_device(addr):
         print(f"_trust_device: dbus failed {exc}, trying dbus-send", flush=True)
         if command_exists("dbus-send"):
             run_cmd(
-                ["dbus-send", "--system", "--print-reply",
-                 "--type=method_call", "--dest=org.bluez",
-                 dev_path, "org.freedesktop.DBus.Properties.Set",
-                 "string:org.bluez.Device1", "string:Trusted", "variant:boolean:true"],
+                [
+                    "dbus-send",
+                    "--system",
+                    "--print-reply",
+                    "--type=method_call",
+                    "--dest=org.bluez",
+                    dev_path,
+                    "org.freedesktop.DBus.Properties.Set",
+                    "string:org.bluez.Device1",
+                    "string:Trusted",
+                    "variant:boolean:true",
+                ],
                 timeout=10,
             )
         elif command_exists("bluetoothctl"):
@@ -1470,7 +1658,10 @@ def handle_connect():
     rc2, stdout2, stderr2 = btctl_connect_interactive(addr, timeout=30)
     time.sleep(2)
     connected_now = is_device_connected(addr)
-    print(f"handle_connect: btctl rc={rc2} connected={connected_now} stdout={stdout2[:200] if stdout2 else ''} stderr={stderr2[:200] if stderr2 else ''}", flush=True)
+    print(
+        f"handle_connect: btctl rc={rc2} connected={connected_now} stdout={stdout2[:200] if stdout2 else ''} stderr={stderr2[:200] if stderr2 else ''}",
+        flush=True,
+    )
     if connected_now:
         _trust_device(addr)
         if wait_for_device_stable(addr):
@@ -1488,7 +1679,10 @@ def handle_connect():
     rc, err_msg = dbus_connect(addr, timeout=30)
     time.sleep(2)
     connected_now = is_device_connected(addr)
-    print(f"handle_connect: dbus_connect rc={rc} err={err_msg} connected={connected_now}", flush=True)
+    print(
+        f"handle_connect: dbus_connect rc={rc} err={err_msg} connected={connected_now}",
+        flush=True,
+    )
     if connected_now:
         _trust_device(addr)
         if wait_for_device_stable(addr):
@@ -1505,7 +1699,10 @@ def handle_connect():
     print(f"handle_connect: {addr} starting network_connect", flush=True)
     rc_net, net_msg = network_connect(addr, timeout=20)
     time.sleep(1)
-    print(f"handle_connect: network_connect rc={rc_net} msg={net_msg} connected={is_device_connected(addr)} network={is_network_connected(addr)}", flush=True)
+    print(
+        f"handle_connect: network_connect rc={rc_net} msg={net_msg} connected={is_device_connected(addr)} network={is_network_connected(addr)}",
+        flush=True,
+    )
     if rc_net == 0:
         if is_network_connected(addr) or is_device_connected(addr):
             _ensure_audio_discovery()
@@ -1525,7 +1722,10 @@ def handle_connect():
         rc_p, err_p = dbus_connect_profile(addr, uuid, timeout=15)
         time.sleep(1)
         connected_now = is_device_connected(addr)
-        print(f"handle_connect: ConnectProfile({uuid}) rc={rc_p} err={err_p} connected={connected_now}", flush=True)
+        print(
+            f"handle_connect: ConnectProfile({uuid}) rc={rc_p} err={err_p} connected={connected_now}",
+            flush=True,
+        )
         if connected_now or rc_p == 0:
             _trust_device(addr)
             _ensure_audio_discovery()
@@ -1540,7 +1740,11 @@ def handle_connect():
     human_msg = humanize_connect_error(last_err, "")
     if not human_msg:
         human_msg = "service profile not available"
-    status = "409 Conflict" if human_msg in ("service profile not available", "network connection dropped") else "500 Internal Server Error"
+    status = (
+        "409 Conflict"
+        if human_msg in ("service profile not available", "network connection dropped")
+        else "500 Internal Server Error"
+    )
     error_response(status, f"connect failed: {human_msg}")
 
 
@@ -1548,8 +1752,10 @@ def dbus_connect(addr, timeout=30):
     dev_path = get_device_path(addr)
     if not dev_path:
         return 1, "device path not found"
+    props = None
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         dev_obj = bus.get_object("org.bluez", dev_path)
         props = _dbus.Interface(dev_obj, "org.freedesktop.DBus.Properties")
@@ -1562,11 +1768,16 @@ def dbus_connect(addr, timeout=30):
         device.Connect(timeout=timeout)
         return 0, ""
     except ImportError:
-        rc, stdout, stderr = dbus_call("org.bluez", dev_path, "org.bluez.Device1", "Connect", timeout=timeout)
+        rc, stdout, stderr = dbus_call(
+            "org.bluez", dev_path, "org.bluez.Device1", "Connect", timeout=timeout
+        )
         if rc == 0:
             return 0, ""
         err_text = sanitize_text(stderr or stdout)
-        if "br-connection-profile-unavailable" in err_text or "profile-unavailable" in err_text.lower():
+        if (
+            "br-connection-profile-unavailable" in err_text
+            or "profile-unavailable" in err_text.lower()
+        ):
             time.sleep(3)
             if is_device_connected(addr):
                 return 0, ""
@@ -1577,20 +1788,26 @@ def dbus_connect(addr, timeout=30):
         err = str(exc)
         if "Already Connected" in err:
             return 0, ""
-        if "br-connection-profile-unavailable" in err or "Profile unavailable" in err or "profile-unavailable" in err.lower():
+        if (
+            "br-connection-profile-unavailable" in err
+            or "Profile unavailable" in err
+            or "profile-unavailable" in err.lower()
+        ):
             time.sleep(3)
+            if props is not None:
+                try:
+                    if bool(props.Get("org.bluez.Device1", "Connected")):
+                        return 0, ""
+                except Exception:
+                    pass
+            if is_device_connected(addr):
+                return 0, ""
+        if props is not None:
             try:
                 if bool(props.Get("org.bluez.Device1", "Connected")):
                     return 0, ""
             except Exception:
                 pass
-            if is_device_connected(addr):
-                return 0, ""
-        try:
-            if bool(props.Get("org.bluez.Device1", "Connected")):
-                return 0, ""
-        except Exception:
-            pass
         return 1, sanitize_text(err)
 
 
@@ -1599,14 +1816,22 @@ def dbus_connect_profile(addr, uuid, timeout=15):
     if not dev_path:
         return 1, "device path not found"
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         dev_obj = bus.get_object("org.bluez", dev_path)
         device = _dbus.Interface(dev_obj, "org.bluez.Device1")
         device.ConnectProfile(uuid, timeout=timeout)
         return 0, ""
     except ImportError:
-        rc, stdout, stderr = dbus_call("org.bluez", dev_path, "org.bluez.Device1", "ConnectProfile", timeout=timeout, args=[f"string:{uuid}"])
+        rc, stdout, stderr = dbus_call(
+            "org.bluez",
+            dev_path,
+            "org.bluez.Device1",
+            "ConnectProfile",
+            timeout=timeout,
+            args=[f"string:{uuid}"],
+        )
         if rc == 0:
             return 0, ""
         err_text = sanitize_text(stderr or stdout)
@@ -1617,7 +1842,10 @@ def dbus_connect_profile(addr, uuid, timeout=15):
         err = str(exc)
         if "Already Connected" in err or "Already Exists" in err:
             return 0, ""
-        if "br-connection-profile-unavailable" in err or "profile-unavailable" in err.lower():
+        if (
+            "br-connection-profile-unavailable" in err
+            or "profile-unavailable" in err.lower()
+        ):
             return 1, "profile not available"
         return 1, sanitize_text(err)
 
@@ -1626,7 +1854,7 @@ def btctl_connect_interactive(addr, timeout=20):
     if not command_exists("bluetoothctl"):
         return 1, "", "bluetoothctl not found"
     try:
-        master, slave = pty.openpty()
+        master, slave = pty.openpty()  # type: ignore[attr-defined]
     except Exception:
         return btctl_connect_fallback(addr, timeout)
     try:
@@ -1659,6 +1887,7 @@ def btctl_connect_interactive(addr, timeout=20):
     start = time.time()
     while time.time() - start < timeout:
         import select as _select
+
         r, _, _ = _select.select([master], [], [], 0.5)
         if r:
             try:
@@ -1667,7 +1896,11 @@ def btctl_connect_interactive(addr, timeout=20):
                     break
                 output_buf += data
                 text = output_buf.decode(errors="replace")
-                if "Confirm passkey" in text or "Request confirmation" in text or "Authorize service" in text:
+                if (
+                    "Confirm passkey" in text
+                    or "Request confirmation" in text
+                    or "Authorize service" in text
+                ):
                     try:
                         os.write(master, b"yes\n")
                     except Exception:
@@ -1721,6 +1954,10 @@ def btctl_connect_fallback(addr, timeout=20):
         )
     except Exception as exc:
         return 1, "", str(exc)
+    if proc.stdin is None:
+        return 1, "", "stdin not available"
+    if proc.stdout is None:
+        return 1, "", "stdout not available"
     commands = "agent on\ndefault-agent\nconnect {}\n".format(addr)
     try:
         proc.stdin.write(commands)
@@ -1733,6 +1970,7 @@ def btctl_connect_fallback(addr, timeout=20):
     failed = False
     while time.time() - start < timeout:
         import select as _select
+
         r, _, _ = _select.select([proc.stdout], [], [], 0.5)
         if r:
             try:
@@ -1742,7 +1980,11 @@ def btctl_connect_fallback(addr, timeout=20):
             if not line:
                 break
             output_lines.append(line.strip())
-            if "Confirm passkey" in line or "Request confirmation" in line or "Authorize service" in line:
+            if (
+                "Confirm passkey" in line
+                or "Request confirmation" in line
+                or "Authorize service" in line
+            ):
                 try:
                     proc.stdin.write("yes\n")
                     proc.stdin.flush()
@@ -1784,7 +2026,9 @@ def handle_disconnect():
     if not is_valid_bdaddr(addr):
         error_response("400 Bad Request", "invalid device address")
     dev_path = get_device_path(addr)
-    rc, stdout, stderr = dbus_call("org.bluez", dev_path, "org.bluez.Device1", "Disconnect", timeout=15)
+    rc, stdout, stderr = dbus_call(
+        "org.bluez", dev_path, "org.bluez.Device1", "Disconnect", timeout=15
+    )
     if rc != 0:
         btctl_exec([f"disconnect {addr}"], timeout=15)
     ok_response()
@@ -1796,10 +2040,15 @@ def handle_remove():
         error_response("400 Bad Request", "invalid device address")
     dev_path = get_device_path(addr)
     adapter_path = get_adapter_path()
+    rc = 0
     if adapter_path:
         rc, stdout, stderr = dbus_call(
-            "org.bluez", adapter_path, "org.bluez.Adapter1", "RemoveDevice",
-            timeout=15, args=[f"objpath:{dev_path}"],
+            "org.bluez",
+            adapter_path,
+            "org.bluez.Adapter1",
+            "RemoveDevice",
+            timeout=15,
+            args=[f"objpath:{dev_path}"],
         )
     if not adapter_path or rc != 0:
         btctl_exec([f"remove {addr}"], timeout=15)
@@ -1813,10 +2062,18 @@ def handle_trust():
     dev_path = get_device_path(addr)
     if command_exists("dbus-send"):
         run_cmd(
-            ["dbus-send", "--system", "--print-reply",
-             "--type=method_call", "--dest=org.bluez",
-             dev_path, "org.freedesktop.DBus.Properties.Set",
-             "string:org.bluez.Device1", "string:Trusted", "variant:boolean:true"],
+            [
+                "dbus-send",
+                "--system",
+                "--print-reply",
+                "--type=method_call",
+                "--dest=org.bluez",
+                dev_path,
+                "org.freedesktop.DBus.Properties.Set",
+                "string:org.bluez.Device1",
+                "string:Trusted",
+                "variant:boolean:true",
+            ],
             timeout=10,
         )
     else:
@@ -1831,10 +2088,18 @@ def handle_untrust():
     dev_path = get_device_path(addr)
     if command_exists("dbus-send"):
         run_cmd(
-            ["dbus-send", "--system", "--print-reply",
-             "--type=method_call", "--dest=org.bluez",
-             dev_path, "org.freedesktop.DBus.Properties.Set",
-             "string:org.bluez.Device1", "string:Trusted", "variant:boolean:false"],
+            [
+                "dbus-send",
+                "--system",
+                "--print-reply",
+                "--type=method_call",
+                "--dest=org.bluez",
+                dev_path,
+                "org.freedesktop.DBus.Properties.Set",
+                "string:org.bluez.Device1",
+                "string:Trusted",
+                "variant:boolean:false",
+            ],
             timeout=10,
         )
     else:
@@ -1855,11 +2120,24 @@ def handle_audio_status():
     default_sink = ""
     default_source = ""
     if audio_available and command_exists("pactl"):
-        _, sink_out, _ = run_ok(["pactl", "get-default-sink"], timeout=5, env_override=audio_env)
+        _, sink_out, _ = run_ok(
+            ["pactl", "get-default-sink"], timeout=5, env_override=audio_env
+        )
         default_sink = sink_out.strip()
-        _, src_out, _ = run_ok(["pactl", "get-default-source"], timeout=5, env_override=audio_env)
+        _, src_out, _ = run_ok(
+            ["pactl", "get-default-source"], timeout=5, env_override=audio_env
+        )
         default_source = src_out.strip()
-    ok_response({"sinks": sinks, "sources": sources, "bluetoothAudio": bt_audio, "defaultSink": default_sink, "defaultSource": default_source, "audioAvailable": audio_available})
+    ok_response(
+        {
+            "sinks": sinks,
+            "sources": sources,
+            "bluetoothAudio": bt_audio,
+            "defaultSink": default_sink,
+            "defaultSource": default_source,
+            "audioAvailable": audio_available,
+        }
+    )
 
 
 def handle_audio_connect():
@@ -1868,7 +2146,9 @@ def handle_audio_connect():
         error_response("400 Bad Request", "invalid device address")
     ensure_audio_service()
     dev_path = get_device_path(addr)
-    rc, _, _ = dbus_call("org.bluez", dev_path, "org.bluez.Device1", "Connect", timeout=20)
+    rc, _, _ = dbus_call(
+        "org.bluez", dev_path, "org.bluez.Device1", "Connect", timeout=20
+    )
     if rc != 0:
         btctl_exec([f"connect {addr}"], timeout=20)
     time.sleep(1)
@@ -1881,7 +2161,9 @@ def handle_audio_disconnect():
     if not is_valid_bdaddr(addr):
         error_response("400 Bad Request", "invalid device address")
     dev_path = get_device_path(addr)
-    rc, _, _ = dbus_call("org.bluez", dev_path, "org.bluez.Device1", "Disconnect", timeout=15)
+    rc, _, _ = dbus_call(
+        "org.bluez", dev_path, "org.bluez.Device1", "Disconnect", timeout=15
+    )
     if rc != 0:
         btctl_exec([f"disconnect {addr}"], timeout=15)
     ok_response()
@@ -1898,14 +2180,22 @@ def handle_audio_sink_set():
         found = any(s["name"] == sink_name for s in sinks_now)
         if not found:
             error_response("404 Not Found", f"sink not available: {sink_name}")
+        stderr = ""
         for attempt in range(3):
-            rc, _, stderr = run_ok(["pactl", "set-default-sink", sink_name], timeout=5, env_override=audio_env)
+            rc, _, stderr = run_ok(
+                ["pactl", "set-default-sink", sink_name],
+                timeout=5,
+                env_override=audio_env,
+            )
             if rc:
                 ok_response()
                 return
             if attempt < 2:
                 time.sleep(0.5)
-        error_response("500 Internal Server Error", f"set default sink failed: {sanitize_text(stderr)}")
+        error_response(
+            "500 Internal Server Error",
+            f"set default sink failed: {sanitize_text(stderr)}",
+        )
     elif command_exists("wpctl"):
         run_ok(["wpctl", "set-default", sink_name], timeout=5, env_override=audio_env)
     ok_response()
@@ -1922,14 +2212,22 @@ def handle_audio_source_set():
         found = any(s["name"] == source_name for s in sources_now)
         if not found:
             error_response("404 Not Found", f"source not available: {source_name}")
+        stderr = ""
         for attempt in range(3):
-            rc, _, stderr = run_ok(["pactl", "set-default-source", source_name], timeout=5, env_override=audio_env)
+            rc, _, stderr = run_ok(
+                ["pactl", "set-default-source", source_name],
+                timeout=5,
+                env_override=audio_env,
+            )
             if rc:
                 ok_response()
                 return
             if attempt < 2:
                 time.sleep(0.5)
-        error_response("500 Internal Server Error", f"set default source failed: {sanitize_text(stderr)}")
+        error_response(
+            "500 Internal Server Error",
+            f"set default source failed: {sanitize_text(stderr)}",
+        )
     elif command_exists("wpctl"):
         run_ok(["wpctl", "set-default", source_name], timeout=5, env_override=audio_env)
     ok_response()
@@ -1982,7 +2280,7 @@ def handle_send_file():
             break
     if not target:
         error_response("400 Bad Request", "device not found, please pair first")
-    if not target.get("connected"):
+    elif not target.get("connected"):
         rc_c, err_c = dbus_connect(addr, timeout=15)
         if rc_c != 0:
             human_msg = humanize_connect_error(err_c, "")
@@ -1993,11 +2291,31 @@ def handle_send_file():
     fname = os.path.basename(filepath)
     fsize = os.path.getsize(filepath)
     with _transfer_progress_lock:
-        _transfer_progress.update({"active": True, "direction": "send", "address": addr, "filename": fname, "size": fsize, "transferred": 0, "status": "sending"})
+        _transfer_progress.update(
+            {
+                "active": True,
+                "direction": "send",
+                "address": addr,
+                "filename": fname,
+                "size": fsize,
+                "transferred": 0,
+                "status": "sending",
+            }
+        )
     rc, out = _dbus_send_file(addr, filepath, timeout=90)
     if rc:
         with _transfer_progress_lock:
-            _transfer_progress.update({"active": False, "direction": "send", "address": addr, "filename": fname, "size": fsize, "transferred": fsize, "status": "complete"})
+            _transfer_progress.update(
+                {
+                    "active": False,
+                    "direction": "send",
+                    "address": addr,
+                    "filename": fname,
+                    "size": fsize,
+                    "transferred": fsize,
+                    "status": "complete",
+                }
+            )
         _add_transfer_record("send", addr, fname, fsize, "success")
         ok_response()
         return
@@ -2007,19 +2325,49 @@ def handle_send_file():
         rc2, out2 = obexctl_send_file(addr, filepath, timeout=90)
         if rc2:
             with _transfer_progress_lock:
-                _transfer_progress.update({"active": False, "direction": "send", "address": addr, "filename": fname, "size": fsize, "transferred": fsize, "status": "complete"})
+                _transfer_progress.update(
+                    {
+                        "active": False,
+                        "direction": "send",
+                        "address": addr,
+                        "filename": fname,
+                        "size": fsize,
+                        "transferred": fsize,
+                        "status": "complete",
+                    }
+                )
             _add_transfer_record("send", addr, fname, fsize, "success")
             ok_response()
             return
         human_msg = humanize_obex_error(sanitize_text(out2))
         with _transfer_progress_lock:
-            _transfer_progress.update({"active": False, "direction": "send", "address": addr, "filename": fname, "size": fsize, "transferred": 0, "status": "error"})
+            _transfer_progress.update(
+                {
+                    "active": False,
+                    "direction": "send",
+                    "address": addr,
+                    "filename": fname,
+                    "size": fsize,
+                    "transferred": 0,
+                    "status": "error",
+                }
+            )
         _add_transfer_record("send", addr, fname, fsize, "failed")
         error_response("500 Internal Server Error", f"send failed: {human_msg}")
         return
     human_msg = humanize_obex_error(sanitize_text(out))
     with _transfer_progress_lock:
-        _transfer_progress.update({"active": False, "direction": "send", "address": addr, "filename": fname, "size": fsize, "transferred": 0, "status": "error"})
+        _transfer_progress.update(
+            {
+                "active": False,
+                "direction": "send",
+                "address": addr,
+                "filename": fname,
+                "size": fsize,
+                "transferred": 0,
+                "status": "error",
+            }
+        )
     _add_transfer_record("send", addr, fname, fsize, "failed")
     error_response("500 Internal Server Error", f"send failed: {human_msg}")
 
@@ -2046,10 +2394,10 @@ def _obex_cleanup(client, session_path, bus):
 
 def _dbus_send_file(addr, filepath, timeout=60):
     try:
-        import dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
     except ImportError:
         return 0, "python-dbus not available"
-    xdg = f"/run/user/{os.getuid()}"
+    xdg = f"/run/user/{os.getuid()}"  # pyright: ignore[reportAttributeAccessIssue]
     env = os.environ.copy()
     env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={xdg}/bus"
     env["XDG_RUNTIME_DIR"] = xdg
@@ -2058,10 +2406,10 @@ def _dbus_send_file(addr, filepath, timeout=60):
     session_path = None
     for attempt in range(3):
         try:
-            bus = dbus.bus.BusConnection(f"unix:path={xdg}/bus")
+            bus = _dbus.bus.BusConnection(f"unix:path={xdg}/bus")
             obj = bus.get_object("org.bluez.obex", "/org/bluez/obex")
-            client = dbus.Interface(obj, "org.bluez.obex.Client1")
-            session_path = client.CreateSession(addr, {"Target": dbus.String("OPP")})
+            client = _dbus.Interface(obj, "org.bluez.obex.Client1")
+            session_path = client.CreateSession(addr, {"Target": _dbus.String("OPP")})
             break
         except Exception as exc:
             if bus:
@@ -2075,7 +2423,12 @@ def _dbus_send_file(addr, filepath, timeout=60):
                 if attempt == 0:
                     if command_exists("systemctl"):
                         try:
-                            subprocess.run(["systemctl", "--user", "restart", "obex"], env=env, timeout=5, capture_output=True)
+                            subprocess.run(
+                                ["systemctl", "--user", "restart", "obex"],
+                                env=env,
+                                timeout=5,
+                                capture_output=True,
+                            )
                         except Exception:
                             pass
                         time.sleep(2)
@@ -2086,15 +2439,21 @@ def _dbus_send_file(addr, filepath, timeout=60):
                     time.sleep(2)
                     if command_exists("systemctl"):
                         try:
-                            subprocess.run(["systemctl", "--user", "restart", "obex"], env=env, timeout=5, capture_output=True)
+                            subprocess.run(
+                                ["systemctl", "--user", "restart", "obex"],
+                                env=env,
+                                timeout=5,
+                                capture_output=True,
+                            )
                         except Exception:
                             pass
                         time.sleep(2)
                 continue
             return 0, f"OBEX session failed: {exc}"
+    assert bus is not None and session_path is not None
     try:
         session_obj = bus.get_object("org.bluez.obex", session_path)
-        push = dbus.Interface(session_obj, "org.bluez.obex.ObjectPush1")
+        push = _dbus.Interface(session_obj, "org.bluez.obex.ObjectPush1")
         transfer_path, props = push.SendFile(filepath)
     except Exception as exc:
         _obex_cleanup(client, session_path, bus)
@@ -2103,7 +2462,9 @@ def _dbus_send_file(addr, filepath, timeout=60):
     file_size = int(p.get("Size", 0))
     try:
         transfer_obj = bus.get_object("org.bluez.obex", transfer_path)
-        transfer_props = dbus.Interface(transfer_obj, "org.freedesktop.DBus.Properties")
+        transfer_props = _dbus.Interface(
+            transfer_obj, "org.freedesktop.DBus.Properties"
+        )
     except Exception as exc:
         _obex_cleanup(client, session_path, bus)
         return 0, f"Transfer monitoring failed: {exc}"
@@ -2112,12 +2473,16 @@ def _dbus_send_file(addr, filepath, timeout=60):
     while time.time() - start < timeout:
         try:
             status = str(transfer_props.Get("org.bluez.obex.Transfer1", "Status"))
-            transferred = int(transfer_props.Get("org.bluez.obex.Transfer1", "Transferred"))
+            transferred = int(
+                transfer_props.Get("org.bluez.obex.Transfer1", "Transferred")
+            )
         except Exception:
             time.sleep(2)
             try:
                 status = str(transfer_props.Get("org.bluez.obex.Transfer1", "Status"))
-                transferred = int(transfer_props.Get("org.bluez.obex.Transfer1", "Transferred"))
+                transferred = int(
+                    transfer_props.Get("org.bluez.obex.Transfer1", "Transferred")
+                )
             except Exception:
                 if file_size > 0 and transferred >= file_size * 0.9:
                     with _transfer_progress_lock:
@@ -2160,11 +2525,11 @@ def _dbus_send_file(addr, filepath, timeout=60):
 
 def obexctl_send_file(addr, filepath, timeout=60):
     try:
-        master, slave = pty.openpty()
+        master, slave = pty.openpty()  # type: ignore[attr-defined]
     except Exception:
         return 0, "pty not available"
     env = os.environ.copy()
-    xdg = f"/run/user/{os.getuid()}"
+    xdg = f"/run/user/{os.getuid()}"  # pyright: ignore[reportAttributeAccessIssue]
     if os.path.exists(f"{xdg}/bus"):
         env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={xdg}/bus"
         env["XDG_RUNTIME_DIR"] = xdg
@@ -2200,6 +2565,7 @@ def obexctl_send_file(addr, filepath, timeout=60):
     _obex_progress_re = re.compile(r"Transferred:\s*(\d+)", re.IGNORECASE)
     while time.time() - start < timeout:
         import select as _select
+
         r, _, _ = _select.select([master], [], [], 1)
         if r:
             try:
@@ -2216,7 +2582,11 @@ def obexctl_send_file(addr, filepath, timeout=60):
                         connect_sent = True
                     except Exception:
                         pass
-                if not connected and connect_sent and ("Connection successful" in text or "Connected: yes" in text):
+                if (
+                    not connected
+                    and connect_sent
+                    and ("Connection successful" in text or "Connected: yes" in text)
+                ):
                     connected = True
                     try:
                         os.write(master, f"send {filepath}\n".encode())
@@ -2228,7 +2598,9 @@ def obexctl_send_file(addr, filepath, timeout=60):
                         try:
                             last_transferred = int(progress_matches[-1])
                             with _transfer_progress_lock:
-                                _transfer_progress["transferred"] = min(last_transferred, fsize)
+                                _transfer_progress["transferred"] = min(
+                                    last_transferred, fsize
+                                )
                         except (ValueError, IndexError):
                             pass
                 if "Transfer successful" in text or "Transfer complete" in text:
@@ -2298,7 +2670,9 @@ def get_server_profiles():
         for line in stdout.splitlines():
             m = re.match(r"\s*UUID:\s+(.+?)\s+\(([0-9a-fA-F-]+)\)", line.strip())
             if m:
-                profiles.append({"name": m.group(1).strip(), "uuid": m.group(2).strip()})
+                profiles.append(
+                    {"name": m.group(1).strip(), "uuid": m.group(2).strip()}
+                )
     return profiles
 
 
@@ -2310,11 +2684,15 @@ def get_connected_to_us():
 def handle_role_get():
     role = get_adapter_role()
     info = get_adapter_info() or {}
-    ok_response({
-        "role": role,
-        "adapter": info,
-        "serverActive": role == "server" and info.get("discoverable", False) and info.get("pairable", False),
-    })
+    ok_response(
+        {
+            "role": role,
+            "adapter": info,
+            "serverActive": role == "server"
+            and info.get("discoverable", False)
+            and info.get("pairable", False),
+        }
+    )
 
 
 def handle_role_set():
@@ -2351,7 +2729,9 @@ def handle_server_alias():
         error_response("400 Bad Request", "server alias required")
     rc, _, stderr = btctl_exec([f"set-alias {alias}"], timeout=10)
     if rc != 0:
-        error_response("500 Internal Server Error", f"alias set failed: {sanitize_text(stderr)}")
+        error_response(
+            "500 Internal Server Error", f"alias set failed: {sanitize_text(stderr)}"
+        )
     ok_response()
 
 
@@ -2390,19 +2770,29 @@ def handle_status():
         connected_count = sum(1 for d in devices if d.get("connected"))
     obexd_running = run_cmd(["pgrep", "-x", "obexd"], timeout=3)[0] == 0
     obex_agent_ok = _is_obex_agent_registered() if obexd_running else False
-    ok_response({
-        "available": adapter is not None,
-        "powered": adapter.get("powered", False) if adapter else False,
-        "pairedCount": paired_count,
-        "connectedCount": connected_count,
-        "obexdRunning": obexd_running,
-        "obexAgentReady": obex_agent_ok,
-    })
+    ok_response(
+        {
+            "available": adapter is not None,
+            "powered": adapter.get("powered", False) if adapter else False,
+            "pairedCount": paired_count,
+            "connectedCount": connected_count,
+            "obexdRunning": obexd_running,
+            "obexAgentReady": obex_agent_ok,
+        }
+    )
 
 
 RECEIVE_DIR = DEFAULT_RECEIVE_DIR
 TRANSFER_HISTORY_FILE = os.path.join(DATA_DIR, "transfer_history.json")
-_transfer_progress = {"active": False, "direction": "", "address": "", "filename": "", "size": 0, "transferred": 0, "status": ""}
+_transfer_progress = {
+    "active": False,
+    "direction": "",
+    "address": "",
+    "filename": "",
+    "size": 0,
+    "transferred": 0,
+    "status": "",
+}
 _transfer_progress_lock = threading.Lock()
 
 
@@ -2410,9 +2800,13 @@ def _start_receive_monitor():
     def _monitor():
         while True:
             try:
-                import dbus
-                xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-                bus = dbus.bus.BusConnection(f"unix:path={xdg}/bus")
+                import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
+                xdg = os.environ.get(
+                    "XDG_RUNTIME_DIR",
+                    f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+                )
+                bus = _dbus.bus.BusConnection(f"unix:path={xdg}/bus")
 
                 def _on_properties_changed(interface, changed, invalidated, path):
                     if interface != "org.bluez.obex.Transfer1":
@@ -2428,12 +2822,27 @@ def _start_receive_monitor():
                                     fname = _transfer_progress.get("filename", "")
                                     fsize = _transfer_progress.get("size", 0)
                                     addr = _transfer_progress.get("address", "")
-                                    rec_status = "success" if status == "complete" else "failed"
-                                    _add_transfer_record("receive", addr, fname, fsize, rec_status)
-                                    _transfer_progress.update({"active": False, "status": "complete" if status == "complete" else "error"})
+                                    rec_status = (
+                                        "success" if status == "complete" else "failed"
+                                    )
+                                    _add_transfer_record(
+                                        "receive", addr, fname, fsize, rec_status
+                                    )
+                                    _transfer_progress.update(
+                                        {
+                                            "active": False,
+                                            "status": (
+                                                "complete"
+                                                if status == "complete"
+                                                else "error"
+                                            ),
+                                        }
+                                    )
                         if "Transferred" in changed:
                             if _transfer_progress.get("direction") != "send":
-                                _transfer_progress["transferred"] = int(changed["Transferred"])
+                                _transfer_progress["transferred"] = int(
+                                    changed["Transferred"]
+                                )
 
                 bus.add_signal_receiver(
                     _on_properties_changed,
@@ -2450,20 +2859,26 @@ def _start_receive_monitor():
                     addr = ""
                     try:
                         session_obj = bus.get_object("org.bluez.obex", session_path)
-                        session_props = dbus.Interface(session_obj, "org.freedesktop.DBus.Properties")
-                        addr = str(session_props.Get("org.bluez.obex.Session1", "Destination"))
+                        session_props = _dbus.Interface(
+                            session_obj, "org.freedesktop.DBus.Properties"
+                        )
+                        addr = str(
+                            session_props.Get("org.bluez.obex.Session1", "Destination")
+                        )
                     except Exception:
                         pass
                     with _transfer_progress_lock:
-                        _transfer_progress.update({
-                            "active": True,
-                            "direction": "receive",
-                            "address": addr,
-                            "filename": fname,
-                            "size": fsize,
-                            "transferred": 0,
-                            "status": "receiving",
-                        })
+                        _transfer_progress.update(
+                            {
+                                "active": True,
+                                "direction": "receive",
+                                "address": addr,
+                                "filename": fname,
+                                "size": fsize,
+                                "transferred": 0,
+                                "status": "receiving",
+                            }
+                        )
 
                 bus.add_signal_receiver(
                     _on_transfer_created,
@@ -2509,14 +2924,17 @@ def _save_transfer_history(history):
 
 def _add_transfer_record(direction, address, filename, size, status):
     history = _load_transfer_history()
-    history.insert(0, {
-        "direction": direction,
-        "address": address,
-        "filename": filename,
-        "size": size,
-        "status": status,
-        "time": int(time.time()),
-    })
+    history.insert(
+        0,
+        {
+            "direction": direction,
+            "address": address,
+            "filename": filename,
+            "size": size,
+            "status": status,
+            "time": int(time.time()),
+        },
+    )
     _save_transfer_history(history)
 
 
@@ -2542,7 +2960,9 @@ def ensure_obex_server():
     obex_override_dir = os.path.expanduser("~/.config/systemd/user/obex.service.d")
     os.makedirs(obex_override_dir, exist_ok=True)
     override_file = os.path.join(obex_override_dir, "override.conf")
-    override_content = "[Service]\nExecStart=\nExecStart=/usr/libexec/bluetooth/obexd -r {0} -a -n\n".format(RECEIVE_DIR)
+    override_content = "[Service]\nExecStart=\nExecStart=/usr/libexec/bluetooth/obexd -r {0} -a -n\n".format(
+        RECEIVE_DIR
+    )
     need_restart = False
     try:
         existing = ""
@@ -2556,24 +2976,46 @@ def ensure_obex_server():
     except OSError:
         need_restart = True
     if command_exists("systemctl"):
-        xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+        xdg = os.environ.get(
+            "XDG_RUNTIME_DIR",
+            f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+        )
         env = os.environ.copy()
         env["XDG_RUNTIME_DIR"] = xdg
         if need_restart:
             try:
-                subprocess.run(["systemctl", "--user", "daemon-reload"], env=env, timeout=5, capture_output=True)
+                subprocess.run(
+                    ["systemctl", "--user", "daemon-reload"],
+                    env=env,
+                    timeout=5,
+                    capture_output=True,
+                )
             except Exception:
                 pass
         try:
-            rc_check = subprocess.run(["systemctl", "--user", "is-active", "obex"], env=env, timeout=5, capture_output=True, text=True)
+            rc_check = subprocess.run(
+                ["systemctl", "--user", "is-active", "obex"],
+                env=env,
+                timeout=5,
+                capture_output=True,
+                text=True,
+            )
             if rc_check.stdout.strip() != "active" or need_restart:
-                subprocess.run(["systemctl", "--user", "restart", "obex"], env=env, timeout=5, capture_output=True)
+                subprocess.run(
+                    ["systemctl", "--user", "restart", "obex"],
+                    env=env,
+                    timeout=5,
+                    capture_output=True,
+                )
         except Exception:
             pass
     rc, _, _ = run_cmd(["pgrep", "-x", "obexd"], timeout=5)
     if rc != 0 and command_exists("obexd"):
         try:
-            xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+            xdg = os.environ.get(
+                "XDG_RUNTIME_DIR",
+                f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+            )
             obex_env = os.environ.copy()
             obex_env["XDG_RUNTIME_DIR"] = xdg
             obex_env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={xdg}/bus"
@@ -2593,9 +3035,13 @@ def ensure_obex_server():
         time.sleep(1)
     for _ in range(10):
         try:
-            import dbus
-            xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-            bus = dbus.bus.BusConnection(f"unix:path={xdg}/bus")
+            import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
+            xdg = os.environ.get(
+                "XDG_RUNTIME_DIR",
+                f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+            )
+            bus = _dbus.bus.BusConnection(f"unix:path={xdg}/bus")
             bus.get_object("org.bluez.obex", "/org/bluez/obex")
             try:
                 bus.close()
@@ -2612,11 +3058,19 @@ def ensure_obex_server():
 
 def stop_obex_server():
     if command_exists("systemctl"):
-        xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+        xdg = os.environ.get(
+            "XDG_RUNTIME_DIR",
+            f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
+        )
         env = os.environ.copy()
         env["XDG_RUNTIME_DIR"] = xdg
         try:
-            subprocess.run(["systemctl", "--user", "stop", "obex"], env=env, timeout=5, capture_output=True)
+            subprocess.run(
+                ["systemctl", "--user", "stop", "obex"],
+                env=env,
+                timeout=5,
+                capture_output=True,
+            )
         except Exception:
             pass
     elif command_exists("pkill"):
@@ -2630,17 +3084,23 @@ def handle_received_files():
         ok_response({"files": []})
         return
     files = []
-    for fname in sorted(os.listdir(RECEIVE_DIR), key=lambda f: os.path.getmtime(os.path.join(RECEIVE_DIR, f)), reverse=True):
+    for fname in sorted(
+        os.listdir(RECEIVE_DIR),
+        key=lambda f: os.path.getmtime(os.path.join(RECEIVE_DIR, f)),
+        reverse=True,
+    ):
         fpath = os.path.join(RECEIVE_DIR, fname)
         if not os.path.isfile(fpath):
             continue
         st = os.stat(fpath)
-        files.append({
-            "name": fname,
-            "size": st.st_size,
-            "time": int(st.st_mtime),
-            "path": fpath,
-        })
+        files.append(
+            {
+                "name": fname,
+                "size": st.st_size,
+                "time": int(st.st_mtime),
+                "path": fpath,
+            }
+        )
     ok_response({"files": files[:50]})
 
 
@@ -2758,7 +3218,10 @@ def get_tethering_clients():
                                     dhcp_leases[lease_mac] = lease_ip
         except Exception:
             pass
-        bt_addr = get_adapter_info().get("address", "").lower().replace(":", "")
+        adapter_info = get_adapter_info()
+        if not adapter_info:
+            return 0, []
+        bt_addr = adapter_info.get("address", "").lower().replace(":", "")
         bridge_rx_speed, bridge_tx_speed = _calc_traffic_speed(BRIDGE_NAME)
         clients = []
         seen_macs = set()
@@ -2774,23 +3237,65 @@ def get_tethering_clients():
                 for arp_mac, arp_ip in arp_table.items():
                     if arp_mac not in seen_macs:
                         seen_macs.add(arp_mac)
-                        clients.append({"interface": iface, "mac": arp_mac, "ip": arp_ip, "rxSpeed": round(bridge_rx_speed), "txSpeed": round(bridge_tx_speed)})
+                        clients.append(
+                            {
+                                "interface": iface,
+                                "mac": arp_mac,
+                                "ip": arp_ip,
+                                "rxSpeed": round(bridge_rx_speed),
+                                "txSpeed": round(bridge_tx_speed),
+                            }
+                        )
                 for lease_mac, lease_ip in dhcp_leases.items():
                     if lease_mac not in seen_macs:
                         seen_macs.add(lease_mac)
-                        clients.append({"interface": iface, "mac": lease_mac, "ip": lease_ip, "rxSpeed": round(bridge_rx_speed), "txSpeed": round(bridge_tx_speed)})
+                        clients.append(
+                            {
+                                "interface": iface,
+                                "mac": lease_mac,
+                                "ip": lease_ip,
+                                "rxSpeed": round(bridge_rx_speed),
+                                "txSpeed": round(bridge_tx_speed),
+                            }
+                        )
                 if not arp_table and not dhcp_leases:
-                    clients.append({"interface": iface, "mac": "", "ip": "", "rxSpeed": round(bridge_rx_speed), "txSpeed": round(bridge_tx_speed)})
+                    clients.append(
+                        {
+                            "interface": iface,
+                            "mac": "",
+                            "ip": "",
+                            "rxSpeed": round(bridge_rx_speed),
+                            "txSpeed": round(bridge_tx_speed),
+                        }
+                    )
             else:
                 iface_rx_speed, iface_tx_speed = _calc_traffic_speed(iface)
-                client_ip = arp_table.get(iface_mac, "") or dhcp_leases.get(iface_mac, "")
+                client_ip = arp_table.get(iface_mac, "") or dhcp_leases.get(
+                    iface_mac, ""
+                )
                 if iface_mac and iface_mac not in seen_macs:
                     seen_macs.add(iface_mac)
-                    clients.append({"interface": iface, "mac": iface_mac, "ip": client_ip, "rxSpeed": round(iface_rx_speed), "txSpeed": round(iface_tx_speed)})
+                    clients.append(
+                        {
+                            "interface": iface,
+                            "mac": iface_mac,
+                            "ip": client_ip,
+                            "rxSpeed": round(iface_rx_speed),
+                            "txSpeed": round(iface_tx_speed),
+                        }
+                    )
                 elif iface_mac in seen_macs:
                     continue
                 else:
-                    clients.append({"interface": iface, "mac": "", "ip": client_ip, "rxSpeed": round(iface_rx_speed), "txSpeed": round(iface_tx_speed)})
+                    clients.append(
+                        {
+                            "interface": iface,
+                            "mac": "",
+                            "ip": client_ip,
+                            "rxSpeed": round(iface_rx_speed),
+                            "txSpeed": round(iface_tx_speed),
+                        }
+                    )
         return len(interfaces), clients
     except OSError:
         return 0, []
@@ -2803,18 +3308,21 @@ def handle_tethering_status():
     if active and os.path.isfile(TETHER_STATE_FILE):
         st = load_shell_state(TETHER_STATE_FILE)
         bridge_ip = st.get("bridge_ip", BRIDGE_IP_DEFAULT)
-    ok_response({
-        "active": active,
-        "bridge": BRIDGE_NAME if active else "",
-        "ip": bridge_ip if active else "",
-        "clients": clients_count,
-        "clientList": clients,
-    })
+    ok_response(
+        {
+            "active": active,
+            "bridge": BRIDGE_NAME if active else "",
+            "ip": bridge_ip if active else "",
+            "clients": clients_count,
+            "clientList": clients,
+        }
+    )
 
 
 def ensure_nap_registered():
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         adapter_path = get_adapter_path()
         if not adapter_path:
@@ -2854,19 +3362,65 @@ def handle_tethering_start():
     inet_iface = get_internet_interface()
     if command_exists("iptables"):
         for _ in range(5):
-            rc, _, _ = run_cmd(["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=3)
+            rc, _, _ = run_cmd(
+                ["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"],
+                timeout=3,
+            )
             if rc != 0:
                 break
         for _ in range(5):
-            rc, _, _ = run_cmd(["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-o", inet_iface, "-j", "ACCEPT"], timeout=3)
+            rc, _, _ = run_cmd(
+                [
+                    "iptables",
+                    "-D",
+                    "FORWARD",
+                    "-i",
+                    BRIDGE_NAME,
+                    "-o",
+                    inet_iface,
+                    "-j",
+                    "ACCEPT",
+                ],
+                timeout=3,
+            )
             if rc != 0:
                 break
         for _ in range(5):
-            rc, _, _ = run_cmd(["iptables", "-D", "FORWARD", "-i", inet_iface, "-o", BRIDGE_NAME, "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], timeout=3)
+            rc, _, _ = run_cmd(
+                [
+                    "iptables",
+                    "-D",
+                    "FORWARD",
+                    "-i",
+                    inet_iface,
+                    "-o",
+                    BRIDGE_NAME,
+                    "-m",
+                    "state",
+                    "--state",
+                    "RELATED,ESTABLISHED",
+                    "-j",
+                    "ACCEPT",
+                ],
+                timeout=3,
+            )
             if rc != 0:
                 break
         for _ in range(5):
-            rc, _, _ = run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", inet_iface, "-j", "MASQUERADE"], timeout=3)
+            rc, _, _ = run_cmd(
+                [
+                    "iptables",
+                    "-t",
+                    "nat",
+                    "-D",
+                    "POSTROUTING",
+                    "-o",
+                    inet_iface,
+                    "-j",
+                    "MASQUERADE",
+                ],
+                timeout=3,
+            )
             if rc != 0:
                 break
     run_cmd(["ip", "link", "add", "name", BRIDGE_NAME, "type", "bridge"], timeout=5)
@@ -2878,10 +3432,55 @@ def handle_tethering_start():
     except OSError:
         pass
     if command_exists("iptables"):
-        run_cmd(["iptables", "-I", "FORWARD", "-i", BRIDGE_NAME, "-o", inet_iface, "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-I", "FORWARD", "-i", inet_iface, "-o", BRIDGE_NAME, "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-I", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-t", "nat", "-I", "POSTROUTING", "-o", inet_iface, "-j", "MASQUERADE"], timeout=5)
+        run_cmd(
+            [
+                "iptables",
+                "-I",
+                "FORWARD",
+                "-i",
+                BRIDGE_NAME,
+                "-o",
+                inet_iface,
+                "-j",
+                "ACCEPT",
+            ],
+            timeout=5,
+        )
+        run_cmd(
+            [
+                "iptables",
+                "-I",
+                "FORWARD",
+                "-i",
+                inet_iface,
+                "-o",
+                BRIDGE_NAME,
+                "-m",
+                "state",
+                "--state",
+                "RELATED,ESTABLISHED",
+                "-j",
+                "ACCEPT",
+            ],
+            timeout=5,
+        )
+        run_cmd(
+            ["iptables", "-I", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=5
+        )
+        run_cmd(
+            [
+                "iptables",
+                "-t",
+                "nat",
+                "-I",
+                "POSTROUTING",
+                "-o",
+                inet_iface,
+                "-j",
+                "MASQUERADE",
+            ],
+            timeout=5,
+        )
     if command_exists("systemctl"):
         run_cmd(["systemctl", "stop", "dnsmasq"], timeout=5)
         run_cmd(["systemctl", "mask", "dnsmasq"], timeout=5)
@@ -2891,16 +3490,18 @@ def handle_tethering_start():
     if command_exists("dnsmasq"):
         dnsmasq_pid = os.path.join(DATA_DIR, "dnsmasq.pid")
         subprocess.Popen(
-            ["dnsmasq",
-             f"--interface={BRIDGE_NAME}",
-             f"--dhcp-range={dhcp_start},{dhcp_end},12h",
-             "--bind-dynamic",
-             "--no-resolv",
-             "--server=8.8.8.8",
-             "--server=8.8.4.4",
-             "--log-dhcp",
-             f"--log-facility={os.path.join(DATA_DIR, 'dnsmasq.log')}",
-             f"--pid-file={dnsmasq_pid}"],
+            [
+                "dnsmasq",
+                f"--interface={BRIDGE_NAME}",
+                f"--dhcp-range={dhcp_start},{dhcp_end},12h",
+                "--bind-dynamic",
+                "--no-resolv",
+                "--server=8.8.8.8",
+                "--server=8.8.4.4",
+                "--log-dhcp",
+                f"--log-facility={os.path.join(DATA_DIR, 'dnsmasq.log')}",
+                f"--pid-file={dnsmasq_pid}",
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -2918,7 +3519,8 @@ def handle_tethering_start():
 
 def handle_tethering_stop():
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         adapter_path = get_adapter_path()
         if adapter_path:
@@ -2934,10 +3536,55 @@ def handle_tethering_stop():
         state = load_shell_state(TETHER_STATE_FILE)
         inet_iface = state.get("inet_iface", "eth0")
     if command_exists("iptables"):
-        run_cmd(["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-o", inet_iface, "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-D", "FORWARD", "-i", inet_iface, "-o", BRIDGE_NAME, "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", inet_iface, "-j", "MASQUERADE"], timeout=5)
+        run_cmd(
+            [
+                "iptables",
+                "-D",
+                "FORWARD",
+                "-i",
+                BRIDGE_NAME,
+                "-o",
+                inet_iface,
+                "-j",
+                "ACCEPT",
+            ],
+            timeout=5,
+        )
+        run_cmd(
+            [
+                "iptables",
+                "-D",
+                "FORWARD",
+                "-i",
+                inet_iface,
+                "-o",
+                BRIDGE_NAME,
+                "-m",
+                "state",
+                "--state",
+                "RELATED,ESTABLISHED",
+                "-j",
+                "ACCEPT",
+            ],
+            timeout=5,
+        )
+        run_cmd(
+            ["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=5
+        )
+        run_cmd(
+            [
+                "iptables",
+                "-t",
+                "nat",
+                "-D",
+                "POSTROUTING",
+                "-o",
+                inet_iface,
+                "-j",
+                "MASQUERADE",
+            ],
+            timeout=5,
+        )
     if is_tethering_active():
         run_cmd(["ip", "link", "set", BRIDGE_NAME, "down"], timeout=5)
         run_cmd(["ip", "addr", "flush", "dev", BRIDGE_NAME], timeout=5)
@@ -2952,7 +3599,8 @@ def handle_tethering_stop():
 
 def handle_tethering_stop_silent():
     try:
-        import dbus as _dbus
+        import dbus as _dbus  # pyright: ignore[reportMissingImports]
+
         bus = _dbus.SystemBus()
         adapter_path = get_adapter_path()
         if adapter_path:
@@ -2968,10 +3616,55 @@ def handle_tethering_stop_silent():
         state = load_shell_state(TETHER_STATE_FILE)
         inet_iface = state.get("inet_iface", "eth0")
     if command_exists("iptables"):
-        run_cmd(["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-o", inet_iface, "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-D", "FORWARD", "-i", inet_iface, "-o", BRIDGE_NAME, "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=5)
-        run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", inet_iface, "-j", "MASQUERADE"], timeout=5)
+        run_cmd(
+            [
+                "iptables",
+                "-D",
+                "FORWARD",
+                "-i",
+                BRIDGE_NAME,
+                "-o",
+                inet_iface,
+                "-j",
+                "ACCEPT",
+            ],
+            timeout=5,
+        )
+        run_cmd(
+            [
+                "iptables",
+                "-D",
+                "FORWARD",
+                "-i",
+                inet_iface,
+                "-o",
+                BRIDGE_NAME,
+                "-m",
+                "state",
+                "--state",
+                "RELATED,ESTABLISHED",
+                "-j",
+                "ACCEPT",
+            ],
+            timeout=5,
+        )
+        run_cmd(
+            ["iptables", "-D", "FORWARD", "-i", BRIDGE_NAME, "-j", "ACCEPT"], timeout=5
+        )
+        run_cmd(
+            [
+                "iptables",
+                "-t",
+                "nat",
+                "-D",
+                "POSTROUTING",
+                "-o",
+                inet_iface,
+                "-j",
+                "MASQUERADE",
+            ],
+            timeout=5,
+        )
     if is_tethering_active():
         run_cmd(["ip", "link", "set", BRIDGE_NAME, "down"], timeout=5)
         run_cmd(["ip", "addr", "flush", "dev", BRIDGE_NAME], timeout=5)
@@ -3035,7 +3728,7 @@ def normalize_base_path(path):
 
 def strip_base_path(path, base_path):
     if base_path != "/" and path.startswith(base_path):
-        return path[len(base_path):] or "/"
+        return path[len(base_path) :] or "/"
     return path or "/"
 
 
@@ -3048,7 +3741,9 @@ def parse_request_body(handler):
     content_type = handler.headers.get("Content-Type", "")
     if "application/json" in content_type:
         payload = json.loads(text or "{}")
-        return {key: ["" if value is None else str(value)] for key, value in payload.items()}
+        return {
+            key: ["" if value is None else str(value)] for key, value in payload.items()
+        }
     return parse_qs(text, keep_blank_values=True)
 
 
@@ -3062,7 +3757,7 @@ def merge_query_action(path, query):
 
 
 def dispatch_api(handler, api_path, query):
-    previous = current_request()
+    request = current_request()
     try:
         REQUEST_CONTEXT.value = {
             "handler": handler,
@@ -3077,23 +3772,28 @@ def dispatch_api(handler, api_path, query):
         handler_fn = ACTIONS.get(action)
         if not handler_fn:
             error_response("404 Not Found", f"unknown action: {action}")
-        handler_fn()
+        else:
+            handler_fn()
     except ResponseDone:
         return
     except Exception as exc:
         try:
-            error_response("500 Internal Server Error", f"unexpected error (step={CURRENT_STEP}): {exc}")
+            error_response(
+                "500 Internal Server Error",
+                f"unexpected error (step={CURRENT_STEP}): {exc}",
+            )
         except ResponseDone:
             return
     finally:
-        if previous is None:
+        if request == {}:
             if hasattr(REQUEST_CONTEXT, "value"):
                 del REQUEST_CONTEXT.value
         else:
-            REQUEST_CONTEXT.value = previous
+            REQUEST_CONTEXT.value = request
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -3108,8 +3808,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         self.route()
 
-    def log_message(self, fmt, *args):
-        sys.stdout.write("%s - - %s\n" % (self.client_address, fmt % args))
+    def log_message(self, format, *args):
+        sys.stdout.write(
+            "%s - - [%s] %s\n"
+            % (self.client_address, self.log_date_time_string(), format % args)
+        )
         sys.stdout.flush()
 
     def route(self):
@@ -3141,14 +3844,26 @@ class Handler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
-        content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
-        if content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
+        content_type = (
+            mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        )
+        if content_type.startswith("text/") or content_type in {
+            "application/javascript",
+            "application/json",
+        }:
             content_type = f"{content_type}; charset=utf-8"
         data_size = target.stat().st_size
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(data_size))
-        self.send_header("Cache-Control", "no-store" if target.name in {"index.html", "app.js", "style.css"} else "public, max-age=3600")
+        self.send_header(
+            "Cache-Control",
+            (
+                "no-store"
+                if target.name in {"index.html", "app.js", "style.css"}
+                else "public, max-age=3600"
+            ),
+        )
         self.end_headers()
         if self.command == "HEAD":
             return
@@ -3206,7 +3921,9 @@ def main():
 
     if os.path.exists(args.unix_socket):
         os.unlink(args.unix_socket)
-    server = ThreadingUnixHTTPServer(args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root)
+    server = ThreadingUnixHTTPServer(
+        args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root
+    )
 
     ensure_obex_server()
     ensure_agent()

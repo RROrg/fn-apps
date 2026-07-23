@@ -40,7 +40,10 @@ const I18N = {
     saveSuccess: "保存成功",
     refreshed: "已刷新",
     close: "关闭",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    selectWizardEntry: "选择 Wizard 参数条目",
+    selectServiceEntry: "选择 UI 配置条目",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -117,7 +120,10 @@ const I18N = {
     saveSuccess: "Saved",
     refreshed: "Refreshed",
     close: "Close",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    selectWizardEntry: "Select Wizard Param Entry",
+    selectServiceEntry: "Select UI Config Entry",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -186,8 +192,16 @@ const appFields = [
   { name: "download_count", label: "field_download_count" },
   { name: "install_type", label: "field_install_type", readonly: true },
   { name: "path", label: "field_path", readonly: true },
-  { name: "install_volume_id", label: "field_install_volume_id", readonly: true },
-  { name: "data_share_volume_id", label: "field_data_share_volume_id", readonly: true },
+  {
+    name: "install_volume_id",
+    label: "field_install_volume_id",
+    readonly: true,
+  },
+  {
+    name: "data_share_volume_id",
+    label: "field_data_share_volume_id",
+    readonly: true,
+  },
   { name: "data_volume_id", label: "field_data_volume_id", readonly: true },
   { name: "manual_install", label: "field_manual_install", type: "bool" },
   { name: "is_stop", label: "field_is_stop", type: "bool" },
@@ -196,10 +210,18 @@ const appFields = [
   { name: "is_docker", label: "field_is_docker", type: "bool", readonly: true },
   { name: "min_size", label: "field_min_size" },
   { name: "service_url", label: "field_service_url" },
-  { name: "source", label: "field_source", options: ["thirdparty", "official"] },
+  {
+    name: "source",
+    label: "field_source",
+    options: ["thirdparty", "official"],
+  },
   { name: "source_id", label: "field_source_id", readonly: true },
   { name: "status", label: "field_status", readonly: true },
-  { name: "is_non_manual_stop", label: "field_is_non_manual_stop", type: "bool" },
+  {
+    name: "is_non_manual_stop",
+    label: "field_is_non_manual_stop",
+    type: "bool",
+  },
   { name: "is_systemd_uint", label: "field_is_systemd_uint", type: "bool" },
   {
     name: "disable_authorization_path",
@@ -270,7 +292,11 @@ function storedValue(name) {
 function parentStoredValue(name) {
   try {
     if (!window.parent || window.parent === window) return "";
-    return window.parent.localStorage.getItem(name) || window.parent.sessionStorage.getItem(name) || "";
+    return (
+      window.parent.localStorage.getItem(name) ||
+      window.parent.sessionStorage.getItem(name) ||
+      ""
+    );
   } catch (_error) {
     return "";
   }
@@ -284,13 +310,15 @@ function documentThemeValue(doc) {
   if (!doc) return "";
   const root = doc.documentElement;
   const body = doc.body;
-  return [
-    body?.getAttribute("theme-mode"),
-    body?.dataset?.theme,
-    root?.dataset?.theme,
-    root?.classList?.contains("dark") ? "dark" : "",
-    root?.classList?.contains("light") ? "light" : "",
-  ].find(Boolean) || "";
+  return (
+    [
+      body?.getAttribute("theme-mode"),
+      body?.dataset?.theme,
+      root?.dataset?.theme,
+      root?.classList?.contains("dark") ? "dark" : "",
+      root?.classList?.contains("light") ? "light" : "",
+    ].find(Boolean) || ""
+  );
 }
 
 function parentDocumentThemeValue() {
@@ -308,7 +336,12 @@ function normalizeLanguage(value) {
 }
 
 function currentLanguage() {
-  return normalizeLanguage(cookieValue("language") || queryValue("language") || navigator.language || "zh-CN");
+  return normalizeLanguage(
+    cookieValue("language") ||
+      queryValue("language") ||
+      navigator.language ||
+      "zh-CN",
+  );
 }
 
 function normalizeTheme(value) {
@@ -318,7 +351,9 @@ function normalizeTheme(value) {
   if (theme === "10") return "light";
   if (theme === "20") return "dark";
   if (theme === "system" || theme === "auto" || theme === "os") {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
   return "";
 }
@@ -335,14 +370,21 @@ function currentTheme() {
     documentThemeValue(document),
     parentDocumentThemeValue(),
     queryValue("fnos-theme-mode"),
-  ].map(normalizeTheme).find(Boolean);
+  ]
+    .map(normalizeTheme)
+    .find(Boolean);
   if (fromSystem) return fromSystem;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function t(key, params = {}) {
   const messages = I18N[state.language] || I18N["zh-CN"];
-  return String(messages[key] || I18N["zh-CN"][key] || key).replace(/\{(\w+)\}/g, (_match, name) => params[name] ?? "");
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
+  );
 }
 
 function applyPreferences({ rerender = false } = {}) {
@@ -365,6 +407,9 @@ function applyPreferences({ rerender = false } = {}) {
   document.querySelectorAll("[data-i18n-title]").forEach((node) => {
     node.title = t(node.dataset.i18nTitle);
   });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel));
+  });
   document.title = t("appTitle");
   if (!currentApp()) {
     document.getElementById("pageTitle").textContent = t("appConfig");
@@ -379,13 +424,17 @@ function applyPreferences({ rerender = false } = {}) {
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[char]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[char],
+  );
 }
 
 function boolValue(value) {
@@ -438,15 +487,21 @@ function currentApp() {
 }
 
 function currentServices() {
-  return state.services.filter((item) => item.app_id === state.selectedAppId && !item._delete);
+  return state.services.filter(
+    (item) => item.app_id === state.selectedAppId && !item._delete,
+  );
 }
 
 function currentEnv() {
-  return state.env.filter((item) => item.app_id === state.selectedAppId && !item._delete);
+  return state.env.filter(
+    (item) => item.app_id === state.selectedAppId && !item._delete,
+  );
 }
 
 function currentRunAs() {
-  return state.runAs[String(state.selectedAppId)] === "package" ? "package" : "root";
+  return state.runAs[String(state.selectedAppId)] === "package"
+    ? "package"
+    : "root";
 }
 
 function uniqueValue(base, existing) {
@@ -489,7 +544,9 @@ function rebuildRestartBaseline() {
 }
 
 function fallbackIcon(app) {
-  return escapeHtml((app.name || app.app_name || "?").slice(0, 1).toUpperCase());
+  return escapeHtml(
+    (app.name || app.app_name || "?").slice(0, 1).toUpperCase(),
+  );
 }
 
 function iconUrl(app) {
@@ -503,10 +560,14 @@ function renderAppList() {
   const apps = state.apps.filter((app) => {
     if (!query) return true;
     return [app.name, app.app_name, app.version].some((value) =>
-      String(value || "").toLowerCase().includes(query),
+      String(value || "")
+        .toLowerCase()
+        .includes(query),
     );
   });
-  list.innerHTML = apps.map((app) => `
+  list.innerHTML = apps
+    .map(
+      (app) => `
     <button class="app-item ${app.id === state.selectedAppId ? "active" : ""}" data-id="${app.id}" type="button">
       <span class="app-icon">
         <img src="${iconUrl(app)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">
@@ -517,7 +578,9 @@ function renderAppList() {
         <small>${escapeHtml(app.app_name || "")}</small>
       </span>
     </button>
-  `).join("");
+  `,
+    )
+    .join("");
 }
 
 function fieldInput(source, field) {
@@ -539,9 +602,12 @@ function fieldInput(source, field) {
     const selectedValue = String(value || field.options[0] || "");
     tag = `
       <select ${field.readonly ? 'disabled tabindex="-1"' : `data-field="${field.name}"`}>
-        ${field.options.map((option) =>
-          `<option value="${escapeHtml(option)}" ${option === selectedValue ? "selected" : ""}>${escapeHtml(option)}</option>`,
-        ).join("")}
+        ${field.options
+          .map(
+            (option) =>
+              `<option value="${escapeHtml(option)}" ${option === selectedValue ? "selected" : ""}>${escapeHtml(option)}</option>`,
+          )
+          .join("")}
       </select>
     `;
   } else if (field.textarea) {
@@ -553,9 +619,9 @@ function fieldInput(source, field) {
 }
 
 function renderAppFields(app) {
-  document.getElementById("appFields").innerHTML = appFields.map((field) =>
-    fieldInput(app, field),
-  ).join("");
+  document.getElementById("appFields").innerHTML = appFields
+    .map((field) => fieldInput(app, field))
+    .join("");
 }
 
 function optionLabel(item, index) {
@@ -565,30 +631,54 @@ function optionLabel(item, index) {
 
 function renderSelect(selectId, items, selectedIndex) {
   const select = document.getElementById(selectId);
-  select.innerHTML = items.map((item, index) =>
-    `<option value="${index}" ${index === selectedIndex ? "selected" : ""}>${escapeHtml(optionLabel(item, index))}</option>`,
-  ).join("");
+  select.innerHTML = items
+    .map(
+      (item, index) =>
+        `<option value="${index}" ${index === selectedIndex ? "selected" : ""}>${escapeHtml(optionLabel(item, index))}</option>`,
+    )
+    .join("");
   select.disabled = items.length === 0;
 }
 
 function renderServiceFields() {
   const services = currentServices();
-  state.selectedServiceIndex = Math.min(state.selectedServiceIndex, Math.max(services.length - 1, 0));
+  state.selectedServiceIndex = Math.min(
+    state.selectedServiceIndex,
+    Math.max(services.length - 1, 0),
+  );
   renderSelect("serviceSelect", services, state.selectedServiceIndex);
   const service = services[state.selectedServiceIndex] || {};
-  document.getElementById("serviceFields").innerHTML = serviceFields.map((field) =>
-    fieldInput(service, { ...field, hidden: field.name === "id" || field.name === "app_id" }),
-  ).join("");
+  document.getElementById("serviceFields").innerHTML = serviceFields
+    .map((field) =>
+      fieldInput(service, {
+        ...field,
+        hidden: field.name === "id" || field.name === "app_id",
+      }),
+    )
+    .join("");
 }
 
 function renderEnvFields() {
   const env = currentEnv();
-  state.selectedEnvIndex = Math.min(state.selectedEnvIndex, Math.max(env.length - 1, 0));
+  state.selectedEnvIndex = Math.min(
+    state.selectedEnvIndex,
+    Math.max(env.length - 1, 0),
+  );
   renderSelect("envSelect", env, state.selectedEnvIndex);
   const item = env[state.selectedEnvIndex] || {};
   document.getElementById("envFields").innerHTML =
-    fieldInput(item, { name: "id", label: "field_id", readonly: true, hidden: true }) +
-    fieldInput(item, { name: "app_id", label: "field_app_name", readonly: true, hidden: true }) +
+    fieldInput(item, {
+      name: "id",
+      label: "field_id",
+      readonly: true,
+      hidden: true,
+    }) +
+    fieldInput(item, {
+      name: "app_id",
+      label: "field_app_name",
+      readonly: true,
+      hidden: true,
+    }) +
     fieldInput(item, { name: "k", label: "field_k" }) +
     fieldInput(item, { name: "v", label: "field_v" });
 }
@@ -608,7 +698,9 @@ function renderEditor() {
     document.getElementById("pageTitle").textContent = t("appConfig");
     return;
   }
-  document.getElementById("pageTitle").textContent = t("editorTitle", { name: app.name || app.app_name });
+  document.getElementById("pageTitle").textContent = t("editorTitle", {
+    name: app.name || app.app_name,
+  });
   empty.classList.add("hidden");
   editor.classList.remove("hidden");
   renderAppFields(app);
@@ -619,9 +711,8 @@ function renderEditor() {
 
 function collectFields(container, target) {
   container.querySelectorAll("[data-field]").forEach((input) => {
-    target[input.dataset.field] = input.dataset.kind === "bool"
-      ? input.value === "true"
-      : input.value;
+    target[input.dataset.field] =
+      input.dataset.kind === "bool" ? input.value === "true" : input.value;
   });
 }
 
@@ -668,14 +759,17 @@ async function saveData() {
   if (!app) return;
   setSaving(true);
   try {
-    const restart = restartSnapshot(app.id) !== state.restartBaseline[String(app.id)];
+    const restart =
+      restartSnapshot(app.id) !== state.restartBaseline[String(app.id)];
     const payload = {
       app,
       restart,
     };
     if (restart) {
       payload.runAs = state.runAs[String(app.id)] || "root";
-      payload.services = state.services.filter((item) => item.app_id === app.id);
+      payload.services = state.services.filter(
+        (item) => item.app_id === app.id,
+      );
       payload.env = state.env.filter((item) => item.app_id === app.id);
     }
     const data = await api("save", payload);
@@ -690,7 +784,11 @@ function addService() {
   applyCurrentEdits();
   const app = currentApp();
   if (!app) return;
-  const existing = new Set(currentServices().map((item) => item.service_name).filter(Boolean));
+  const existing = new Set(
+    currentServices()
+      .map((item) => item.service_name)
+      .filter(Boolean),
+  );
   const item = {
     app_id: app.id,
     service_name: uniqueValue(`${app.app_name}.Application`, existing),
@@ -729,8 +827,16 @@ function addEnv() {
   applyCurrentEdits();
   const app = currentApp();
   if (!app) return;
-  const existing = new Set(currentEnv().map((item) => item.k).filter(Boolean));
-  state.env.push({ app_id: app.id, k: uniqueValue("wizard_key", existing), v: "" });
+  const existing = new Set(
+    currentEnv()
+      .map((item) => item.k)
+      .filter(Boolean),
+  );
+  state.env.push({
+    app_id: app.id,
+    k: uniqueValue("wizard_key", existing),
+    v: "",
+  });
   state.selectedEnvIndex = currentEnv().length - 1;
   renderEnvFields();
 }
@@ -776,17 +882,22 @@ document.getElementById("searchInput").addEventListener("input", (event) => {
 document.getElementById("runAsSelect").addEventListener("change", (event) => {
   const app = currentApp();
   if (!app) return;
-  state.runAs[String(app.id)] = event.target.value === "package" ? "package" : "root";
+  state.runAs[String(app.id)] =
+    event.target.value === "package" ? "package" : "root";
 });
 
 document.getElementById("refreshBtn").addEventListener("click", () => {
-  loadData().then(() => showToast(t("refreshed"))).catch((error) => showToast(error.message, true));
+  loadData()
+    .then(() => showToast(t("refreshed")))
+    .catch((error) => showToast(error.message, true));
 });
 document.getElementById("saveBtn").addEventListener("click", () => {
   saveData().catch((error) => showToast(error.message, true));
 });
 document.getElementById("addServiceBtn").addEventListener("click", addService);
-document.getElementById("deleteServiceBtn").addEventListener("click", deleteService);
+document
+  .getElementById("deleteServiceBtn")
+  .addEventListener("click", deleteService);
 document.getElementById("addEnvBtn").addEventListener("click", addEnv);
 document.getElementById("deleteEnvBtn").addEventListener("click", deleteEnv);
 document.getElementById("aboutBtn").addEventListener("click", openAbout);
@@ -803,7 +914,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 applyPreferences();
-window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyPreferences());
+window
+  .matchMedia?.("(prefers-color-scheme: dark)")
+  .addEventListener?.("change", () => applyPreferences());
 window.addEventListener("storage", () => applyPreferences({ rerender: true }));
 setInterval(() => applyPreferences({ rerender: true }), 1500);
 
