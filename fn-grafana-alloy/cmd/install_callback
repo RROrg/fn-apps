@@ -5,15 +5,15 @@
 
 ARCH=$(uname -m)
 if [ ! -d "${TRIM_APPDEST}/bin/${ARCH}" ]; then
-    echo "${ARCH} is not supported." > $TRIM_TEMP_LOGFILE
-    exit 1
+  echo "${ARCH} is not supported." >$TRIM_TEMP_LOGFILE
+  exit 1
 fi
 
 LOG_FILE="${TRIM_PKGVAR}/info.log"
 SETTINGS_FILE="${TRIM_PKGVAR}/settings.json"
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - [install] $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - [install] $1" >>${LOG_FILE}
 }
 
 # 创建必要的目录
@@ -28,13 +28,13 @@ HOSTNAME="${wizard_hostname:-fnos}"
 
 # 转换 auth_enabled 为 boolean
 if [ "$AUTH_ENABLED" = "true" ] || [ "$AUTH_ENABLED" = "1" ]; then
-    AUTH_ENABLED_BOOL="true"
+  AUTH_ENABLED_BOOL="true"
 else
-    AUTH_ENABLED_BOOL="false"
+  AUTH_ENABLED_BOOL="false"
 fi
 
 # 生成初始 settings.json
-cat > "${SETTINGS_FILE}" << EOF
+cat >"${SETTINGS_FILE}" <<EOF
 {
     "loki_url": "${LOKI_URL}",
     "auth_enabled": ${AUTH_ENABLED_BOOL},

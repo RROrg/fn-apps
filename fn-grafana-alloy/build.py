@@ -127,7 +127,16 @@ def main():
     with tarfile.open(app_tgz, "w:gz") as tar:
         tar.add(os.path.join(WORKDIR, "app"), arcname=".")
 
-    fpk_members = ["cmd", "config", "i18n", "wizard", "app.tgz", "ICON.PNG", "ICON_256.PNG", "manifest"]
+    fpk_members = [
+        "cmd",
+        "config",
+        "i18n",
+        "wizard",
+        "app.tgz",
+        "ICON.PNG",
+        "ICON_256.PNG",
+        "manifest",
+    ]
     with tarfile.open(fpk_path, "w:gz") as tar:
         for member in fpk_members:
             full_path = os.path.join(WORKDIR, member)

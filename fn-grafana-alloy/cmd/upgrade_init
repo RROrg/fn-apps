@@ -6,15 +6,15 @@
 LOG_FILE="${TRIM_PKGVAR}/info.log"
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - [upgrade_init] $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - [upgrade_init] $1" >>${LOG_FILE}
 }
 
 log_msg "Upgrade init started"
 
 # 备份当前 settings.json（防止升级过程中丢失用户配置）
 if [ -f "${TRIM_PKGVAR}/settings.json" ]; then
-    cp "${TRIM_PKGVAR}/settings.json" "${TRIM_PKGVAR}/settings.json.bak"
-    log_msg "Settings backed up"
+  cp "${TRIM_PKGVAR}/settings.json" "${TRIM_PKGVAR}/settings.json.bak"
+  log_msg "Settings backed up"
 fi
 
 log_msg "Upgrade init completed"

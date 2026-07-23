@@ -9,16 +9,16 @@ chmod +x "${COLLECTOR_BIN}" 2>/dev/null
 chmod +x "${WEB_BIN}" 2>/dev/null
 
 if [ -f "${SETTINGS_FILE}" ]; then
-    saved_port=$(get_web_port)
+  saved_port=$(get_web_port)
 
-    if check_influxdb_running; then
-        saved_influxdb_host=$(get_influxdb_host)
-        saved_influxdb_port=$(get_influxdb_port)
-        saved_influxdb_token=$(get_influxdb_token)
-        saved_influxdb_org=$(get_influxdb_org)
-        saved_influxdb_bucket=$(get_influxdb_bucket)
-        generate_scrutiny_config "${saved_port}" "${saved_influxdb_host}" "${saved_influxdb_port}" "${saved_influxdb_token}" "${saved_influxdb_org}" "${saved_influxdb_bucket}"
-    fi
+  if check_influxdb_running; then
+    saved_influxdb_host=$(get_influxdb_host)
+    saved_influxdb_port=$(get_influxdb_port)
+    saved_influxdb_token=$(get_influxdb_token)
+    saved_influxdb_org=$(get_influxdb_org)
+    saved_influxdb_bucket=$(get_influxdb_bucket)
+    generate_scrutiny_config "${saved_port}" "${saved_influxdb_host}" "${saved_influxdb_port}" "${saved_influxdb_token}" "${saved_influxdb_org}" "${saved_influxdb_bucket}"
+  fi
 fi
 
 rm -f "${TRIM_APPDEST}/web/.translated"

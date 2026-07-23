@@ -7,7 +7,7 @@ LOG_FILE="${TRIM_PKGVAR}/info.log"
 SETTINGS_FILE="${TRIM_PKGVAR}/settings.json"
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - [config] $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - [config] $1" >>${LOG_FILE}
 }
 
 log_msg "Config callback started"
@@ -25,31 +25,31 @@ DISABLE_REPORTING="${wizard_disable_reporting:-true}"
 # 处理自定义标签
 CUSTOM_LABELS="{}"
 if [ -n "$wizard_custom_label_1_key" ] && [ -n "$wizard_custom_label_1_value" ]; then
-    CUSTOM_LABELS=$(echo "$CUSTOM_LABELS" | jq --arg k "$wizard_custom_label_1_key" --arg v "$wizard_custom_label_1_value" '. + {($k): $v}')
+  CUSTOM_LABELS=$(echo "$CUSTOM_LABELS" | jq --arg k "$wizard_custom_label_1_key" --arg v "$wizard_custom_label_1_value" '. + {($k): $v}')
 fi
 if [ -n "$wizard_custom_label_2_key" ] && [ -n "$wizard_custom_label_2_value" ]; then
-    CUSTOM_LABELS=$(echo "$CUSTOM_LABELS" | jq --arg k "$wizard_custom_label_2_key" --arg v "$wizard_custom_label_2_value" '. + {($k): $v}')
+  CUSTOM_LABELS=$(echo "$CUSTOM_LABELS" | jq --arg k "$wizard_custom_label_2_key" --arg v "$wizard_custom_label_2_value" '. + {($k): $v}')
 fi
 if [ -n "$wizard_custom_label_3_key" ] && [ -n "$wizard_custom_label_3_value" ]; then
-    CUSTOM_LABELS=$(echo "$CUSTOM_LABELS" | jq --arg k "$wizard_custom_label_3_key" --arg v "$wizard_custom_label_3_value" '. + {($k): $v}')
+  CUSTOM_LABELS=$(echo "$CUSTOM_LABELS" | jq --arg k "$wizard_custom_label_3_key" --arg v "$wizard_custom_label_3_value" '. + {($k): $v}')
 fi
 
 # 转换 auth_enabled 为 boolean
 if [ "$AUTH_ENABLED" = "true" ] || [ "$AUTH_ENABLED" = "1" ]; then
-    AUTH_ENABLED_BOOL="true"
+  AUTH_ENABLED_BOOL="true"
 else
-    AUTH_ENABLED_BOOL="false"
+  AUTH_ENABLED_BOOL="false"
 fi
 
 # 转换 disable_reporting 为 boolean
 if [ "$DISABLE_REPORTING" = "false" ] || [ "$DISABLE_REPORTING" = "0" ]; then
-    DISABLE_REPORTING_BOOL="false"
+  DISABLE_REPORTING_BOOL="false"
 else
-    DISABLE_REPORTING_BOOL="true"
+  DISABLE_REPORTING_BOOL="true"
 fi
 
 # 生成 settings.json
-cat > "${SETTINGS_FILE}" << EOF
+cat >"${SETTINGS_FILE}" <<EOF
 {
     "loki_url": "${LOKI_URL}",
     "auth_enabled": ${AUTH_ENABLED_BOOL},
@@ -70,6 +70,6 @@ log_msg "Config callback completed"
 # TRIM_APPDEST 指向 target 目录，cmd/ 在应用根目录 /var/apps/[appname]/cmd/
 APP_ROOT="/var/apps/fn-grafana-alloy"
 if [ -x "${APP_ROOT}/cmd/main" ]; then
-    "${APP_ROOT}/cmd/main" reload >> ${LOG_FILE} 2>&1
-    log_msg "Configuration reloaded"
+  "${APP_ROOT}/cmd/main" reload >>${LOG_FILE} 2>&1
+  log_msg "Configuration reloaded"
 fi

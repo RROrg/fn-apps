@@ -1,13 +1,13 @@
 {
-    ".url": {
-        "fn-grafana-alloy.main": {
-            "title": "${entry.title}",
-            "icon": "images/icon_{0}.png",
-            "type": "iframe",
-            "protocol": "http",
-            "port": "${wizard_port}",
-            "url": "/",
-            "allUsers": true
-        }
+  ".url": {
+    "fn-grafana-alloy.main": {
+      "title": "${entry.title}",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "port": "${wizard_port}",
+      "url": "/",
+      "allUsers": true
     }
+  }
 }

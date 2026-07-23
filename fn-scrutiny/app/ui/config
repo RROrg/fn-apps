@@ -1,16 +1,16 @@
 {
-    ".url": {
-        "fn-scrutiny.Application": {
-            "title": "${entry.title}",
-            "icon": "images/icon_{0}.png",
-            "type": "iframe",
-            "port": "${wizard_port}",
-            "url": "/",
-            "allUsers": false,
-            "control": {
-                "accessPerm": "readonly",
-                "fullUrlPerm": "readonly"
-            }
-        }
+  ".url": {
+    "fn-scrutiny.Application": {
+      "title": "${entry.title}",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "port": "${wizard_port}",
+      "url": "/",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly",
+        "fullUrlPerm": "readonly"
+      }
     }
+  }
 }

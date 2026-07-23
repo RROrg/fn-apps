@@ -1,114 +1,129 @@
 [
-    {
-        "stepTitle": "${wizard.install_stepTitle}",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "${wizard.install_item1_helpText}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_port",
-                "label": "${wizard.install_item2_label}",
-                "initValue": "8086",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item2_required}"
-                    },
-                    {
-                        "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
-                        "message": "${wizard.install_item2_rules}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_username",
-                "label": "${wizard.install_item3_label}",
-                "initValue": "admin",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item3_required}"
-                    }
-                ]
-            },
-            {
-                "type": "password",
-                "field": "wizard_password",
-                "label": "${wizard.install_item4_label}",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item4_required}"
-                    },
-                    {
-                        "min": 8,
-                        "message": "${wizard.install_item4_min}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_org",
-                "label": "${wizard.install_item5_label}",
-                "initValue": "fnos",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item5_required}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_bucket",
-                "label": "${wizard.install_item6_label}",
-                "initValue": "default",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item6_required}"
-                    }
-                ]
-            },
-            {
-                "type": "select",
-                "field": "wizard_retention",
-                "label": "${wizard.install_item7_label}",
-                "initValue": "26000h",
-                "options": [
-                    { "label": "30 days (720h)", "value": "720h" },
-                    { "label": "90 days (2160h)", "value": "2160h" },
-                    { "label": "1 year (8760h)", "value": "8760h" },
-                    { "label": "3 years (26000h)", "value": "26000h" },
-                    { "label": "Unlimited", "value": "0" }
-                ],
-                "helpText": "${wizard.install_item7_helpText}"
-            },
-            {
-                "type": "radio",
-                "field": "wizard_cli",
-                "label": "${wizard.install_item8_label}",
-                "initValue": "true",
-                "options": [
-                    {
-                        "label": "${wizard.install_item8_options1}",
-                        "value": "true"
-                    },
-                    {
-                        "label": "${wizard.install_item8_options2}",
-                        "value": "false"
-                    }
-                ],
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item8_required}"
-                    }
-                ]
-            }
+  {
+    "stepTitle": "${wizard.install_stepTitle}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.install_item1_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_port",
+        "label": "${wizard.install_item2_label}",
+        "initValue": "8086",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item2_required}"
+          },
+          {
+            "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
+            "message": "${wizard.install_item2_rules}"
+          }
         ]
-    }
+      },
+      {
+        "type": "text",
+        "field": "wizard_username",
+        "label": "${wizard.install_item3_label}",
+        "initValue": "admin",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item3_required}"
+          }
+        ]
+      },
+      {
+        "type": "password",
+        "field": "wizard_password",
+        "label": "${wizard.install_item4_label}",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item4_required}"
+          },
+          {
+            "min": 8,
+            "message": "${wizard.install_item4_min}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_org",
+        "label": "${wizard.install_item5_label}",
+        "initValue": "fnos",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item5_required}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_bucket",
+        "label": "${wizard.install_item6_label}",
+        "initValue": "default",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item6_required}"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "field": "wizard_retention",
+        "label": "${wizard.install_item7_label}",
+        "initValue": "26000h",
+        "options": [
+          {
+            "label": "30 days (720h)",
+            "value": "720h"
+          },
+          {
+            "label": "90 days (2160h)",
+            "value": "2160h"
+          },
+          {
+            "label": "1 year (8760h)",
+            "value": "8760h"
+          },
+          {
+            "label": "3 years (26000h)",
+            "value": "26000h"
+          },
+          {
+            "label": "Unlimited",
+            "value": "0"
+          }
+        ],
+        "helpText": "${wizard.install_item7_helpText}"
+      },
+      {
+        "type": "radio",
+        "field": "wizard_cli",
+        "label": "${wizard.install_item8_label}",
+        "initValue": "true",
+        "options": [
+          {
+            "label": "${wizard.install_item8_options1}",
+            "value": "true"
+          },
+          {
+            "label": "${wizard.install_item8_options2}",
+            "value": "false"
+          }
+        ],
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item8_required}"
+          }
+        ]
+      }
+    ]
+  }
 ]

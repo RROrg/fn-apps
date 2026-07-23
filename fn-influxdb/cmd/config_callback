@@ -9,13 +9,13 @@ NEW_PORT="${wizard_port:-$(get_port)}"
 OLD_PORT=$(get_port)
 
 if [ "${NEW_PORT}" != "${OLD_PORT}" ]; then
-    saved_username=$(get_username)
-    saved_password=$(get_password)
-    saved_org=$(get_org)
-    saved_bucket=$(get_bucket)
-    saved_retention=$(get_retention)
-    saved_cli=$(get_cli)
-    write_settings "${SETTINGS_FILE}" "${NEW_PORT}" "${saved_username}" "${saved_password}" "${saved_org}" "${saved_bucket}" "${saved_retention}" "${saved_cli}"
+  saved_username=$(get_username)
+  saved_password=$(get_password)
+  saved_org=$(get_org)
+  saved_bucket=$(get_bucket)
+  saved_retention=$(get_retention)
+  saved_cli=$(get_cli)
+  write_settings "${SETTINGS_FILE}" "${NEW_PORT}" "${saved_username}" "${saved_password}" "${saved_org}" "${saved_bucket}" "${saved_retention}" "${saved_cli}"
 fi
 
 exit 0

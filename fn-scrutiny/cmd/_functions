@@ -11,158 +11,165 @@ INFLUXDB_TOKEN_FILE="${INFLUXDB_APP_DATA}/.influxdb_token"
 
 ARCH=$(uname -m)
 case "${ARCH}" in
-    x86_64)  WEB_BIN="${TRIM_APPDEST}/bin/x86_64/scrutiny-web"
-             COLLECTOR_BIN="${TRIM_APPDEST}/bin/x86_64/scrutiny-collector-metrics" ;;
-    aarch64) WEB_BIN="${TRIM_APPDEST}/bin/aarch64/scrutiny-web"
-             COLLECTOR_BIN="${TRIM_APPDEST}/bin/aarch64/scrutiny-collector-metrics" ;;
-    *)       WEB_BIN="${TRIM_APPDEST}/bin/${ARCH}/scrutiny-web"
-             COLLECTOR_BIN="${TRIM_APPDEST}/bin/${ARCH}/scrutiny-collector-metrics" ;;
+  x86_64)
+    WEB_BIN="${TRIM_APPDEST}/bin/x86_64/scrutiny-web"
+    COLLECTOR_BIN="${TRIM_APPDEST}/bin/x86_64/scrutiny-collector-metrics"
+    ;;
+  aarch64)
+    WEB_BIN="${TRIM_APPDEST}/bin/aarch64/scrutiny-web"
+    COLLECTOR_BIN="${TRIM_APPDEST}/bin/aarch64/scrutiny-collector-metrics"
+    ;;
+  *)
+    WEB_BIN="${TRIM_APPDEST}/bin/${ARCH}/scrutiny-web"
+    COLLECTOR_BIN="${TRIM_APPDEST}/bin/${ARCH}/scrutiny-collector-metrics"
+    ;;
 esac
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
 }
 
 rotate_log() {
-    local logfile="$1"
-    local maxsize="$2"
-    if [ -f "${logfile}" ] && [ "$(stat -c%s "${logfile}" 2>/dev/null || echo 0)" -gt "${maxsize}" ]; then
-        mv "${logfile}" "${logfile}.old"
-    fi
+  local logfile="$1"
+  local maxsize="$2"
+  if [ -f "${logfile}" ] && [ "$(stat -c%s "${logfile}" 2>/dev/null || echo 0)" -gt "${maxsize}" ]; then
+    mv "${logfile}" "${logfile}.old"
+  fi
 }
 
 check_process() {
-    local pid=$1
-    if kill -0 "${pid}" 2>/dev/null; then
-        return 0  # process exist
-    else
-        return 1  # process not exist
-    fi
+  local pid=$1
+  if kill -0 "${pid}" 2>/dev/null; then
+    return 0 # process exist
+  else
+    return 1 # process not exist
+  fi
 }
 
 read_settings() {
-    local key="$1"
-    local file="${2:-${SETTINGS_FILE}}"
-    if [ -f "${file}" ]; then
-        grep "\"${key}\"" "${file}" 2>/dev/null | sed 's/.*:.*"\(.*\)".*/\1/' | tr -d ' ,'
-    fi
+  local key="$1"
+  local file="${2:-${SETTINGS_FILE}}"
+  if [ -f "${file}" ]; then
+    grep "\"${key}\"" "${file}" 2>/dev/null | sed 's/.*:.*"\(.*\)".*/\1/' | tr -d ' ,'
+  fi
 }
 
 get_web_port() {
-    local port
-    port=$(read_settings "web_port")
-    echo "${port:-8080}"
+  local port
+  port=$(read_settings "web_port")
+  echo "${port:-8080}"
 }
 
 get_host_id() {
-    local host_id
-    host_id=$(read_settings "host_id")
-    echo "${host_id:-fnOS}"
+  local host_id
+  host_id=$(read_settings "host_id")
+  echo "${host_id:-fnOS}"
 }
 
 get_cron_interval() {
-    local interval
-    interval=$(read_settings "cron_interval")
-    echo "${interval:-15}"
+  local interval
+  interval=$(read_settings "cron_interval")
+  echo "${interval:-15}"
 }
 
 get_translate() {
-    local translate
-    translate=$(read_settings "translate")
-    echo "${translate:-true}"
+  local translate
+  translate=$(read_settings "translate")
+  echo "${translate:-true}"
 }
 
 get_cron_schedule() {
-    local interval="$1"
-    [ -z "${interval}" ] && interval=$(get_cron_interval)
+  local interval="$1"
+  if [ -n "${interval}" ]; then
     if [ "${interval}" -ge 1440 ]; then
-        echo "0 0 * * *"
+      echo "0 0 * * *"
     elif [ "${interval}" -ge 720 ]; then
-        echo "0 */12 * * *"
+      echo "0 */12 * * *"
     elif [ "${interval}" -ge 360 ]; then
-        echo "0 */6 * * *"
+      echo "0 */6 * * *"
     elif [ "${interval}" -ge 60 ]; then
-        echo "0 */1 * * *"
+      echo "0 */1 * * *"
     else
-        echo "*/${interval} * * * *"
+      echo "*/${interval} * * * *"
     fi
+  fi
 }
 
 get_influxdb_mode() {
-    local mode
-    mode=$(read_settings "influxdb_mode")
-    echo "${mode:-auto}"
+  local mode
+  mode=$(read_settings "influxdb_mode")
+  echo "${mode:-auto}"
 }
 
 get_influxdb_host() {
-    if [ "$(get_influxdb_mode)" = "custom" ]; then
-        read_settings "influxdb_host"
-    else
-        echo "localhost"
-    fi
+  if [ "$(get_influxdb_mode)" = "custom" ]; then
+    read_settings "influxdb_host"
+  else
+    echo "localhost"
+  fi
 }
 
 get_influxdb_port() {
-    if [ "$(get_influxdb_mode)" = "custom" ]; then
-        local port
-        port=$(read_settings "influxdb_port")
-        echo "${port:-8086}"
-    else
-        local port
-        port=$(read_settings "port" "${INFLUXDB_SETTINGS}")
-        echo "${port:-8086}"
-    fi
+  if [ "$(get_influxdb_mode)" = "custom" ]; then
+    local port
+    port=$(read_settings "influxdb_port")
+    echo "${port:-8086}"
+  else
+    local port
+    port=$(read_settings "port" "${INFLUXDB_SETTINGS}")
+    echo "${port:-8086}"
+  fi
 }
 
 get_influxdb_token() {
-    if [ -f "${INFLUXDB_TOKEN_FILE}" ]; then
-        cat "${INFLUXDB_TOKEN_FILE}" 2>/dev/null
-        return 0
-    fi
-    local custom_token
-    custom_token=$(read_settings "influxdb_token")
-    if [ -n "${custom_token}" ]; then
-        echo "${custom_token}"
-        return 0
-    fi
-    read_settings "influxdb_token" "${INFLUXDB_SETTINGS}"
+  if [ -f "${INFLUXDB_TOKEN_FILE}" ]; then
+    cat "${INFLUXDB_TOKEN_FILE}" 2>/dev/null
+    return 0
+  fi
+  local custom_token
+  custom_token=$(read_settings "influxdb_token")
+  if [ -n "${custom_token}" ]; then
+    echo "${custom_token}"
+    return 0
+  fi
+  read_settings "influxdb_token" "${INFLUXDB_SETTINGS}"
 }
 
 get_influxdb_org() {
-    if [ "$(get_influxdb_mode)" = "custom" ]; then
-        local org
-        org=$(read_settings "influxdb_org")
-        echo "${org:-scrutiny}"
-    else
-        echo "scrutiny"
-    fi
+  if [ "$(get_influxdb_mode)" = "custom" ]; then
+    local org
+    org=$(read_settings "influxdb_org")
+    echo "${org:-scrutiny}"
+  else
+    echo "scrutiny"
+  fi
 }
 
 get_influxdb_bucket() {
-    if [ "$(get_influxdb_mode)" = "custom" ]; then
-        local bucket
-        bucket=$(read_settings "influxdb_bucket")
-        echo "${bucket:-scrutiny}"
-    else
-        echo "scrutiny"
-    fi
+  if [ "$(get_influxdb_mode)" = "custom" ]; then
+    local bucket
+    bucket=$(read_settings "influxdb_bucket")
+    echo "${bucket:-scrutiny}"
+  else
+    echo "scrutiny"
+  fi
 }
 
 write_settings() {
-    local settings_file="$1"
-    local web_port="$2"
-    local cron_schedule="$3"
-    local cron_interval="$4"
-    local host_id="$5"
-    local translate="$6"
-    local influxdb_mode="$7"
-    local influxdb_host="$8"
-    local influxdb_port="$9"
-    local influxdb_token="${10}"
-    local influxdb_org="${11}"
-    local influxdb_bucket="${12}"
+  local settings_file="$1"
+  local web_port="$2"
+  local cron_schedule="$3"
+  local cron_interval="$4"
+  local host_id="$5"
+  local translate="$6"
+  local influxdb_mode="$7"
+  local influxdb_host="$8"
+  local influxdb_port="$9"
+  local influxdb_token="${10}"
+  local influxdb_org="${11}"
+  local influxdb_bucket="${12}"
 
-    cat >"${settings_file}" <<EOF
+  cat >"${settings_file}" <<EOF
 {
     "web_port": "${web_port}",
     "cron_schedule": "${cron_schedule}",
@@ -180,14 +187,14 @@ EOF
 }
 
 generate_scrutiny_config() {
-    local web_port="$1"
-    local influxdb_host="$2"
-    local influxdb_port="$3"
-    local influxdb_token="$4"
-    local influxdb_org="$5"
-    local influxdb_bucket="$6"
+  local web_port="$1"
+  local influxdb_host="$2"
+  local influxdb_port="$3"
+  local influxdb_token="$4"
+  local influxdb_org="$5"
+  local influxdb_bucket="$6"
 
-    cat >"${SCRUTINY_CONFIG}" <<EOF
+  cat >"${SCRUTINY_CONFIG}" <<EOF
 version: 1
 
 web:
@@ -212,347 +219,350 @@ EOF
 }
 
 install_cron() {
-    if [ ! -x "${COLLECTOR_BIN}" ]; then
-        log_msg "WARNING: Collector binary not available, skipping cron installation"
-        return 0
-    fi
+  if [ ! -x "${COLLECTOR_BIN}" ]; then
+    log_msg "WARNING: Collector binary not available, skipping cron installation"
+    return 0
+  fi
 
-    local schedule
-    schedule=$(get_cron_schedule)
-    local host_id
-    host_id=$(get_host_id)
-    local web_port
-    web_port=$(get_web_port)
-    local cron_line="${schedule} ${COLLECTOR_BIN} run --host-id ${host_id} --api-endpoint http://localhost:${web_port} >> ${LOG_FILE} 2>&1 || true"
+  local schedule
+  schedule=$(get_cron_schedule "$(get_cron_interval)")
+  local host_id
+  host_id=$(get_host_id)
+  local web_port
+  web_port=$(get_web_port)
+  local cron_line="${schedule} ${COLLECTOR_BIN} run --host-id ${host_id} --api-endpoint http://localhost:${web_port} >> ${LOG_FILE} 2>&1 || true"
 
-    remove_cron
+  remove_cron
 
-    (crontab -l 2>/dev/null; echo "${cron_line}") | crontab -
-    log_msg "Cron installed: ${cron_line}"
+  (
+    crontab -l 2>/dev/null
+    echo "${cron_line}"
+  ) | crontab -
+  log_msg "Cron installed: ${cron_line}"
 }
 
 remove_cron() {
-    crontab -l 2>/dev/null | grep -v "scrutiny-collector-metrics" | crontab -
-    log_msg "Cron removed"
+  crontab -l 2>/dev/null | grep -v "scrutiny-collector-metrics" | crontab -
+  log_msg "Cron removed"
 }
 
 run_collector_once() {
-    if [ ! -x "${COLLECTOR_BIN}" ]; then
-        log_msg "WARNING: Collector binary not available, skipping one-time collection"
-        return 0
-    fi
+  if [ ! -x "${COLLECTOR_BIN}" ]; then
+    log_msg "WARNING: Collector binary not available, skipping one-time collection"
+    return 0
+  fi
 
-    local host_id
-    host_id=$(get_host_id)
-    log_msg "Running collector once..."
-    ${COLLECTOR_BIN} run --host-id "${host_id}" --api-endpoint "http://localhost:$(get_web_port)" >> ${LOG_FILE} 2>&1 &
-    log_msg "Collector started in background"
+  local host_id
+  host_id=$(get_host_id)
+  log_msg "Running collector once..."
+  ${COLLECTOR_BIN} run --host-id "${host_id}" --api-endpoint "http://localhost:$(get_web_port)" >>${LOG_FILE} 2>&1 &
+  log_msg "Collector started in background"
 }
 
 apply_translation() {
-    local web_dir="${TRIM_APPDEST}/web"
-    local marker="${web_dir}/.translated"
-    local unmarker="${web_dir}/.untranslated"
+  local web_dir="${TRIM_APPDEST}/web"
+  local marker="${web_dir}/.translated"
+  local unmarker="${web_dir}/.untranslated"
 
-    local translate
-    translate=$(get_translate)
+  local translate
+  translate=$(get_translate)
 
-    if [ "${translate}" != "true" ]; then
-        if [ -f "${marker}" ] && [ ! -f "${unmarker}" ]; then
-            log_msg "Chinese translation is disabled, restoring original frontend..."
-            local frontend_url
-            frontend_url="https://github.com/Starosdev/scrutiny/releases/download/v1.49.2/scrutiny-web-frontend.tar.gz"
-            curl -fsSL "${frontend_url}" -o /tmp/scrutiny-web-frontend.tar.gz 2>/dev/null
-            rm -rf "${web_dir}"
-            mkdir -p "${web_dir}"
-            tar -xzf /tmp/scrutiny-web-frontend.tar.gz -C "${web_dir}"
-            rm -f /tmp/scrutiny-web-frontend.tar.gz
-            touch "${unmarker}"
-            log_msg "Original frontend restored"
-        fi
-        return 0
+  if [ "${translate}" != "true" ]; then
+    if [ -f "${marker}" ] && [ ! -f "${unmarker}" ]; then
+      log_msg "Chinese translation is disabled, restoring original frontend..."
+      local frontend_url
+      frontend_url="https://github.com/Starosdev/scrutiny/releases/download/v1.49.2/scrutiny-web-frontend.tar.gz"
+      curl -fsSL "${frontend_url}" -o /tmp/scrutiny-web-frontend.tar.gz 2>/dev/null
+      rm -rf "${web_dir}"
+      mkdir -p "${web_dir}"
+      tar -xzf /tmp/scrutiny-web-frontend.tar.gz -C "${web_dir}"
+      rm -f /tmp/scrutiny-web-frontend.tar.gz
+      touch "${unmarker}"
+      log_msg "Original frontend restored"
     fi
+    return 0
+  fi
 
-    rm -f "${unmarker}"
+  rm -f "${unmarker}"
 
-    if [ -f "${marker}" ]; then
-        return 0
-    fi
+  if [ -f "${marker}" ]; then
+    return 0
+  fi
 
-    if [ -f "${TRIM_APPDEST}/translate.sh" ]; then
-        log_msg "Applying Chinese translation to frontend..."
-        bash "${TRIM_APPDEST}/translate.sh" "${web_dir}" >> ${LOG_FILE} 2>&1
-        log_msg "Chinese translation applied"
-    fi
+  if [ -f "${TRIM_APPDEST}/translate.sh" ]; then
+    log_msg "Applying Chinese translation to frontend..."
+    bash "${TRIM_APPDEST}/translate.sh" "${web_dir}" >>${LOG_FILE} 2>&1
+    log_msg "Chinese translation applied"
+  fi
 }
 
 start_process() {
-    if status; then
-        log_msg "Scrutiny Web already running"
-        return 0
-    fi
-
-    if [ ! -f "${WEB_BIN}" ]; then
-        log_msg "ERROR: Web binary not found at ${WEB_BIN}"
-        echo "Scrutiny Web 可执行文件缺失: ${WEB_BIN}" > "${TRIM_TEMP_LOGFILE}"
-        return 1
-    fi
-
-    if [ ! -x "${WEB_BIN}" ]; then
-        chmod +x "${WEB_BIN}" 2>/dev/null
-    fi
-
-    if [ ! -x "${WEB_BIN}" ]; then
-        log_msg "ERROR: Web binary not executable at ${WEB_BIN}"
-        echo "Scrutiny Web 可执行文件无执行权限: ${WEB_BIN}" > "${TRIM_TEMP_LOGFILE}"
-        return 1
-    fi
-
-    local web_port
-    web_port=$(get_web_port)
-
-    log_msg "Starting Scrutiny Web on port ${web_port}..."
-    ${WEB_BIN} start --config "${SCRUTINY_CONFIG}" >> ${LOG_FILE} 2>&1 &
-    printf "%s" "$!" > ${PID_FILE}
-
-    local count=0
-    while ! curl -s "http://127.0.0.1:${web_port}/api/health" >/dev/null 2>&1; do
-        sleep 1
-        count=$((count + 1))
-        if [ ${count} -ge 30 ]; then
-            log_msg "Scrutiny Web failed to start within 30 seconds"
-            echo "Scrutiny Web 启动超时，请检查日志" > "${TRIM_TEMP_LOGFILE}"
-            return 1
-        fi
-    done
-
-    log_msg "Scrutiny Web started (PID: $(head -n 1 ${PID_FILE}))"
+  if status; then
+    log_msg "Scrutiny Web already running"
     return 0
+  fi
+
+  if [ ! -f "${WEB_BIN}" ]; then
+    log_msg "ERROR: Web binary not found at ${WEB_BIN}"
+    echo "Scrutiny Web 可执行文件缺失: ${WEB_BIN}" >"${TRIM_TEMP_LOGFILE}"
+    return 1
+  fi
+
+  if [ ! -x "${WEB_BIN}" ]; then
+    chmod +x "${WEB_BIN}" 2>/dev/null
+  fi
+
+  if [ ! -x "${WEB_BIN}" ]; then
+    log_msg "ERROR: Web binary not executable at ${WEB_BIN}"
+    echo "Scrutiny Web 可执行文件无执行权限: ${WEB_BIN}" >"${TRIM_TEMP_LOGFILE}"
+    return 1
+  fi
+
+  local web_port
+  web_port=$(get_web_port)
+
+  log_msg "Starting Scrutiny Web on port ${web_port}..."
+  ${WEB_BIN} start --config "${SCRUTINY_CONFIG}" >>${LOG_FILE} 2>&1 &
+  printf "%s" "$!" >${PID_FILE}
+
+  local count=0
+  while ! curl -s "http://127.0.0.1:${web_port}/api/health" >/dev/null 2>&1; do
+    sleep 1
+    count=$((count + 1))
+    if [ ${count} -ge 30 ]; then
+      log_msg "Scrutiny Web failed to start within 30 seconds"
+      echo "Scrutiny Web 启动超时，请检查日志" >"${TRIM_TEMP_LOGFILE}"
+      return 1
+    fi
+  done
+
+  log_msg "Scrutiny Web started (PID: $(head -n 1 ${PID_FILE}))"
+  return 0
 }
 
 stop_process() {
-    log_msg "Stopping process ..."
+  log_msg "Stopping process ..."
 
-    if [ -r "${PID_FILE}" ]; then
-        pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
+  if [ -r "${PID_FILE}" ]; then
+    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
 
-        log_msg "pid=${pid}"
-        if ! check_process "${pid}"; then
-            # process not exist, delete pidfile
-            rm -f "${PID_FILE}"
-            log_msg "remove pid file 1"
-            return
-        fi
-
-        log_msg "send TERM signal to PID:${pid}..."
-        kill -TERM ${pid} >> ${LOG_FILE} 2>&1
-
-        local count=0
-        while check_process "${pid}" && [ $count -lt 15 ]; do
-            sleep 1
-            count=$((count + 1))
-            log_msg "waiting process terminal... (${count}s/15s)"
-        done
-
-        if check_process "${pid}"; then
-            log_msg "send KILL signal to PID:${pid}..."
-            kill -KILL "${pid}"
-            sleep 1
-            rm -f "${PID_FILE}"
-        else
-            log_msg "process killed... "
-            rm -f "${PID_FILE}"
-        fi
+    log_msg "pid=${pid}"
+    if ! check_process "${pid}"; then
+      # process not exist, delete pidfile
+      rm -f "${PID_FILE}"
+      log_msg "remove pid file 1"
+      return
     fi
 
-    return 0
+    log_msg "send TERM signal to PID:${pid}..."
+    kill -TERM ${pid} >>${LOG_FILE} 2>&1
+
+    local count=0
+    while check_process "${pid}" && [ $count -lt 15 ]; do
+      sleep 1
+      count=$((count + 1))
+      log_msg "waiting process terminal... (${count}s/15s)"
+    done
+
+    if check_process "${pid}"; then
+      log_msg "send KILL signal to PID:${pid}..."
+      kill -KILL "${pid}"
+      sleep 1
+      rm -f "${PID_FILE}"
+    else
+      log_msg "process killed... "
+      rm -f "${PID_FILE}"
+    fi
+  fi
+
+  return 0
 }
 
 status() {
-    if [ -f "${PID_FILE}" ]; then
-        pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
-        if check_process "${pid}"; then
-            return 0
-        else
-            # Process is not running but pidfile exists - clean it up
-            rm -f "${PID_FILE}"
-        fi
+  if [ -f "${PID_FILE}" ]; then
+    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
+    if check_process "${pid}"; then
+      return 0
+    else
+      # Process is not running but pidfile exists - clean it up
+      rm -f "${PID_FILE}"
     fi
+  fi
 
-    return 1
+  return 1
 }
 
 kill_collector() {
-    local pids
-    pids=$(pgrep -f "scrutiny-collector-metrics" 2>/dev/null)
-    if [ -n "${pids}" ]; then
-        log_msg "Killing collector processes: ${pids}"
-        echo "${pids}" | xargs kill 2>/dev/null
-    fi
+  local pids
+  pids=$(pgrep -f "scrutiny-collector-metrics" 2>/dev/null)
+  if [ -n "${pids}" ]; then
+    log_msg "Killing collector processes: ${pids}"
+    echo "${pids}" | xargs kill 2>/dev/null
+  fi
 }
 
 check_influxdb_running() {
-    local influxdb_host
-    influxdb_host=$(get_influxdb_host)
-    local influxdb_port
-    influxdb_port=$(get_influxdb_port)
-    if curl -s "http://${influxdb_host}:${influxdb_port}/health" >/dev/null 2>&1; then
-        return 0
-    fi
-    return 1
+  local influxdb_host
+  influxdb_host=$(get_influxdb_host)
+  local influxdb_port
+  influxdb_port=$(get_influxdb_port)
+  if curl -s "http://${influxdb_host}:${influxdb_port}/health" >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
 }
 
 ensure_influxdb_bucket() {
-    local influxdb_host
-    influxdb_host=$(get_influxdb_host)
-    local influxdb_port
-    influxdb_port=$(get_influxdb_port)
-    local influxdb_token
-    influxdb_token=$(get_influxdb_token)
-    local influxdb_org
-    influxdb_org=$(get_influxdb_org)
-    local bucket_name
-    bucket_name=$(get_influxdb_bucket)
+  local influxdb_host
+  influxdb_host=$(get_influxdb_host)
+  local influxdb_port
+  influxdb_port=$(get_influxdb_port)
+  local influxdb_token
+  influxdb_token=$(get_influxdb_token)
+  local influxdb_org
+  influxdb_org=$(get_influxdb_org)
+  local bucket_name
+  bucket_name=$(get_influxdb_bucket)
 
-    if [ -z "${influxdb_token}" ]; then
-        log_msg "WARNING: No InfluxDB token available, cannot ensure bucket"
-        return 1
-    fi
+  if [ -z "${influxdb_token}" ]; then
+    log_msg "WARNING: No InfluxDB token available, cannot ensure bucket"
+    return 1
+  fi
 
-    local orgs_response
-    orgs_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/orgs?org=${influxdb_org}" \
-        -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
+  local orgs_response
+  orgs_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/orgs?org=${influxdb_org}" \
+    -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
 
-    local org_id
-    org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+  local org_id
+  org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+  if [ -z "${org_id}" ]; then
+    log_msg "Creating InfluxDB org '${influxdb_org}'..."
+    local create_org_response
+    create_org_response=$(curl -s -X POST "http://${influxdb_host}:${influxdb_port}/api/v2/orgs" \
+      -H "Authorization: Token ${influxdb_token}" \
+      -H "Content-Type: application/json" \
+      -d "{\"name\":\"${influxdb_org}\",\"description\":\"Scrutiny Organization\"}" 2>/dev/null)
+    org_id=$(echo "${create_org_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
     if [ -z "${org_id}" ]; then
-        log_msg "Creating InfluxDB org '${influxdb_org}'..."
-        local create_org_response
-        create_org_response=$(curl -s -X POST "http://${influxdb_host}:${influxdb_port}/api/v2/orgs" \
-            -H "Authorization: Token ${influxdb_token}" \
-            -H "Content-Type: application/json" \
-            -d "{\"name\":\"${influxdb_org}\",\"description\":\"Scrutiny Organization\"}" 2>/dev/null)
-        org_id=$(echo "${create_org_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
-        if [ -z "${org_id}" ]; then
-            log_msg "WARNING: Failed to create InfluxDB org: ${create_org_response}"
-            return 1
-        fi
-        log_msg "InfluxDB org '${influxdb_org}' created (ID: ${org_id})"
+      log_msg "WARNING: Failed to create InfluxDB org: ${create_org_response}"
+      return 1
     fi
+    log_msg "InfluxDB org '${influxdb_org}' created (ID: ${org_id})"
+  fi
 
-    local buckets_response
-    buckets_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/buckets?org=${influxdb_org}&name=${bucket_name}" \
-        -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
+  local buckets_response
+  buckets_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/buckets?org=${influxdb_org}&name=${bucket_name}" \
+    -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
 
-    if echo "${buckets_response}" | grep -qE "\"name\"\s*:\s*\"${bucket_name}\""; then
-        log_msg "InfluxDB bucket '${bucket_name}' already exists"
-        return 0
-    fi
+  if echo "${buckets_response}" | grep -qE "\"name\"\s*:\s*\"${bucket_name}\""; then
+    log_msg "InfluxDB bucket '${bucket_name}' already exists"
+    return 0
+  fi
 
-    local create_response
-    create_response=$(curl -s -X POST "http://${influxdb_host}:${influxdb_port}/api/v2/buckets" \
-        -H "Authorization: Token ${influxdb_token}" \
-        -H "Content-Type: application/json" \
-        -d "{
+  local create_response
+  create_response=$(curl -s -X POST "http://${influxdb_host}:${influxdb_port}/api/v2/buckets" \
+    -H "Authorization: Token ${influxdb_token}" \
+    -H "Content-Type: application/json" \
+    -d "{
             \"orgID\": \"${org_id}\",
             \"name\": \"${bucket_name}\",
             \"retentionRules\": [{\"type\": \"expire\", \"everySeconds\": 93600000}],
             \"description\": \"Scrutiny metrics bucket\"
         }" 2>/dev/null)
 
-    if echo "${create_response}" | grep -qE "\"name\"\s*:\s*\"${bucket_name}\""; then
-        log_msg "InfluxDB bucket '${bucket_name}' created successfully"
-        return 0
-    else
-        log_msg "WARNING: Failed to create InfluxDB bucket: ${create_response}"
-        return 1
-    fi
+  if echo "${create_response}" | grep -qE "\"name\"\s*:\s*\"${bucket_name}\""; then
+    log_msg "InfluxDB bucket '${bucket_name}' created successfully"
+    return 0
+  else
+    log_msg "WARNING: Failed to create InfluxDB bucket: ${create_response}"
+    return 1
+  fi
 }
 
 delete_influxdb_data() {
-    local influxdb_host
-    influxdb_host=$(get_influxdb_host)
-    local influxdb_port
-    influxdb_port=$(get_influxdb_port)
-    local influxdb_token
-    influxdb_token=$(get_influxdb_token)
-    local influxdb_org
-    influxdb_org=$(get_influxdb_org)
-    local bucket_name
-    bucket_name=$(get_influxdb_bucket)
+  local influxdb_host
+  influxdb_host=$(get_influxdb_host)
+  local influxdb_port
+  influxdb_port=$(get_influxdb_port)
+  local influxdb_token
+  influxdb_token=$(get_influxdb_token)
+  local influxdb_org
+  influxdb_org=$(get_influxdb_org)
+  local bucket_name
+  bucket_name=$(get_influxdb_bucket)
 
-    if [ -z "${influxdb_token}" ]; then
-        log_msg "WARNING: No InfluxDB token, cannot delete InfluxDB data"
-        return 1
+  if [ -z "${influxdb_token}" ]; then
+    log_msg "WARNING: No InfluxDB token, cannot delete InfluxDB data"
+    return 1
+  fi
+
+  if ! check_influxdb_running; then
+    log_msg "WARNING: InfluxDB is not running, cannot delete InfluxDB data"
+    return 1
+  fi
+
+  local orgs_response
+  orgs_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/orgs?org=${influxdb_org}" \
+    -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
+
+  local org_id
+  org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+  if [ -n "${org_id}" ]; then
+    local buckets_response
+    buckets_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/buckets?org=${influxdb_org}&name=${bucket_name}" \
+      -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
+
+    local bucket_id
+    bucket_id=$(echo "${buckets_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+    if [ -n "${bucket_id}" ]; then
+      curl -s -X DELETE "http://${influxdb_host}:${influxdb_port}/api/v2/buckets/${bucket_id}" \
+        -H "Authorization: Token ${influxdb_token}" 2>/dev/null
+      log_msg "InfluxDB bucket '${bucket_name}' deleted"
     fi
 
-    if ! check_influxdb_running; then
-        log_msg "WARNING: InfluxDB is not running, cannot delete InfluxDB data"
-        return 1
-    fi
-
-    local orgs_response
-    orgs_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/orgs?org=${influxdb_org}" \
-        -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
-
-    local org_id
-    org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
-    if [ -n "${org_id}" ]; then
-        local buckets_response
-        buckets_response=$(curl -s "http://${influxdb_host}:${influxdb_port}/api/v2/buckets?org=${influxdb_org}&name=${bucket_name}" \
-            -H "Authorization: Token ${influxdb_token}" 2>/dev/null)
-
-        local bucket_id
-        bucket_id=$(echo "${buckets_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
-        if [ -n "${bucket_id}" ]; then
-            curl -s -X DELETE "http://${influxdb_host}:${influxdb_port}/api/v2/buckets/${bucket_id}" \
-                -H "Authorization: Token ${influxdb_token}" 2>/dev/null
-            log_msg "InfluxDB bucket '${bucket_name}' deleted"
-        fi
-
-        curl -s -X DELETE "http://${influxdb_host}:${influxdb_port}/api/v2/orgs/${org_id}" \
-            -H "Authorization: Token ${influxdb_token}" 2>/dev/null
-        log_msg "InfluxDB org '${influxdb_org}' deleted"
-    else
-        log_msg "InfluxDB org '${influxdb_org}' not found, nothing to delete"
-    fi
+    curl -s -X DELETE "http://${influxdb_host}:${influxdb_port}/api/v2/orgs/${org_id}" \
+      -H "Authorization: Token ${influxdb_token}" 2>/dev/null
+    log_msg "InfluxDB org '${influxdb_org}' deleted"
+  else
+    log_msg "InfluxDB org '${influxdb_org}' not found, nothing to delete"
+  fi
 }
 
 check_env() {
-    if ! command -v smartctl >/dev/null 2>&1; then
-        log_msg "WARNING: smartctl not found. Please install smartmontools."
-    fi
+  if ! command -v smartctl >/dev/null 2>&1; then
+    log_msg "WARNING: smartctl not found. Please install smartmontools."
+  fi
 
-    if [ ! -f "${WEB_BIN}" ]; then
-        log_msg "ERROR: Web binary not found at ${WEB_BIN}"
-        echo "Scrutiny Web 可执行文件缺失: ${WEB_BIN}" > "${TRIM_TEMP_LOGFILE}"
-        return 1
-    fi
+  if [ ! -f "${WEB_BIN}" ]; then
+    log_msg "ERROR: Web binary not found at ${WEB_BIN}"
+    echo "Scrutiny Web 可执行文件缺失: ${WEB_BIN}" >"${TRIM_TEMP_LOGFILE}"
+    return 1
+  fi
 
-    if [ ! -x "${WEB_BIN}" ]; then
-        chmod +x "${WEB_BIN}" 2>/dev/null
-    fi
+  if [ ! -x "${WEB_BIN}" ]; then
+    chmod +x "${WEB_BIN}" 2>/dev/null
+  fi
 
-    if [ ! -x "${WEB_BIN}" ]; then
-        log_msg "ERROR: Web binary not executable at ${WEB_BIN}"
-        echo "Scrutiny Web 可执行文件无执行权限: ${WEB_BIN}" > "${TRIM_TEMP_LOGFILE}"
-        return 1
-    fi
+  if [ ! -x "${WEB_BIN}" ]; then
+    log_msg "ERROR: Web binary not executable at ${WEB_BIN}"
+    echo "Scrutiny Web 可执行文件无执行权限: ${WEB_BIN}" >"${TRIM_TEMP_LOGFILE}"
+    return 1
+  fi
 
-    if [ ! -f "${COLLECTOR_BIN}" ]; then
-        log_msg "WARNING: Collector binary not found at ${COLLECTOR_BIN}, cron collection will not work"
-    else
-        if [ ! -x "${COLLECTOR_BIN}" ]; then
-            chmod +x "${COLLECTOR_BIN}" 2>/dev/null
-        fi
-        if [ ! -x "${COLLECTOR_BIN}" ]; then
-            log_msg "WARNING: Collector binary not executable at ${COLLECTOR_BIN}, cron collection will not work"
-        fi
+  if [ ! -f "${COLLECTOR_BIN}" ]; then
+    log_msg "WARNING: Collector binary not found at ${COLLECTOR_BIN}, cron collection will not work"
+  else
+    if [ ! -x "${COLLECTOR_BIN}" ]; then
+      chmod +x "${COLLECTOR_BIN}" 2>/dev/null
     fi
-
-    if [ -z "$(get_influxdb_token)" ]; then
-        log_msg "WARNING: InfluxDB token not found. Make sure fn-influxdb is installed and configured, or provide a custom token."
+    if [ ! -x "${COLLECTOR_BIN}" ]; then
+      log_msg "WARNING: Collector binary not executable at ${COLLECTOR_BIN}, cron collection will not work"
     fi
+  fi
 
-    return 0
+  if [ -z "$(get_influxdb_token)" ]; then
+    log_msg "WARNING: InfluxDB token not found. Make sure fn-influxdb is installed and configured, or provide a custom token."
+  fi
+
+  return 0
 }

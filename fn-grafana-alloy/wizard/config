@@ -1,160 +1,160 @@
 [
-    {
-        "stepTitle": "${wizard.config_stepTitle}",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "${wizard.config_item1_helpText}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_loki_url",
-                "label": "${wizard.config_item2_label}",
-                "description": "${wizard.config_item2_description}",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.config_item2_required}"
-                    },
-                    {
-                        "pattern": "^https?://",
-                        "message": "${wizard.config_item2_rules}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_port",
-                "label": "${wizard.config_item3_label}",
-                "description": "${wizard.config_item3_description}",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.config_item3_required}"
-                    },
-                    {
-                        "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
-                        "message": "${wizard.config_item3_rules}"
-                    }
-                ]
-            },
-            {
-                "type": "switch",
-                "field": "wizard_auth_enabled",
-                "label": "${wizard.config_item4_label}",
-                "description": "${wizard.config_item4_description}"
-            },
-            {
-                "type": "switch",
-                "field": "wizard_disable_reporting",
-                "label": "${wizard.config_item5_label}",
-                "description": "${wizard.config_item5_description}"
-            }
+  {
+    "stepTitle": "${wizard.config_stepTitle}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item1_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_loki_url",
+        "label": "${wizard.config_item2_label}",
+        "description": "${wizard.config_item2_description}",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.config_item2_required}"
+          },
+          {
+            "pattern": "^https?://",
+            "message": "${wizard.config_item2_rules}"
+          }
         ]
-    },
-    {
-        "stepTitle": "${wizard.config_step2Title}",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "${wizard.config_item6_helpText}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_auth_username",
-                "label": "${wizard.config_item7_label}",
-                "initValue": "",
-                "description": "${wizard.config_item7_description}"
-            },
-            {
-                "type": "password",
-                "field": "wizard_auth_password",
-                "label": "${wizard.config_item8_label}",
-                "description": "${wizard.config_item8_description}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_auth_tenant",
-                "label": "${wizard.config_item9_label}",
-                "initValue": "",
-                "description": "${wizard.config_item9_description}"
-            }
+      },
+      {
+        "type": "text",
+        "field": "wizard_port",
+        "label": "${wizard.config_item3_label}",
+        "description": "${wizard.config_item3_description}",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.config_item3_required}"
+          },
+          {
+            "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
+            "message": "${wizard.config_item3_rules}"
+          }
         ]
-    },
-    {
-        "stepTitle": "${wizard.config_step3Title}",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "${wizard.config_item10_helpText}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_hostname",
-                "label": "${wizard.config_item11_label}",
-                "description": "${wizard.config_item11_description}",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.config_item11_required}"
-                    },
-                    {
-                        "pattern": "^[a-zA-Z0-9_-]+$",
-                        "message": "${wizard.config_item11_rules}"
-                    }
-                ]
-            },
-            {
-                "type": "tips",
-                "helpText": "${wizard.config_item12_helpText}"
-            }
+      },
+      {
+        "type": "switch",
+        "field": "wizard_auth_enabled",
+        "label": "${wizard.config_item4_label}",
+        "description": "${wizard.config_item4_description}"
+      },
+      {
+        "type": "switch",
+        "field": "wizard_disable_reporting",
+        "label": "${wizard.config_item5_label}",
+        "description": "${wizard.config_item5_description}"
+      }
+    ]
+  },
+  {
+    "stepTitle": "${wizard.config_step2Title}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item6_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_auth_username",
+        "label": "${wizard.config_item7_label}",
+        "initValue": "",
+        "description": "${wizard.config_item7_description}"
+      },
+      {
+        "type": "password",
+        "field": "wizard_auth_password",
+        "label": "${wizard.config_item8_label}",
+        "description": "${wizard.config_item8_description}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_auth_tenant",
+        "label": "${wizard.config_item9_label}",
+        "initValue": "",
+        "description": "${wizard.config_item9_description}"
+      }
+    ]
+  },
+  {
+    "stepTitle": "${wizard.config_step3Title}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item10_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_hostname",
+        "label": "${wizard.config_item11_label}",
+        "description": "${wizard.config_item11_description}",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.config_item11_required}"
+          },
+          {
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "message": "${wizard.config_item11_rules}"
+          }
         ]
-    },
-    {
-        "stepTitle": "${wizard.config_step4Title}",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "${wizard.config_item13_helpText}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_custom_label_1_key",
-                "label": "${wizard.config_item14_label}",
-                "initValue": "",
-                "description": "${wizard.config_item14_description}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_custom_label_1_value",
-                "label": "${wizard.config_item15_label}",
-                "initValue": "",
-                "description": "${wizard.config_item15_description}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_custom_label_2_key",
-                "label": "${wizard.config_item16_label}",
-                "initValue": ""
-            },
-            {
-                "type": "text",
-                "field": "wizard_custom_label_2_value",
-                "label": "${wizard.config_item17_label}",
-                "initValue": ""
-            },
-            {
-                "type": "text",
-                "field": "wizard_custom_label_3_key",
-                "label": "${wizard.config_item18_label}",
-                "initValue": ""
-            },
-            {
-                "type": "text",
-                "field": "wizard_custom_label_3_value",
-                "label": "${wizard.config_item19_label}",
-                "initValue": ""
-            }
-        ]
-    }
+      },
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item12_helpText}"
+      }
+    ]
+  },
+  {
+    "stepTitle": "${wizard.config_step4Title}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item13_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_custom_label_1_key",
+        "label": "${wizard.config_item14_label}",
+        "initValue": "",
+        "description": "${wizard.config_item14_description}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_custom_label_1_value",
+        "label": "${wizard.config_item15_label}",
+        "initValue": "",
+        "description": "${wizard.config_item15_description}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_custom_label_2_key",
+        "label": "${wizard.config_item16_label}",
+        "initValue": ""
+      },
+      {
+        "type": "text",
+        "field": "wizard_custom_label_2_value",
+        "label": "${wizard.config_item17_label}",
+        "initValue": ""
+      },
+      {
+        "type": "text",
+        "field": "wizard_custom_label_3_key",
+        "label": "${wizard.config_item18_label}",
+        "initValue": ""
+      },
+      {
+        "type": "text",
+        "field": "wizard_custom_label_3_value",
+        "label": "${wizard.config_item19_label}",
+        "initValue": ""
+      }
+    ]
+  }
 ]

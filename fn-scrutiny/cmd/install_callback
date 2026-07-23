@@ -22,10 +22,10 @@ chmod +x "${COLLECTOR_BIN}" 2>/dev/null
 chmod +x "${WEB_BIN}" 2>/dev/null
 
 if check_influxdb_running; then
-    ensure_influxdb_bucket || true
-    generate_scrutiny_config "${WEB_PORT}" "$(get_influxdb_host)" "$(get_influxdb_port)" "$(get_influxdb_token)" "$(get_influxdb_org)" "$(get_influxdb_bucket)"
+  ensure_influxdb_bucket || true
+  generate_scrutiny_config "${WEB_PORT}" "$(get_influxdb_host)" "$(get_influxdb_port)" "$(get_influxdb_token)" "$(get_influxdb_org)" "$(get_influxdb_bucket)"
 else
-    log_msg "WARNING: InfluxDB is not running. Config will be generated on first start."
+  log_msg "WARNING: InfluxDB is not running. Config will be generated on first start."
 fi
 
 exit 0

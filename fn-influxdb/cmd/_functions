@@ -12,92 +12,92 @@ INFLUXDB_BOLT="${TRIM_PKGVAR}/influxd.bolt"
 INFLUXDB_SQLITE="${TRIM_PKGVAR}/influxd.sqlite"
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
 }
 
 rotate_log() {
-    local logfile="$1"
-    local maxsize="$2"
-    if [ -f "${logfile}" ] && [ "$(stat -c%s "${logfile}" 2>/dev/null || echo 0)" -gt "${maxsize}" ]; then
-        mv "${logfile}" "${logfile}.old"
-    fi
+  local logfile="$1"
+  local maxsize="$2"
+  if [ -f "${logfile}" ] && [ "$(stat -c%s "${logfile}" 2>/dev/null || echo 0)" -gt "${maxsize}" ]; then
+    mv "${logfile}" "${logfile}.old"
+  fi
 }
 
 check_process() {
-    local pid=$1
-    if kill -0 "${pid}" 2>/dev/null; then
-        return 0  # process exist
-    else
-        return 1  # process not exist
-    fi
+  local pid=$1
+  if kill -0 "${pid}" 2>/dev/null; then
+    return 0 # process exist
+  else
+    return 1 # process not exist
+  fi
 }
 
 read_settings() {
-    local key="$1"
-    if [ -f "${SETTINGS_FILE}" ]; then
-        grep "\"${key}\"" "${SETTINGS_FILE}" 2>/dev/null | sed 's/.*:.*"\(.*\)".*/\1/' | tr -d ' ,'
-    fi
+  local key="$1"
+  if [ -f "${SETTINGS_FILE}" ]; then
+    grep "\"${key}\"" "${SETTINGS_FILE}" 2>/dev/null | sed 's/.*:.*"\(.*\)".*/\1/' | tr -d ' ,'
+  fi
 }
 
 get_port() {
-    local port
-    port=$(read_settings "port")
-    echo "${port:-8086}"
+  local port
+  port=$(read_settings "port")
+  echo "${port:-8086}"
 }
 
 get_username() {
-    local username
-    username=$(read_settings "username")
-    echo "${username:-admin}"
+  local username
+  username=$(read_settings "username")
+  echo "${username:-admin}"
 }
 
 get_password() {
-    local password
-    password=$(read_settings "password")
-    echo "${password}"
+  local password
+  password=$(read_settings "password")
+  echo "${password}"
 }
 
 get_org() {
-    local org
-    org=$(read_settings "org")
-    echo "${org:-fnos}"
+  local org
+  org=$(read_settings "org")
+  echo "${org:-fnos}"
 }
 
 get_bucket() {
-    local bucket
-    bucket=$(read_settings "bucket")
-    echo "${bucket:-default}"
+  local bucket
+  bucket=$(read_settings "bucket")
+  echo "${bucket:-default}"
 }
 
 get_retention() {
-    local retention
-    retention=$(read_settings "retention")
-    echo "${retention:-26000h}"
+  local retention
+  retention=$(read_settings "retention")
+  echo "${retention:-26000h}"
 }
 
 get_cli() {
-    local cli
-    cli=$(read_settings "cli")
-    echo "${cli:-true}"
+  local cli
+  cli=$(read_settings "cli")
+  echo "${cli:-true}"
 }
 
 get_token() {
-    if [ -f "${TOKEN_FILE}" ]; then
-        cat "${TOKEN_FILE}" 2>/dev/null
-    fi
+  if [ -f "${TOKEN_FILE}" ]; then
+    cat "${TOKEN_FILE}" 2>/dev/null
+  fi
 }
 
 write_settings() {
-    local settings_file="$1"
-    local port="$2"
-    local username="$3"
-    local password="$4"
-    local org="$5"
-    local bucket="$6"
-    local retention="$7"
-    local cli="$8"
+  local settings_file="$1"
+  local port="$2"
+  local username="$3"
+  local password="$4"
+  local org="$5"
+  local bucket="$6"
+  local retention="$7"
+  local cli="$8"
 
-    cat >"${settings_file}" <<EOF
+  cat >"${settings_file}" <<EOF
 {
     "port": "${port}",
     "username": "${username}",
@@ -111,204 +111,204 @@ EOF
 }
 
 download_influxdb() {
-    local arch_name
-    case "$(uname -m)" in
-        x86_64)  arch_name="amd64" ;;
-        aarch64) arch_name="arm64" ;;
-        *)       arch_name="$(uname -m)" ;;
-    esac
+  local arch_name
+  case "$(uname -m)" in
+    x86_64) arch_name="amd64" ;;
+    aarch64) arch_name="arm64" ;;
+    *) arch_name="$(uname -m)" ;;
+  esac
 
-    local influxdb_version="2.7.11"
-    local influxdb_url="https://download.influxdata.com/influxdb/releases/influxdb2-${influxdb_version}_linux_${arch_name}.tar.gz"
-    local tmp_dir
-    tmp_dir=$(mktemp -d)
+  local influxdb_version="2.7.11"
+  local influxdb_url="https://download.influxdata.com/influxdb/releases/influxdb2-${influxdb_version}_linux_${arch_name}.tar.gz"
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
 
-    log_msg "Downloading InfluxDB v${influxdb_version} for ${arch_name}..."
+  log_msg "Downloading InfluxDB v${influxdb_version} for ${arch_name}..."
 
-    if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
-        log_msg "Neither curl nor wget available"
-        echo "InfluxDB 下载失败：系统缺少 curl 和 wget" > "${TRIM_TEMP_LOGFILE}"
-        rm -rf "${tmp_dir}"
-        return 1
-    fi
-
-    local download_err
-    download_err="${tmp_dir}/download_err.log"
-
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "${influxdb_url}" -o "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -q "${influxdb_url}" -O "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}"
-    fi
-
-    if [ $? -ne 0 ]; then
-        local err_detail
-        err_detail=$(cat "${download_err}" 2>/dev/null | head -1)
-        log_msg "Failed to download InfluxDB: ${err_detail}"
-        echo "InfluxDB 下载失败，请检查网络连接后重试 (${err_detail})" > "${TRIM_TEMP_LOGFILE}"
-        rm -rf "${tmp_dir}"
-        return 1
-    fi
-
-    mkdir -p "${TRIM_PKGVAR}/bin"
-    tar -xzf "${tmp_dir}/influxdb.tar.gz" -C "${tmp_dir}"
-
-    local influxd_bin
-    influxd_bin=$(find "${tmp_dir}" -name "influxd" -type f | head -1)
-    if [ -z "${influxd_bin}" ]; then
-        log_msg "influxd binary not found in archive"
-        echo "InfluxDB 安装失败：下载包中未找到 influxd 可执行文件" > "${TRIM_TEMP_LOGFILE}"
-        rm -rf "${tmp_dir}"
-        return 1
-    fi
-    cp "${influxd_bin}" "${INFLUXDB_BIN}"
-    chmod +x "${INFLUXDB_BIN}"
-
-    local influx_cli
-    influx_cli=$(find "${tmp_dir}" -name "influx" -type f | head -1)
-    local install_cli
-    install_cli=$(get_cli)
-    if [ "${install_cli}" = "true" ] && [ -n "${influx_cli}" ]; then
-        cp "${influx_cli}" "${INFLUXDB_CLI}"
-        chmod +x "${INFLUXDB_CLI}"
-        log_msg "InfluxDB CLI installed"
-    elif [ "${install_cli}" = "true" ] && [ -z "${influx_cli}" ]; then
-        log_msg "WARNING: influx CLI not found in archive, will use API for setup"
-    else
-        log_msg "InfluxDB CLI installation skipped (disabled in settings)"
-    fi
-
+  if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
+    log_msg "Neither curl nor wget available"
+    echo "InfluxDB 下载失败：系统缺少 curl 和 wget" >"${TRIM_TEMP_LOGFILE}"
     rm -rf "${tmp_dir}"
-    log_msg "InfluxDB installed successfully"
-    return 0
+    return 1
+  fi
+
+  local download_err
+  download_err="${tmp_dir}/download_err.log"
+
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "${influxdb_url}" -o "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "${influxdb_url}" -O "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}"
+  fi
+
+  if [ $? -ne 0 ]; then
+    local err_detail
+    err_detail=$(cat "${download_err}" 2>/dev/null | head -1)
+    log_msg "Failed to download InfluxDB: ${err_detail}"
+    echo "InfluxDB 下载失败，请检查网络连接后重试 (${err_detail})" >"${TRIM_TEMP_LOGFILE}"
+    rm -rf "${tmp_dir}"
+    return 1
+  fi
+
+  mkdir -p "${TRIM_PKGVAR}/bin"
+  tar -xzf "${tmp_dir}/influxdb.tar.gz" -C "${tmp_dir}"
+
+  local influxd_bin
+  influxd_bin=$(find "${tmp_dir}" -name "influxd" -type f | head -1)
+  if [ -z "${influxd_bin}" ]; then
+    log_msg "influxd binary not found in archive"
+    echo "InfluxDB 安装失败：下载包中未找到 influxd 可执行文件" >"${TRIM_TEMP_LOGFILE}"
+    rm -rf "${tmp_dir}"
+    return 1
+  fi
+  cp "${influxd_bin}" "${INFLUXDB_BIN}"
+  chmod +x "${INFLUXDB_BIN}"
+
+  local influx_cli
+  influx_cli=$(find "${tmp_dir}" -name "influx" -type f | head -1)
+  local install_cli
+  install_cli=$(get_cli)
+  if [ "${install_cli}" = "true" ] && [ -n "${influx_cli}" ]; then
+    cp "${influx_cli}" "${INFLUXDB_CLI}"
+    chmod +x "${INFLUXDB_CLI}"
+    log_msg "InfluxDB CLI installed"
+  elif [ "${install_cli}" = "true" ] && [ -z "${influx_cli}" ]; then
+    log_msg "WARNING: influx CLI not found in archive, will use API for setup"
+  else
+    log_msg "InfluxDB CLI installation skipped (disabled in settings)"
+  fi
+
+  rm -rf "${tmp_dir}"
+  log_msg "InfluxDB installed successfully"
+  return 0
 }
 
 start_process() {
-    if status; then
-        log_msg "InfluxDB already running"
-        return 0
-    fi
-
-    if [ ! -x "${INFLUXDB_BIN}" ]; then
-        log_msg "InfluxDB binary not found, downloading..."
-        download_influxdb || return 1
-    fi
-
-    mkdir -p "${INFLUXDB_DATA}"
-
-    local port
-    port=$(get_port)
-
-    log_msg "Starting InfluxDB on port ${port}..."
-    ${INFLUXDB_BIN} \
-        --engine-path "${INFLUXDB_DATA}" \
-        --bolt-path "${INFLUXDB_BOLT}" \
-        --sqlite-path "${INFLUXDB_SQLITE}" \
-        --http-bind-address "0.0.0.0:${port}" \
-        >> ${LOG_FILE} 2>&1 &
-    printf "%s" "$!" > ${PID_FILE}
-
-    local count=0
-    while ! curl -s "http://127.0.0.1:${port}/health" >/dev/null 2>&1; do
-        sleep 1
-        count=$((count + 1))
-        if [ ${count} -ge 30 ]; then
-            log_msg "InfluxDB failed to start within 30 seconds"
-            echo "InfluxDB 启动超时，请检查日志" > "${TRIM_TEMP_LOGFILE}"
-            return 1
-        fi
-    done
-
-    log_msg "InfluxDB started (PID: $(head -n 1 ${PID_FILE}))"
+  if status; then
+    log_msg "InfluxDB already running"
     return 0
+  fi
+
+  if [ ! -x "${INFLUXDB_BIN}" ]; then
+    log_msg "InfluxDB binary not found, downloading..."
+    download_influxdb || return 1
+  fi
+
+  mkdir -p "${INFLUXDB_DATA}"
+
+  local port
+  port=$(get_port)
+
+  log_msg "Starting InfluxDB on port ${port}..."
+  ${INFLUXDB_BIN} \
+    --engine-path "${INFLUXDB_DATA}" \
+    --bolt-path "${INFLUXDB_BOLT}" \
+    --sqlite-path "${INFLUXDB_SQLITE}" \
+    --http-bind-address "0.0.0.0:${port}" \
+    >>${LOG_FILE} 2>&1 &
+  printf "%s" "$!" >${PID_FILE}
+
+  local count=0
+  while ! curl -s "http://127.0.0.1:${port}/health" >/dev/null 2>&1; do
+    sleep 1
+    count=$((count + 1))
+    if [ ${count} -ge 30 ]; then
+      log_msg "InfluxDB failed to start within 30 seconds"
+      echo "InfluxDB 启动超时，请检查日志" >"${TRIM_TEMP_LOGFILE}"
+      return 1
+    fi
+  done
+
+  log_msg "InfluxDB started (PID: $(head -n 1 ${PID_FILE}))"
+  return 0
 }
 
 stop_process() {
-    log_msg "Stopping process ..."
+  log_msg "Stopping process ..."
 
-    if [ -r "${PID_FILE}" ]; then
-        pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
+  if [ -r "${PID_FILE}" ]; then
+    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
 
-        log_msg "pid=${pid}"
-        if ! check_process "${pid}"; then
-            # process not exist, delete pidfile
-            rm -f "${PID_FILE}"
-            log_msg "remove pid file 1"
-            return
-        fi
-
-        log_msg "send TERM signal to PID:${pid}..."
-        kill -TERM ${pid} >> ${LOG_FILE} 2>&1
-
-        local count=0
-        while check_process "${pid}" && [ $count -lt 15 ]; do
-            sleep 1
-            count=$((count + 1))
-            log_msg "waiting process terminal... (${count}s/15s)"
-        done
-
-        if check_process "${pid}"; then
-            log_msg "send KILL signal to PID:${pid}..."
-            kill -KILL "${pid}"
-            sleep 1
-            rm -f "${PID_FILE}"
-        else
-            log_msg "process killed... "
-            rm -f "${PID_FILE}"
-        fi
+    log_msg "pid=${pid}"
+    if ! check_process "${pid}"; then
+      # process not exist, delete pidfile
+      rm -f "${PID_FILE}"
+      log_msg "remove pid file 1"
+      return
     fi
 
-    return 0
+    log_msg "send TERM signal to PID:${pid}..."
+    kill -TERM ${pid} >>${LOG_FILE} 2>&1
+
+    local count=0
+    while check_process "${pid}" && [ $count -lt 15 ]; do
+      sleep 1
+      count=$((count + 1))
+      log_msg "waiting process terminal... (${count}s/15s)"
+    done
+
+    if check_process "${pid}"; then
+      log_msg "send KILL signal to PID:${pid}..."
+      kill -KILL "${pid}"
+      sleep 1
+      rm -f "${PID_FILE}"
+    else
+      log_msg "process killed... "
+      rm -f "${PID_FILE}"
+    fi
+  fi
+
+  return 0
 }
 
 status() {
-    if [ -f "${PID_FILE}" ]; then
-        pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
-        if check_process "${pid}"; then
-            return 0
-        else
-            # Process is not running but pidfile exists - clean it up
-            rm -f "${PID_FILE}"
-        fi
+  if [ -f "${PID_FILE}" ]; then
+    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
+    if check_process "${pid}"; then
+      return 0
+    else
+      # Process is not running but pidfile exists - clean it up
+      rm -f "${PID_FILE}"
     fi
+  fi
 
-    return 1
+  return 1
 }
 
 setup_influxdb() {
-    local port
-    port=$(get_port)
+  local port
+  port=$(get_port)
 
-    local setup_check
-    setup_check=$(curl -s "http://127.0.0.1:${port}/api/v2/setup" 2>/dev/null)
-    if echo "${setup_check}" | grep -qE '"allowed"\s*:\s*true'; then
-        log_msg "InfluxDB not yet initialized, running setup..."
-    else
-        log_msg "InfluxDB already initialized"
-        return 0
-    fi
+  local setup_check
+  setup_check=$(curl -s "http://127.0.0.1:${port}/api/v2/setup" 2>/dev/null)
+  if echo "${setup_check}" | grep -qE '"allowed"\s*:\s*true'; then
+    log_msg "InfluxDB not yet initialized, running setup..."
+  else
+    log_msg "InfluxDB already initialized"
+    return 0
+  fi
 
-    local username
-    username=$(get_username)
-    local password
-    password=$(get_password)
-    local org
-    org=$(get_org)
-    local bucket
-    bucket=$(get_bucket)
-    local retention
-    retention=$(get_retention)
+  local username
+  username=$(get_username)
+  local password
+  password=$(get_password)
+  local org
+  org=$(get_org)
+  local bucket
+  bucket=$(get_bucket)
+  local retention
+  retention=$(get_retention)
 
-    if [ ${#password} -lt 8 ]; then
-        log_msg "ERROR: Password must be at least 8 characters long (current: ${#password} chars)"
-        log_msg "Please reconfigure with a valid password"
-        return 1
-    fi
+  if [ ${#password} -lt 8 ]; then
+    log_msg "ERROR: Password must be at least 8 characters long (current: ${#password} chars)"
+    log_msg "Please reconfigure with a valid password"
+    return 1
+  fi
 
-    local setup_response
-    setup_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/setup" \
-        -H "Content-Type: application/json" \
-        -d "{
+  local setup_response
+  setup_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/setup" \
+    -H "Content-Type: application/json" \
+    -d "{
             \"username\": \"${username}\",
             \"password\": \"${password}\",
             \"org\": \"${org}\",
@@ -316,189 +316,189 @@ setup_influxdb() {
             \"retentionDuration\": \"${retention}\"
         }" 2>/dev/null)
 
-    if echo "${setup_response}" | grep -qE '"code"\s*:\s*"invalid"'; then
-        local error_msg
-        error_msg=$(echo "${setup_response}" | grep -oE '"message"\s*:\s*"[^"]*"' | head -1 | sed 's/"message"\s*:\s*"//;s/"//')
-        log_msg "InfluxDB setup failed: ${error_msg}"
-        return 1
-    fi
+  if echo "${setup_response}" | grep -qE '"code"\s*:\s*"invalid"'; then
+    local error_msg
+    error_msg=$(echo "${setup_response}" | grep -oE '"message"\s*:\s*"[^"]*"' | head -1 | sed 's/"message"\s*:\s*"//;s/"//')
+    log_msg "InfluxDB setup failed: ${error_msg}"
+    return 1
+  fi
 
-    local token
-    token=$(echo "${setup_response}" | grep -oE '"token"\s*:\s*"[^"]*"' | head -1 | sed 's/"token"\s*:\s*"//;s/"//')
-    if [ -z "${token}" ]; then
-        log_msg "Failed to parse InfluxDB token from setup response"
-        log_msg "Response: ${setup_response}"
-        return 1
-    fi
+  local token
+  token=$(echo "${setup_response}" | grep -oE '"token"\s*:\s*"[^"]*"' | head -1 | sed 's/"token"\s*:\s*"//;s/"//')
+  if [ -z "${token}" ]; then
+    log_msg "Failed to parse InfluxDB token from setup response"
+    log_msg "Response: ${setup_response}"
+    return 1
+  fi
 
-    echo "${token}" >"${TOKEN_FILE}"
-    chmod 600 "${TOKEN_FILE}"
-    log_msg "InfluxDB setup completed, token saved"
-    return 0
+  echo "${token}" >"${TOKEN_FILE}"
+  chmod 600 "${TOKEN_FILE}"
+  log_msg "InfluxDB setup completed, token saved"
+  return 0
 }
 
 create_bucket_for_app() {
-    local app_org="$1"
-    local app_bucket="$2"
-    local retention="$3"
-    local port
-    port=$(get_port)
-    local token
-    token=$(get_token)
-    local admin_org
-    admin_org=$(get_org)
+  local app_org="$1"
+  local app_bucket="$2"
+  local retention="$3"
+  local port
+  port=$(get_port)
+  local token
+  token=$(get_token)
+  local admin_org
+  admin_org=$(get_org)
 
-    if [ -z "${token}" ]; then
-        log_msg "No token available, cannot create bucket"
-        return 1
-    fi
+  if [ -z "${token}" ]; then
+    log_msg "No token available, cannot create bucket"
+    return 1
+  fi
 
-    local orgs_response
-    orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs" \
-        -H "Authorization: Token ${token}" 2>/dev/null)
+  local orgs_response
+  orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs" \
+    -H "Authorization: Token ${token}" 2>/dev/null)
 
-    local org_id
-    org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+  local org_id
+  org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
 
-    if [ -z "${org_id}" ]; then
-        log_msg "Failed to get org ID"
-        return 1
-    fi
+  if [ -z "${org_id}" ]; then
+    log_msg "Failed to get org ID"
+    return 1
+  fi
 
-    local buckets_response
-    buckets_response=$(curl -s "http://127.0.0.1:${port}/api/v2/buckets?org=${admin_org}&name=${app_bucket}" \
-        -H "Authorization: Token ${token}" 2>/dev/null)
+  local buckets_response
+  buckets_response=$(curl -s "http://127.0.0.1:${port}/api/v2/buckets?org=${admin_org}&name=${app_bucket}" \
+    -H "Authorization: Token ${token}" 2>/dev/null)
 
-    if echo "${buckets_response}" | grep -qE "\"name\"\\s*:\\s*\"${app_bucket}\""; then
-        log_msg "Bucket '${app_bucket}' already exists"
-        return 0
-    fi
+  if echo "${buckets_response}" | grep -qE "\"name\"\\s*:\\s*\"${app_bucket}\""; then
+    log_msg "Bucket '${app_bucket}' already exists"
+    return 0
+  fi
 
-    local retention_body=""
-    if [ -n "${retention}" ] && [ "${retention}" != "0" ]; then
-        retention_body="\"retentionRules\": [{\"type\": \"expire\", \"everySeconds\": $(echo "${retention}" | sed 's/h//g' | awk '{print int($1 * 3600)}')}],"
-    fi
+  local retention_body=""
+  if [ -n "${retention}" ] && [ "${retention}" != "0" ]; then
+    retention_body="\"retentionRules\": [{\"type\": \"expire\", \"everySeconds\": $(echo "${retention}" | sed 's/h//g' | awk '{print int($1 * 3600)}')}],"
+  fi
 
-    local create_response
-    create_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/buckets" \
-        -H "Authorization: Token ${token}" \
-        -H "Content-Type: application/json" \
-        -d "{
+  local create_response
+  create_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/buckets" \
+    -H "Authorization: Token ${token}" \
+    -H "Content-Type: application/json" \
+    -d "{
             \"orgID\": \"${org_id}\",
             \"name\": \"${app_bucket}\",
             ${retention_body}
             \"description\": \"Bucket for ${app_org}\"
         }" 2>/dev/null)
 
-    if echo "${create_response}" | grep -qE "\"name\"\\s*:\\s*\"${app_bucket}\""; then
-        log_msg "Bucket '${app_bucket}' created successfully"
-        return 0
-    else
-        log_msg "Failed to create bucket '${app_bucket}': ${create_response}"
-        return 1
-    fi
+  if echo "${create_response}" | grep -qE "\"name\"\\s*:\\s*\"${app_bucket}\""; then
+    log_msg "Bucket '${app_bucket}' created successfully"
+    return 0
+  else
+    log_msg "Failed to create bucket '${app_bucket}': ${create_response}"
+    return 1
+  fi
 }
 
 create_token_for_app() {
-    local app_name="$1"
-    local permissions="$2"
-    local port
-    port=$(get_port)
-    local token
-    token=$(get_token)
-    local admin_org
-    admin_org=$(get_org)
+  local app_name="$1"
+  local permissions="$2"
+  local port
+  port=$(get_port)
+  local token
+  token=$(get_token)
+  local admin_org
+  admin_org=$(get_org)
 
-    if [ -z "${token}" ]; then
-        log_msg "No token available, cannot create token"
-        return 1
-    fi
+  if [ -z "${token}" ]; then
+    log_msg "No token available, cannot create token"
+    return 1
+  fi
 
-    local orgs_response
-    orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs" \
-        -H "Authorization: Token ${token}" 2>/dev/null)
+  local orgs_response
+  orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs" \
+    -H "Authorization: Token ${token}" 2>/dev/null)
 
-    local org_id
-    org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+  local org_id
+  org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
 
-    local auth_response
-    auth_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/authorizations" \
-        -H "Authorization: Token ${token}" \
-        -H "Content-Type: application/json" \
-        -d "{
+  local auth_response
+  auth_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/authorizations" \
+    -H "Authorization: Token ${token}" \
+    -H "Content-Type: application/json" \
+    -d "{
             \"orgID\": \"${org_id}\",
             \"description\": \"${app_name} access token\",
             \"permissions\": ${permissions}
         }" 2>/dev/null)
 
-    local app_token
-    app_token=$(echo "${auth_response}" | grep -oE '"token"\s*:\s*"[^"]*"' | head -1 | sed 's/"token"\s*:\s*"//;s/"//')
-    if [ -z "${app_token}" ]; then
-        log_msg "Failed to create token for ${app_name}: ${auth_response}"
-        return 1
-    fi
+  local app_token
+  app_token=$(echo "${auth_response}" | grep -oE '"token"\s*:\s*"[^"]*"' | head -1 | sed 's/"token"\s*:\s*"//;s/"//')
+  if [ -z "${app_token}" ]; then
+    log_msg "Failed to create token for ${app_name}: ${auth_response}"
+    return 1
+  fi
 
-    echo "${app_token}"
-    return 0
+  echo "${app_token}"
+  return 0
 }
 
 ensure_scrutiny_resources() {
-    local port
-    port=$(get_port)
-    local token
-    token=$(get_token)
+  local port
+  port=$(get_port)
+  local token
+  token=$(get_token)
 
-    if [ -z "${token}" ]; then
-        log_msg "No token available, cannot ensure scrutiny resources"
-        return 1
-    fi
+  if [ -z "${token}" ]; then
+    log_msg "No token available, cannot ensure scrutiny resources"
+    return 1
+  fi
 
-    local scrutiny_org="scrutiny"
-    local scrutiny_bucket="scrutiny"
+  local scrutiny_org="scrutiny"
+  local scrutiny_bucket="scrutiny"
 
-    local orgs_response
-    orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs?org=${scrutiny_org}" \
-        -H "Authorization: Token ${token}" 2>/dev/null)
+  local orgs_response
+  orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs?org=${scrutiny_org}" \
+    -H "Authorization: Token ${token}" 2>/dev/null)
 
-    local scrutiny_org_id
-    scrutiny_org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
+  local scrutiny_org_id
+  scrutiny_org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
 
+  if [ -z "${scrutiny_org_id}" ]; then
+    log_msg "Creating scrutiny org..."
+    local create_org_response
+    create_org_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/orgs" \
+      -H "Authorization: Token ${token}" \
+      -H "Content-Type: application/json" \
+      -d "{\"name\":\"${scrutiny_org}\",\"description\":\"Scrutiny Organization\"}" 2>/dev/null)
+    scrutiny_org_id=$(echo "${create_org_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
     if [ -z "${scrutiny_org_id}" ]; then
-        log_msg "Creating scrutiny org..."
-        local create_org_response
-        create_org_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/orgs" \
-            -H "Authorization: Token ${token}" \
-            -H "Content-Type: application/json" \
-            -d "{\"name\":\"${scrutiny_org}\",\"description\":\"Scrutiny Organization\"}" 2>/dev/null)
-        scrutiny_org_id=$(echo "${create_org_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
-        if [ -z "${scrutiny_org_id}" ]; then
-            log_msg "Failed to create scrutiny org: ${create_org_response}"
-            return 1
-        fi
-        log_msg "Scrutiny org created (ID: ${scrutiny_org_id})"
+      log_msg "Failed to create scrutiny org: ${create_org_response}"
+      return 1
     fi
+    log_msg "Scrutiny org created (ID: ${scrutiny_org_id})"
+  fi
 
-    local buckets_response
-    buckets_response=$(curl -s "http://127.0.0.1:${port}/api/v2/buckets?org=${scrutiny_org}&name=${scrutiny_bucket}" \
-        -H "Authorization: Token ${token}" 2>/dev/null)
+  local buckets_response
+  buckets_response=$(curl -s "http://127.0.0.1:${port}/api/v2/buckets?org=${scrutiny_org}&name=${scrutiny_bucket}" \
+    -H "Authorization: Token ${token}" 2>/dev/null)
 
-    if echo "${buckets_response}" | grep -qE "\"name\"\\s*:\\s*\"${scrutiny_bucket}\""; then
-        log_msg "Scrutiny bucket already exists"
-        return 0
-    fi
+  if echo "${buckets_response}" | grep -qE "\"name\"\\s*:\\s*\"${scrutiny_bucket}\""; then
+    log_msg "Scrutiny bucket already exists"
+    return 0
+  fi
 
-    log_msg "Creating scrutiny bucket..."
-    local create_bucket_response
-    create_bucket_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/buckets" \
-        -H "Authorization: Token ${token}" \
-        -H "Content-Type: application/json" \
-        -d "{\"orgID\":\"${scrutiny_org_id}\",\"name\":\"${scrutiny_bucket}\",\"description\":\"Bucket for Scrutiny\"}" 2>/dev/null)
+  log_msg "Creating scrutiny bucket..."
+  local create_bucket_response
+  create_bucket_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/buckets" \
+    -H "Authorization: Token ${token}" \
+    -H "Content-Type: application/json" \
+    -d "{\"orgID\":\"${scrutiny_org_id}\",\"name\":\"${scrutiny_bucket}\",\"description\":\"Bucket for Scrutiny\"}" 2>/dev/null)
 
-    if echo "${create_bucket_response}" | grep -qE "\"name\"\\s*:\\s*\"${scrutiny_bucket}\""; then
-        log_msg "Scrutiny bucket created successfully"
-        return 0
-    else
-        log_msg "Failed to create scrutiny bucket: ${create_bucket_response}"
-        return 1
-    fi
+  if echo "${create_bucket_response}" | grep -qE "\"name\"\\s*:\\s*\"${scrutiny_bucket}\""; then
+    log_msg "Scrutiny bucket created successfully"
+    return 0
+  else
+    log_msg "Failed to create scrutiny bucket: ${create_bucket_response}"
+    return 1
+  fi
 }

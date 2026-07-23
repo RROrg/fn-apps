@@ -6,12 +6,12 @@
 LOG_FILE="${TRIM_PKGVAR}/info.log"
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - [uninstall] $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - [uninstall] $1" >>${LOG_FILE}
 }
 
 if [ "${wizard_data_action:-}" == "delete" ]; then
-    rm -rf "${TRIM_PKGVAR}"
-    exit 0
+  rm -rf "${TRIM_PKGVAR}"
+  exit 0
 fi
 
 log_msg "Uninstall callback completed"

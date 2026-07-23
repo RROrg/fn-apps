@@ -22,12 +22,12 @@ INFLUXDB_BUCKET="${wizard_influxdb_bucket:-$(get_influxdb_bucket)}"
 write_settings "${SETTINGS_FILE}" "${WEB_PORT}" "${CRON_SCHEDULE}" "${CRON_INTERVAL}" "${HOST_ID}" "${TRANSLATE}" "${INFLUXDB_MODE}" "${INFLUXDB_HOST}" "${INFLUXDB_PORT}" "${INFLUXDB_TOKEN}" "${INFLUXDB_ORG}" "${INFLUXDB_BUCKET}"
 
 if check_influxdb_running; then
-    ensure_influxdb_bucket || true
-    generate_scrutiny_config "${WEB_PORT}" "$(get_influxdb_host)" "$(get_influxdb_port)" "$(get_influxdb_token)" "$(get_influxdb_org)" "$(get_influxdb_bucket)"
+  ensure_influxdb_bucket || true
+  generate_scrutiny_config "${WEB_PORT}" "$(get_influxdb_host)" "$(get_influxdb_port)" "$(get_influxdb_token)" "$(get_influxdb_org)" "$(get_influxdb_bucket)"
 fi
 
 if [ "${TRANSLATE}" != "${OLD_TRANSLATE}" ]; then
-    rm -f "${TRIM_APPDEST}/web/.translated"
+  rm -f "${TRIM_APPDEST}/web/.translated"
 fi
 
 exit 0

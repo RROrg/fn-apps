@@ -73,7 +73,12 @@ def parse_manifest(path):
 
 def update_manifest_version(manifest_path, version):
     text = Path(manifest_path).read_text(encoding="utf-8")
-    text = re.sub(r"^version\s*=.*$", f"version               = {version}", text, flags=re.MULTILINE)
+    text = re.sub(
+        r"^version\s*=.*$",
+        f"version               = {version}",
+        text,
+        flags=re.MULTILINE,
+    )
     Path(manifest_path).write_text(text, encoding="utf-8")
 
 
@@ -154,7 +159,16 @@ def main():
             tar.add(str(item), arcname=item.name)
 
     with tarfile.open(str(fpk_path), "w:gz") as tar:
-        for name in ["cmd", "config", "i18n", "wizard", "app.tgz", "ICON.PNG", "ICON_256.PNG", "manifest"]:
+        for name in [
+            "cmd",
+            "config",
+            "i18n",
+            "wizard",
+            "app.tgz",
+            "ICON.PNG",
+            "ICON_256.PNG",
+            "manifest",
+        ]:
             src = workdir / name
             if src.is_file() or src.is_dir():
                 tar.add(str(src), arcname=name)

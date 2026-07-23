@@ -6,16 +6,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/_functions"
 
 if [ -f "${SETTINGS_FILE}" ]; then
-    echo "wizard_port=$(get_web_port)"
-    echo "wizard_host_id=$(get_host_id)"
-    echo "wizard_cron_interval=$(get_cron_interval)"
-    echo "wizard_translate=$(get_translate)"
-    echo "wizard_influxdb_mode=$(get_influxdb_mode)"
-    echo "wizard_influxdb_host=$(get_influxdb_host)"
-    echo "wizard_influxdb_port=$(get_influxdb_port)"
-    echo "wizard_influxdb_token=$(get_influxdb_token)"
-    echo "wizard_influxdb_org=$(get_influxdb_org)"
-    echo "wizard_influxdb_bucket=$(get_influxdb_bucket)"
+  echo "wizard_port=$(get_web_port)"
+  echo "wizard_host_id=$(get_host_id)"
+  echo "wizard_cron_interval=$(get_cron_interval)"
+  echo "wizard_translate=$(get_translate)"
+  echo "wizard_influxdb_mode=$(get_influxdb_mode)"
+  echo "wizard_influxdb_host=$(get_influxdb_host)"
+  echo "wizard_influxdb_port=$(get_influxdb_port)"
+  echo "wizard_influxdb_token=$(get_influxdb_token)"
+  echo "wizard_influxdb_org=$(get_influxdb_org)"
+  echo "wizard_influxdb_bucket=$(get_influxdb_bucket)"
 fi
 
 exit 0

@@ -15,42 +15,42 @@ ALLOY_DATA="${TRIM_PKGVAR}/data"
 CMD="${ALLOY_BIN} run ${CONFIG_FILE} --server.http.listen-addr=0.0.0.0:${wizard_port:-12345} --storage.path=${ALLOY_DATA}"
 
 log_msg() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> ${LOG_FILE}
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
 }
 
 # 检查环境
 check_env() {
-    if [ ! -f "${ALLOY_BIN}" ]; then
-        log_msg "ERROR: Alloy binary not found: ${ALLOY_BIN}"
-        echo "Alloy 可执行文件缺失: ${ALLOY_BIN}" >> "${TRIM_TEMP_LOGFILE}"
-        exit 1
-    fi
+  if [ ! -f "${ALLOY_BIN}" ]; then
+    log_msg "ERROR: Alloy binary not found: ${ALLOY_BIN}"
+    echo "Alloy 可执行文件缺失: ${ALLOY_BIN}" >>"${TRIM_TEMP_LOGFILE}"
+    exit 1
+  fi
 
+  if [ ! -x "${ALLOY_BIN}" ]; then
+    log_msg "WARNING: Alloy binary not executable, fixing permissions..."
+    chmod +x "${ALLOY_BIN}" 2>/dev/null
     if [ ! -x "${ALLOY_BIN}" ]; then
-        log_msg "WARNING: Alloy binary not executable, fixing permissions..."
-        chmod +x "${ALLOY_BIN}" 2>/dev/null
-        if [ ! -x "${ALLOY_BIN}" ]; then
-            log_msg "ERROR: Cannot set execute permission on: ${ALLOY_BIN}"
-            echo "无法设置 Alloy 执行权限" >> "${TRIM_TEMP_LOGFILE}"
-            exit 1
-        fi
+      log_msg "ERROR: Cannot set execute permission on: ${ALLOY_BIN}"
+      echo "无法设置 Alloy 执行权限" >>"${TRIM_TEMP_LOGFILE}"
+      exit 1
     fi
+  fi
 
-    # 架构诊断
-    if command -v file >/dev/null; then
-        local bin_info=$(file "${ALLOY_BIN}")
-        log_msg "Binary Info: ${bin_info}"
-        log_msg "System Arch: $(uname -m)"
-    fi
+  # 架构诊断
+  if command -v file >/dev/null; then
+    local bin_info=$(file "${ALLOY_BIN}")
+    log_msg "Binary Info: ${bin_info}"
+    log_msg "System Arch: $(uname -m)"
+  fi
 }
 
 # 确保配置文件存在
 ensure_config() {
-    mkdir -p "${ALLOY_DATA}"
-    
-    if [ ! -f "${SETTINGS_FILE}" ]; then
-        log_msg "Creating default settings..."
-        cat > "${SETTINGS_FILE}" << 'EOF'
+  mkdir -p "${ALLOY_DATA}"
+
+  if [ ! -f "${SETTINGS_FILE}" ]; then
+    log_msg "Creating default settings..."
+    cat >"${SETTINGS_FILE}" <<'EOF'
 {
     "loki_url": "http://localhost:3100/loki/api/v1/push",
     "auth_enabled": false,
@@ -63,26 +63,26 @@ ensure_config() {
     "custom_labels": {}
 }
 EOF
-    fi
-    
-    generate_config
+  fi
+
+  generate_config
 }
 
 # 根据设置生成配置文件
 # 使用 bash 内置替换代替 sed，避免特殊字符（& | \）导致替换错误
 generate_config() {
-    log_msg "Generating configuration..."
+  log_msg "Generating configuration..."
 
-    if [ ! -f "${TEMPLATE_FILE}" ]; then
-        log_msg "ERROR: Template file missing: ${TEMPLATE_FILE}"
-        echo "配置模板文件缺失: ${TEMPLATE_FILE}" >> "${TRIM_TEMP_LOGFILE}"
-        return 1
-    fi
+  if [ ! -f "${TEMPLATE_FILE}" ]; then
+    log_msg "ERROR: Template file missing: ${TEMPLATE_FILE}"
+    echo "配置模板文件缺失: ${TEMPLATE_FILE}" >>"${TRIM_TEMP_LOGFILE}"
+    return 1
+  fi
 
-    # 确保 settings.json 存在（防止 reload 时文件被意外删除）
-    if [ ! -f "${SETTINGS_FILE}" ]; then
-        log_msg "WARNING: Settings file missing, creating defaults..."
-        cat > "${SETTINGS_FILE}" << 'EOFDEFAULT'
+  # 确保 settings.json 存在（防止 reload 时文件被意外删除）
+  if [ ! -f "${SETTINGS_FILE}" ]; then
+    log_msg "WARNING: Settings file missing, creating defaults..."
+    cat >"${SETTINGS_FILE}" <<'EOFDEFAULT'
 {
     "loki_url": "http://localhost:3100/loki/api/v1/push",
     "auth_enabled": false,
@@ -95,211 +95,211 @@ generate_config() {
     "custom_labels": {}
 }
 EOFDEFAULT
+  fi
+
+  # 读取配置值
+  local loki_url hostname_val platform_val
+  local auth_enabled auth_username auth_password auth_tenant
+  local custom_labels_lines=""
+
+  if command -v jq >/dev/null; then
+    loki_url=$(jq -r '.loki_url // "http://localhost:3100/loki/api/v1/push"' "${SETTINGS_FILE}")
+    auth_enabled=$(jq -r '.auth_enabled // false' "${SETTINGS_FILE}")
+    auth_username=$(jq -r '.auth_username // ""' "${SETTINGS_FILE}")
+    auth_password=$(jq -r '.auth_password // ""' "${SETTINGS_FILE}")
+    auth_tenant=$(jq -r '.auth_tenant // ""' "${SETTINGS_FILE}")
+    hostname_val=$(jq -r '.hostname // "fnos"' "${SETTINGS_FILE}")
+    platform_val=$(jq -r '.platform // "fnos"' "${SETTINGS_FILE}")
+
+    # 生成自定义标签（每个标签独占一行，缩进对齐）
+    local labels_json
+    labels_json=$(jq -c '.custom_labels // {}' "${SETTINGS_FILE}")
+    if [ "$labels_json" != "{}" ] && [ "$labels_json" != "null" ]; then
+      custom_labels_lines=$(echo "$labels_json" | jq -r 'to_entries[] | "    \(.key) = \"\(.value)\","')
+    fi
+  else
+    log_msg "WARNING: jq not found, using default values"
+    loki_url="http://localhost:3100/loki/api/v1/push"
+    auth_enabled="false"
+    auth_username=""
+    auth_password=""
+    auth_tenant=""
+    hostname_val="fnos"
+    platform_val="fnos"
+  fi
+
+  # 判断条件块是否启用
+  local enable_auth=false
+  if [ "$auth_enabled" = "true" ] && [ -n "$auth_username" ] && [ -n "$auth_password" ]; then
+    enable_auth=true
+  fi
+  local enable_tenant=false
+  if [ -n "$auth_tenant" ]; then
+    enable_tenant=true
+  fi
+
+  # 逐行处理模板（bash 内置替换，安全处理 & | \ 等特殊字符）
+  local tmp_config="${TRIM_PKGVAR}/config.alloy.tmp"
+  local skip_block=0
+
+  : >"${tmp_config}"
+
+  while IFS= read -r line || [[ -n $line ]]; do
+    # --- 条件块：AUTH_ENABLED ---
+    if [[ $line == *'{{#AUTH_ENABLED}}'* ]]; then
+      if ! $enable_auth; then skip_block=$((skip_block + 1)); fi
+      continue
+    fi
+    if [[ $line == *'{{/AUTH_ENABLED}}'* ]]; then
+      if ! $enable_auth; then skip_block=$((skip_block - 1)); fi
+      continue
     fi
 
-    # 读取配置值
-    local loki_url hostname_val platform_val
-    local auth_enabled auth_username auth_password auth_tenant
-    local custom_labels_lines=""
-
-    if command -v jq >/dev/null; then
-        loki_url=$(jq -r '.loki_url // "http://localhost:3100/loki/api/v1/push"' "${SETTINGS_FILE}")
-        auth_enabled=$(jq -r '.auth_enabled // false' "${SETTINGS_FILE}")
-        auth_username=$(jq -r '.auth_username // ""' "${SETTINGS_FILE}")
-        auth_password=$(jq -r '.auth_password // ""' "${SETTINGS_FILE}")
-        auth_tenant=$(jq -r '.auth_tenant // ""' "${SETTINGS_FILE}")
-        hostname_val=$(jq -r '.hostname // "fnos"' "${SETTINGS_FILE}")
-        platform_val=$(jq -r '.platform // "fnos"' "${SETTINGS_FILE}")
-
-        # 生成自定义标签（每个标签独占一行，缩进对齐）
-        local labels_json
-        labels_json=$(jq -c '.custom_labels // {}' "${SETTINGS_FILE}")
-        if [ "$labels_json" != "{}" ] && [ "$labels_json" != "null" ]; then
-            custom_labels_lines=$(echo "$labels_json" | jq -r 'to_entries[] | "    \(.key) = \"\(.value)\","')
-        fi
-    else
-        log_msg "WARNING: jq not found, using default values"
-        loki_url="http://localhost:3100/loki/api/v1/push"
-        auth_enabled="false"
-        auth_username=""
-        auth_password=""
-        auth_tenant=""
-        hostname_val="fnos"
-        platform_val="fnos"
+    # --- 条件块：AUTH_TENANT ---
+    if [[ $line == *'{{#AUTH_TENANT}}'* ]]; then
+      if ! $enable_tenant; then skip_block=$((skip_block + 1)); fi
+      continue
+    fi
+    if [[ $line == *'{{/AUTH_TENANT}}'* ]]; then
+      if ! $enable_tenant; then skip_block=$((skip_block - 1)); fi
+      continue
     fi
 
-    # 判断条件块是否启用
-    local enable_auth=false
-    if [ "$auth_enabled" = "true" ] && [ -n "$auth_username" ] && [ -n "$auth_password" ]; then
-        enable_auth=true
+    # 跳过禁用块中的行
+    if [ $skip_block -gt 0 ]; then continue; fi
+
+    # --- 特殊处理：自定义标签占位符（多行输出）---
+    if [[ $line == *'{{CUSTOM_LABELS}}'* ]]; then
+      if [ -n "$custom_labels_lines" ]; then
+        printf '%s\n' "$custom_labels_lines" >>"${tmp_config}"
+      fi
+      continue
     fi
-    local enable_tenant=false
-    if [ -n "$auth_tenant" ]; then
-        enable_tenant=true
-    fi
 
-    # 逐行处理模板（bash 内置替换，安全处理 & | \ 等特殊字符）
-    local tmp_config="${TRIM_PKGVAR}/config.alloy.tmp"
-    local skip_block=0
+    # --- 替换简单变量 ---
+    line="${line//\{\{LOKI_URL\}\}/${loki_url}}"
+    line="${line//\{\{AUTH_USERNAME\}\}/${auth_username}}"
+    line="${line//\{\{AUTH_PASSWORD\}\}/${auth_password}}"
+    line="${line//\{\{AUTH_TENANT\}\}/${auth_tenant}}"
+    line="${line//\{\{HOSTNAME\}\}/${hostname_val}}"
+    line="${line//\{\{PLATFORM\}\}/${platform_val}}"
 
-    : > "${tmp_config}"
+    printf '%s\n' "$line" >>"${tmp_config}"
+  done <"${TEMPLATE_FILE}"
 
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        # --- 条件块：AUTH_ENABLED ---
-        if [[ "$line" == *'{{#AUTH_ENABLED}}'* ]]; then
-            if ! $enable_auth; then skip_block=$((skip_block + 1)); fi
-            continue
-        fi
-        if [[ "$line" == *'{{/AUTH_ENABLED}}'* ]]; then
-            if ! $enable_auth; then skip_block=$((skip_block - 1)); fi
-            continue
-        fi
-
-        # --- 条件块：AUTH_TENANT ---
-        if [[ "$line" == *'{{#AUTH_TENANT}}'* ]]; then
-            if ! $enable_tenant; then skip_block=$((skip_block + 1)); fi
-            continue
-        fi
-        if [[ "$line" == *'{{/AUTH_TENANT}}'* ]]; then
-            if ! $enable_tenant; then skip_block=$((skip_block - 1)); fi
-            continue
-        fi
-
-        # 跳过禁用块中的行
-        if [ $skip_block -gt 0 ]; then continue; fi
-
-        # --- 特殊处理：自定义标签占位符（多行输出）---
-        if [[ "$line" == *'{{CUSTOM_LABELS}}'* ]]; then
-            if [ -n "$custom_labels_lines" ]; then
-                printf '%s\n' "$custom_labels_lines" >> "${tmp_config}"
-            fi
-            continue
-        fi
-
-        # --- 替换简单变量 ---
-        line="${line//\{\{LOKI_URL\}\}/${loki_url}}"
-        line="${line//\{\{AUTH_USERNAME\}\}/${auth_username}}"
-        line="${line//\{\{AUTH_PASSWORD\}\}/${auth_password}}"
-        line="${line//\{\{AUTH_TENANT\}\}/${auth_tenant}}"
-        line="${line//\{\{HOSTNAME\}\}/${hostname_val}}"
-        line="${line//\{\{PLATFORM\}\}/${platform_val}}"
-
-        printf '%s\n' "$line" >> "${tmp_config}"
-    done < "${TEMPLATE_FILE}"
-
-    mv "${tmp_config}" "${CONFIG_FILE}"
-    log_msg "Configuration updated successfully"
+  mv "${tmp_config}" "${CONFIG_FILE}"
+  log_msg "Configuration updated successfully"
 }
 
 start_process() {
-    if status; then
-        log_msg "Alloy is already running"
-        return 0
-    fi
-
-    check_env
-    log_msg "Starting Grafana Alloy..."
-    ensure_config
-    
-    # 构建启动命令（根据设置追加可选参数）
-    local FINAL_CMD="${CMD}"
-    local disable_reporting="true"
-    if command -v jq >/dev/null && [ -f "${SETTINGS_FILE}" ]; then
-        disable_reporting=$(jq -r '.disable_reporting // true' "${SETTINGS_FILE}")
-    fi
-    if [ "$disable_reporting" = "true" ]; then
-        FINAL_CMD="${FINAL_CMD} --disable-reporting"
-    fi
-    
-    # 执行
-    nohup bash -c "${FINAL_CMD}" >> "${LOG_FILE}" 2>&1 &
-    local pid=$!
-    printf "%s" "${pid}" > "${PID_FILE}"
-    
-    # 等待 2 秒检查进程是否还在
-    sleep 2
-    if check_process "${pid}"; then
-        log_msg "Alloy started successfully with PID: ${pid}"
-    else
-        log_msg "ERROR: Alloy process failed to start or crashed immediately."
-        echo "Alloy 启动失败，请检查配置或查看日志" >> "${TRIM_TEMP_LOGFILE}"
-        rm -f "${PID_FILE}"
-        return 1
-    fi
+  if status; then
+    log_msg "Alloy is already running"
     return 0
+  fi
+
+  check_env
+  log_msg "Starting Grafana Alloy..."
+  ensure_config
+
+  # 构建启动命令（根据设置追加可选参数）
+  local FINAL_CMD="${CMD}"
+  local disable_reporting="true"
+  if command -v jq >/dev/null && [ -f "${SETTINGS_FILE}" ]; then
+    disable_reporting=$(jq -r '.disable_reporting // true' "${SETTINGS_FILE}")
+  fi
+  if [ "$disable_reporting" = "true" ]; then
+    FINAL_CMD="${FINAL_CMD} --disable-reporting"
+  fi
+
+  # 执行
+  nohup bash -c "${FINAL_CMD}" >>"${LOG_FILE}" 2>&1 &
+  local pid=$!
+  printf "%s" "${pid}" >"${PID_FILE}"
+
+  # 等待 2 秒检查进程是否还在
+  sleep 2
+  if check_process "${pid}"; then
+    log_msg "Alloy started successfully with PID: ${pid}"
+  else
+    log_msg "ERROR: Alloy process failed to start or crashed immediately."
+    echo "Alloy 启动失败，请检查配置或查看日志" >>"${TRIM_TEMP_LOGFILE}"
+    rm -f "${PID_FILE}"
+    return 1
+  fi
+  return 0
 }
 
 stop_process() {
-    log_msg "Stopping Grafana Alloy..."
+  log_msg "Stopping Grafana Alloy..."
 
-    if [ -r "${PID_FILE}" ]; then
-        pid=$(cat "${PID_FILE}" | tr -d '[:space:]')
-        
-        if ! check_process "${pid}"; then
-            rm -f "${PID_FILE}"
-            log_msg "Process not found, cleanup PID file"
-            return
-        fi
+  if [ -r "${PID_FILE}" ]; then
+    pid=$(cat "${PID_FILE}" | tr -d '[:space:]')
 
-        kill -TERM "${pid}"
-        local count=0
-        while check_process "${pid}" && [ $count -lt 10 ]; do
-            sleep 1
-            count=$((count + 1))
-        done
-
-        if check_process "${pid}"; then
-            log_msg "Process did not stop, killing..."
-            kill -KILL "${pid}"
-        fi
-        
-        rm -f "${PID_FILE}"
-        log_msg "Alloy stopped"
+    if ! check_process "${pid}"; then
+      rm -f "${PID_FILE}"
+      log_msg "Process not found, cleanup PID file"
+      return
     fi
+
+    kill -TERM "${pid}"
+    local count=0
+    while check_process "${pid}" && [ $count -lt 10 ]; do
+      sleep 1
+      count=$((count + 1))
+    done
+
+    if check_process "${pid}"; then
+      log_msg "Process did not stop, killing..."
+      kill -KILL "${pid}"
+    fi
+
+    rm -f "${PID_FILE}"
+    log_msg "Alloy stopped"
+  fi
 }
 
 reload_config() {
-    log_msg "Reloading..."
-    generate_config
-    
-    if [ -r "${PID_FILE}" ]; then
-        pid=$(cat "${PID_FILE}" | tr -d '[:space:]')
-        if check_process "${pid}"; then
-            kill -HUP "${pid}"
-            log_msg "Sent SIGHUP"
-        fi
+  log_msg "Reloading..."
+  generate_config
+
+  if [ -r "${PID_FILE}" ]; then
+    pid=$(cat "${PID_FILE}" | tr -d '[:space:]')
+    if check_process "${pid}"; then
+      kill -HUP "${pid}"
+      log_msg "Sent SIGHUP"
     fi
+  fi
 }
 
 check_process() {
-    [ -n "$1" ] && kill -0 "$1" 2>/dev/null
+  [ -n "$1" ] && kill -0 "$1" 2>/dev/null
 }
 
 status() {
-    if [ -f "${PID_FILE}" ]; then
-        local pid=$(cat "${PID_FILE}" | tr -d '[:space:]')
-        if check_process "${pid}"; then
-            return 0
-        fi
-        rm -f "${PID_FILE}"
+  if [ -f "${PID_FILE}" ]; then
+    local pid=$(cat "${PID_FILE}" | tr -d '[:space:]')
+    if check_process "${pid}"; then
+      return 0
     fi
-    return 1
+    rm -f "${PID_FILE}"
+  fi
+  return 1
 }
 
 case $1 in
-start)
+  start)
     start_process
     ;;
-stop)
+  stop)
     stop_process
     ;;
-reload)
+  reload)
     reload_config
     ;;
-status)
+  status)
     if status; then exit 0; else exit 3; fi
     ;;
-*)
+  *)
     exit 1
     ;;
 esac

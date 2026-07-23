@@ -1,12 +1,12 @@
 {
-    "defaults": {
-        "run-as": "root"
-    },
-    "folder-permission": {
-        "ro": [
-            "/var/log",
-            "/run/log/journal",
-            "/usr/trim/nginx/logs"
-        ]
-    }
+  "defaults": {
+    "run-as": "root"
+  },
+  "folder-permission": {
+    "ro": [
+      "/var/log",
+      "/run/log/journal",
+      "/usr/trim/nginx/logs"
+    ]
+  }
 }

@@ -6,7 +6,7 @@ WEB_DIR="${1:-.}"
 MARKER="${WEB_DIR}/.translated"
 
 if [ -f "${MARKER}" ]; then
-    exit 0
+  exit 0
 fi
 
 echo "Applying Chinese translation to Scrutiny frontend..."
@@ -16,24 +16,24 @@ cd "${WEB_DIR}" || exit 1
 # Helper: translate both "X" and " X " formats
 # Usage: tr_both "English" "Chinese"
 tr_both() {
-    local en="$1"
-    local zh="$2"
-    for f in main-*.js chunk-*.js; do
-        [ -f "$f" ] || continue
-        sed -i "s#\"${en}\"#\"${zh}\"#g" "$f"
-        sed -i "s#\" ${en} \"#\" ${zh} \"#g" "$f"
-    done
+  local en="$1"
+  local zh="$2"
+  for f in main-*.js chunk-*.js; do
+    [ -f "$f" ] || continue
+    sed -i "s#\"${en}\"#\"${zh}\"#g" "$f"
+    sed -i "s#\" ${en} \"#\" ${zh} \"#g" "$f"
+  done
 }
 
 # Helper: translate only in a specific chunk file
 # Usage: tr_chunk_NAME "English" "Chinese"
 tr_chunk_SXF454OX() {
-    local en="$1"
-    local zh="$2"
-    for f in chunk-SXF454OX.js; do
-        [ -f "$f" ] || continue
-        sed -i "s#\"${en}\"#\"${zh}\"#g" "$f"
-    done
+  local en="$1"
+  local zh="$2"
+  for f in chunk-SXF454OX.js; do
+    [ -f "$f" ] || continue
+    sed -i "s#\"${en}\"#\"${zh}\"#g" "$f"
+  done
 }
 
 # Navigation & Common
@@ -513,18 +513,18 @@ tr_both "Delete Pool" "删除池"
 # Device detail page - tooltips and labels (chunk-SXF454OX)
 tr_chunk_SXF454OX "click for more details." "点击查看详情。"
 tr_chunk_SXF454OX "Raw" "原始值"
-tr_chunk_SXF454OX "\"Scrutiny\"" "\"Scrutiny 阈值\""
+tr_chunk_SXF454OX '"Scrutiny"' '"Scrutiny 阈值"'
 
 # NOTE: NVMe lowercase underscore names are also lookup keys - do NOT translate them.
 
 # Chart labels
 for f in main-*.js chunk-*.js; do
-    [ -f "$f" ] || continue
-    sed -i 's#"Download SVG"#"下载 SVG"#g' "$f"
-    sed -i 's#"Download PNG"#"下载 PNG"#g' "$f"
-    sed -i 's#"Download CSV"#"下载 CSV"#g' "$f"
-    sed -i 's#exportToSVG#"下载 SVG"#g' "$f"
-    sed -i 's#exportToPNG#"下载 PNG"#g' "$f"
+  [ -f "$f" ] || continue
+  sed -i 's#"Download SVG"#"下载 SVG"#g' "$f"
+  sed -i 's#"Download PNG"#"下载 PNG"#g' "$f"
+  sed -i 's#"Download CSV"#"下载 CSV"#g' "$f"
+  sed -i 's#exportToSVG#"下载 SVG"#g' "$f"
+  sed -i 's#exportToPNG#"下载 PNG"#g' "$f"
 done
 
 # MDADM RAID
@@ -565,22 +565,22 @@ tr_both "Scrutiny" "Scrutiny"
 
 # Time units
 for f in main-*.js chunk-*.js; do
-    [ -f "$f" ] || continue
-    sed -i 's#" days"#" 天"#g' "$f"
-    sed -i 's#" hours"#" 小时"#g' "$f"
-    sed -i 's#" minutes"#" 分钟"#g' "$f"
-    sed -i 's#" seconds"#" 秒"#g' "$f"
+  [ -f "$f" ] || continue
+  sed -i 's#" days"#" 天"#g' "$f"
+  sed -i 's#" hours"#" 小时"#g' "$f"
+  sed -i 's#" minutes"#" 分钟"#g' "$f"
+  sed -i 's#" seconds"#" 秒"#g' "$f"
 done
 
 # Inline DOM translation script into index.html
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "index.html" ] && [ -f "${SCRIPT_DIR}/translate_dom.js" ]; then
-    # Remove old external script reference if present
-    sed -i '/<script src="translate_dom.js"><\/script>/d' index.html
-    # Remove old inline script block if present (from previous run)
-    sed -i '/^<script>$/,/^<\/script>$/{ /translateStr/d; /translateObj/d; /translateNode/d; /translateElement/d; /translateFullDoc/d; /MutationObserver/d; /DOMContentLoaded/d; /setInterval/d; /origFetch/d; /origXHROpen/d; /origXHRSend/d; /origResponseTextDesc/d; /origResponseDesc/d; /setupDOMTranslation/d; /var T=/d; /Available Spare/d; /Percentage Used/d; /Controller Busy/d; /^<script>$/d; /^<\/script>$/d; }' index.html
-    # Inject new inline script
-    awk -v script_file="${SCRIPT_DIR}/translate_dom.js" '
+  # Remove old external script reference if present
+  sed -i '/<script src="translate_dom.js"><\/script>/d' index.html
+  # Remove old inline script block if present (from previous run)
+  sed -i '/^<script>$/,/^<\/script>$/{ /translateStr/d; /translateObj/d; /translateNode/d; /translateElement/d; /translateFullDoc/d; /MutationObserver/d; /DOMContentLoaded/d; /setInterval/d; /origFetch/d; /origXHROpen/d; /origXHRSend/d; /origResponseTextDesc/d; /origResponseDesc/d; /setupDOMTranslation/d; /var T=/d; /Available Spare/d; /Percentage Used/d; /Controller Busy/d; /^<script>$/d; /^<\/script>$/d; }' index.html
+  # Inject new inline script
+  awk -v script_file="${SCRIPT_DIR}/translate_dom.js" '
         /<\/head>/ {
             print "<script>"
             while ((getline line < script_file) > 0) print line
@@ -589,8 +589,8 @@ if [ -f "index.html" ] && [ -f "${SCRIPT_DIR}/translate_dom.js" ]; then
             next
         }
         { print }
-    ' index.html > index.html.new && mv index.html.new index.html
-    echo "DOM translation script inlined into index.html"
+    ' index.html >index.html.new && mv index.html.new index.html
+  echo "DOM translation script inlined into index.html"
 fi
 
 touch "${MARKER}"

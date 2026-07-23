@@ -1,147 +1,177 @@
 [
-    {
-        "stepTitle": "${wizard.install_stepTitle}",
-        "items": [
-            {
-                "type": "tips",
-                "helpText": "${wizard.install_item1_helpText}"
-            },
-            {
-                "type": "tips",
-                "helpText": "${wizard.install_item2_helpText}"
-            },
-            {
-                "type": "text",
-                "field": "wizard_port",
-                "label": "${wizard.install_item3_label}",
-                "initValue": "8080",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item3_required}"
-                    },
-                    {
-                        "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
-                        "message": "${wizard.install_item3_rules}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_host_id",
-                "label": "${wizard.install_item4_label}",
-                "initValue": "fnOS",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item4_required}"
-                    }
-                ]
-            },
-            {
-                "type": "select",
-                "field": "wizard_cron_interval",
-                "label": "${wizard.install_item5_label}",
-                "initValue": "15",
-                "options": [
-                    { "label": "Every 15 minutes", "value": "15" },
-                    { "label": "Every 30 minutes", "value": "30" },
-                    { "label": "Every 1 hour", "value": "60" },
-                    { "label": "Every 6 hours", "value": "360" },
-                    { "label": "Every 12 hours", "value": "720" },
-                    { "label": "Every 24 hours", "value": "1440" }
-                ],
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "Required"
-                    }
-                ]
-            },
-            {
-                "type": "select",
-                "field": "wizard_translate",
-                "label": "${wizard.install_item6_label}",
-                "initValue": "true",
-                "options": [
-                    { "label": "${wizard.install_item6_options1}", "value": "true" },
-                    { "label": "${wizard.install_item6_options2}", "value": "false" }
-                ],
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "Required"
-                    }
-                ]
-            },
-            {
-                "type": "select",
-                "field": "wizard_influxdb_mode",
-                "label": "${wizard.install_item7_label}",
-                "initValue": "auto",
-                "options": [
-                    { "label": "${wizard.install_item7_options1}", "value": "auto" },
-                    { "label": "${wizard.install_item7_options2}", "value": "custom" }
-                ],
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item7_required}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_influxdb_host",
-                "label": "${wizard.install_item8_label}",
-                "initValue": "localhost",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item8_required}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_influxdb_port",
-                "label": "${wizard.install_item9_label}",
-                "initValue": "8086",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item9_required}"
-                    },
-                    {
-                        "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
-                        "message": "${wizard.install_item9_rules}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_influxdb_org",
-                "label": "${wizard.install_item10_label}",
-                "initValue": "scrutiny",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item10_required}"
-                    }
-                ]
-            },
-            {
-                "type": "text",
-                "field": "wizard_influxdb_bucket",
-                "label": "${wizard.install_item11_label}",
-                "initValue": "scrutiny",
-                "rules": [
-                    {
-                        "required": true,
-                        "message": "${wizard.install_item11_required}"
-                    }
-                ]
-            }
+  {
+    "stepTitle": "${wizard.install_stepTitle}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.install_item1_helpText}"
+      },
+      {
+        "type": "tips",
+        "helpText": "${wizard.install_item2_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_port",
+        "label": "${wizard.install_item3_label}",
+        "initValue": "8080",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item3_required}"
+          },
+          {
+            "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
+            "message": "${wizard.install_item3_rules}"
+          }
         ]
-    }
+      },
+      {
+        "type": "text",
+        "field": "wizard_host_id",
+        "label": "${wizard.install_item4_label}",
+        "initValue": "fnOS",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item4_required}"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "field": "wizard_cron_interval",
+        "label": "${wizard.install_item5_label}",
+        "initValue": "15",
+        "options": [
+          {
+            "label": "Every 15 minutes",
+            "value": "15"
+          },
+          {
+            "label": "Every 30 minutes",
+            "value": "30"
+          },
+          {
+            "label": "Every 1 hour",
+            "value": "60"
+          },
+          {
+            "label": "Every 6 hours",
+            "value": "360"
+          },
+          {
+            "label": "Every 12 hours",
+            "value": "720"
+          },
+          {
+            "label": "Every 24 hours",
+            "value": "1440"
+          }
+        ],
+        "rules": [
+          {
+            "required": true,
+            "message": "Required"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "field": "wizard_translate",
+        "label": "${wizard.install_item6_label}",
+        "initValue": "true",
+        "options": [
+          {
+            "label": "${wizard.install_item6_options1}",
+            "value": "true"
+          },
+          {
+            "label": "${wizard.install_item6_options2}",
+            "value": "false"
+          }
+        ],
+        "rules": [
+          {
+            "required": true,
+            "message": "Required"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "field": "wizard_influxdb_mode",
+        "label": "${wizard.install_item7_label}",
+        "initValue": "auto",
+        "options": [
+          {
+            "label": "${wizard.install_item7_options1}",
+            "value": "auto"
+          },
+          {
+            "label": "${wizard.install_item7_options2}",
+            "value": "custom"
+          }
+        ],
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item7_required}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_influxdb_host",
+        "label": "${wizard.install_item8_label}",
+        "initValue": "localhost",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item8_required}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_influxdb_port",
+        "label": "${wizard.install_item9_label}",
+        "initValue": "8086",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item9_required}"
+          },
+          {
+            "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
+            "message": "${wizard.install_item9_rules}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_influxdb_org",
+        "label": "${wizard.install_item10_label}",
+        "initValue": "scrutiny",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item10_required}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_influxdb_bucket",
+        "label": "${wizard.install_item11_label}",
+        "initValue": "scrutiny",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item11_required}"
+          }
+        ]
+      }
+    ]
+  }
 ]
