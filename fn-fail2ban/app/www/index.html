@@ -113,7 +113,7 @@
           <ul id="ban-list" class="ban-list" role="list"></ul>
           <div id="ban-empty" class="empty small" data-i18n="noBannedIPs">暂无被封 IP</div>
         </div>
-        <input id="ban-import-file" type="file" accept=".json,.csv,.txt" style="display:none" aria-hidden="true">
+        <input id="ban-import-file" type="file" accept=".json,.csv,.txt" class="hidden" aria-hidden="true">
         <div class="ban-input-row">
           <input id="ban-input" class="input" placeholder="输入 IP 地址 或 CIDR" data-i18n-placeholder="placeholder.banInput" autocomplete="off">
           <button id="ban-add" class="btn primary small" data-i18n="btn.add">添加</button>
@@ -136,7 +136,7 @@
       <div class="modal-body">
         <div class="audit-filter-row">
           <input id="audit-filter" class="input" placeholder="筛选（jail / ip / action）" data-i18n-placeholder="placeholder.auditFilter" autocomplete="off">
-          <select id="audit-action-filter" class="input">
+          <select id="audit-action-filter" class="input" title="筛选操作">
             <option value="" data-i18n="audit.allActions">全部操作</option>
             <option value="ban">Ban</option>
             <option value="unban">Unban</option>
@@ -195,14 +195,14 @@
       <div class="modal-body">
         <div class="log-filter-row">
           <input id="log-filter" class="input" placeholder="筛选日志" data-i18n-placeholder="placeholder.logFilter" autocomplete="off">
-          <select id="log-level" class="input">
+          <select id="log-level" class="input" title="筛选级别">
             <option value="" data-i18n="log.allLevels">全部级别</option>
             <option value="ERROR">ERROR</option>
             <option value="WARNING">WARNING</option>
             <option value="INFO">INFO</option>
             <option value="DEBUG">DEBUG</option>
           </select>
-          <select id="log-lines" class="input">
+          <select id="log-lines" class="input" title="筛选行数">
             <option value="50">50</option>
             <option value="100" selected>100</option>
             <option value="200">200</option>

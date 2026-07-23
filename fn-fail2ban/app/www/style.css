@@ -231,8 +231,15 @@ textarea {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .btn {
@@ -430,8 +437,13 @@ textarea {
 
 .table-wrap {
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+}
+
+@supports (scrollbar-width: thin) {
+  .table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
 }
 
 .table-wrap::-webkit-scrollbar {
@@ -534,8 +546,13 @@ textarea {
 }
 
 @keyframes modal-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -547,14 +564,35 @@ textarea {
   background: var(--panel);
   box-shadow: var(--shadow);
   padding: 20px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
   animation: modal-content-in 0.2s ease-out;
 }
 
+@supports (scrollbar-width: thin) {
+  .modal-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
 @keyframes modal-content-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-content.modal-sm {
@@ -744,6 +782,7 @@ html[data-theme="dark"] .warning-banner {
   background: var(--field);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -798,8 +837,22 @@ html[data-theme="dark"] .warning-banner {
   margin: 0 0 12px 0;
   max-height: 320px;
   overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+}
+
+@supports (scrollbar-width: thin) {
+  .ban-list {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+.ban-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ban-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
 }
 
 .ban-list li {
@@ -883,8 +936,22 @@ html[data-theme="dark"] .warning-banner {
 .audit-list-container {
   max-height: 420px;
   overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+}
+
+@supports (scrollbar-width: thin) {
+  .audit-list-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+.audit-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.audit-list-container::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
 }
 
 .audit-table {
@@ -1077,8 +1144,13 @@ html[data-theme="dark"] .warning-banner {
   overflow: auto;
   border-radius: 8px;
   background: var(--log-bg);
-  scrollbar-width: thin;
-  scrollbar-color: var(--log-line) transparent;
+}
+
+@supports (scrollbar-width: thin) {
+  .log-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--log-line) transparent;
+  }
 }
 
 .log-container::-webkit-scrollbar {
@@ -1135,6 +1207,7 @@ html[data-theme="dark"] .warning-banner {
   font-size: 13px;
   color: var(--muted);
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -1233,8 +1306,15 @@ html[data-theme="dark"] .warning-banner {
 }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .toast.error {

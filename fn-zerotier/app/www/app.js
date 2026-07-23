@@ -19,7 +19,9 @@ const moonCreateSeedEl = document.getElementById("moonCreateSeed");
 const moonRootIdentityEl = document.getElementById("moonRootIdentity");
 const moonCreateSupportEl = document.getElementById("moonCreateSupport");
 const moonCreateForm = document.getElementById("moonCreateForm");
-const moonCreateWorldIdInput = document.getElementById("moonCreateWorldIdInput");
+const moonCreateWorldIdInput = document.getElementById(
+  "moonCreateWorldIdInput",
+);
 const moonStableEndpointsInput = document.getElementById("moonStableEndpoints");
 const moonCreateCancelBtn = document.getElementById("moonCreateCancelBtn");
 const moonCreateBtn = document.getElementById("moonCreateBtn");
@@ -117,7 +119,8 @@ const I18N = {
     stoppedMoon: "已停止 moon {id}",
     removedMoon: "已移除 moon {id}",
     about: "关于",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -192,7 +195,8 @@ const I18N = {
     joinedNetwork: "Joining network {id}",
     leftNetwork: "Left network {id}",
     networkSaved: "Network {id} settings saved",
-    worldIdInvalid: "World ID must be 10 hex characters, or a zero-padded 16-character string",
+    worldIdInvalid:
+      "World ID must be 10 hex characters, or a zero-padded 16-character string",
     seedInvalid: "Seed must be a 10-character hexadecimal string",
     endpointRequired: "Enter at least one Stable Endpoint",
     joinedMoon: "Joined moon {id}",
@@ -205,7 +209,8 @@ const I18N = {
     stoppedMoon: "Stopped moon {id}",
     removedMoon: "Removed moon {id}",
     about: "About",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -216,7 +221,10 @@ const I18N = {
 const NETWORK_STATUS_META = {
   OK: { className: "pill-ok", key: "normal" },
   ACCESS_DENIED: { className: "pill-warn", key: "accessDenied" },
-  REQUESTING_CONFIGURATION: { className: "pill-warn", key: "requestingConfiguration" },
+  REQUESTING_CONFIGURATION: {
+    className: "pill-warn",
+    key: "requestingConfiguration",
+  },
 };
 
 function moonTableHeaderHtml() {
@@ -267,7 +275,11 @@ function storedValue(name) {
 function parentStoredValue(name) {
   try {
     if (!window.parent || window.parent === window) return "";
-    return window.parent.localStorage.getItem(name) || window.parent.sessionStorage.getItem(name) || "";
+    return (
+      window.parent.localStorage.getItem(name) ||
+      window.parent.sessionStorage.getItem(name) ||
+      ""
+    );
   } catch (_error) {
     return "";
   }
@@ -281,13 +293,15 @@ function documentThemeValue(doc) {
   if (!doc) return "";
   const root = doc.documentElement;
   const body = doc.body;
-  return [
-    body?.getAttribute("theme-mode"),
-    body?.dataset?.theme,
-    root?.dataset?.theme,
-    root?.classList?.contains("dark") ? "dark" : "",
-    root?.classList?.contains("light") ? "light" : "",
-  ].find(Boolean) || "";
+  return (
+    [
+      body?.getAttribute("theme-mode"),
+      body?.dataset?.theme,
+      root?.dataset?.theme,
+      root?.classList?.contains("dark") ? "dark" : "",
+      root?.classList?.contains("light") ? "light" : "",
+    ].find(Boolean) || ""
+  );
 }
 
 function parentDocumentThemeValue() {
@@ -305,7 +319,12 @@ function normalizeLanguage(value) {
 }
 
 function currentLanguage() {
-  return normalizeLanguage(cookieValue("language") || queryValue("language") || navigator.language || "zh-CN");
+  return normalizeLanguage(
+    cookieValue("language") ||
+      queryValue("language") ||
+      navigator.language ||
+      "zh-CN",
+  );
 }
 
 function normalizeTheme(value) {
@@ -315,7 +334,9 @@ function normalizeTheme(value) {
   if (theme === "10") return "light";
   if (theme === "20") return "dark";
   if (theme === "system" || theme === "auto" || theme === "os") {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
   return "";
 }
@@ -332,14 +353,21 @@ function currentTheme() {
     documentThemeValue(document),
     parentDocumentThemeValue(),
     queryValue("fnos-theme-mode"),
-  ].map(normalizeTheme).find(Boolean);
+  ]
+    .map(normalizeTheme)
+    .find(Boolean);
   if (fromSystem) return fromSystem;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function t(key, params = {}) {
   const messages = I18N[state.language] || I18N["zh-CN"];
-  return String(messages[key] || I18N["zh-CN"][key] || key).replace(/\{(\w+)\}/g, (_match, name) => params[name] ?? "");
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
+  );
 }
 
 function applyPreferences({ rerender = false } = {}) {
@@ -445,8 +473,15 @@ async function copyText(text, successMessage) {
 function toBool(value) {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value !== 0;
-  const normalized = String(value || "").trim().toLowerCase();
-  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return (
+    normalized === "1" ||
+    normalized === "true" ||
+    normalized === "yes" ||
+    normalized === "on"
+  );
 }
 
 function renderService(data) {
@@ -478,11 +513,15 @@ function checkedAttr(value) {
 }
 
 function isValidMoonWorldId(value) {
-  return /^(?:[0-9a-fA-F]{10}|0{6}[0-9a-fA-F]{10})$/.test(String(value || "").trim());
+  return /^(?:[0-9a-fA-F]{10}|0{6}[0-9a-fA-F]{10})$/.test(
+    String(value || "").trim(),
+  );
 }
 
 function extractSeedFromIdentity(identity) {
-  const normalized = String(identity || "").trim().toLowerCase();
+  const normalized = String(identity || "")
+    .trim()
+    .toLowerCase();
   if (/^[0-9a-f]{10}$/.test(normalized)) {
     return normalized;
   }
@@ -505,11 +544,17 @@ function resetMoonCreateForm() {
 
 function moonEndpoints(moon) {
   const roots = Array.isArray(moon?.roots) ? moon.roots : [];
-  return roots.flatMap((root) => (Array.isArray(root?.stableEndpoints) ? root.stableEndpoints : [])).filter(Boolean);
+  return roots
+    .flatMap((root) =>
+      Array.isArray(root?.stableEndpoints) ? root.stableEndpoints : [],
+    )
+    .filter(Boolean);
 }
 
 function getCreatedMoonById(worldId) {
-  const moons = Array.isArray(latestStatusData?.createdMoons) ? latestStatusData.createdMoons : [];
+  const moons = Array.isArray(latestStatusData?.createdMoons)
+    ? latestStatusData.createdMoons
+    : [];
   return moons.find((moon) => moon.id === worldId) || null;
 }
 
@@ -566,9 +611,11 @@ function renderNetworks(data) {
     .map((network) => {
       const name = network.name || t("unnamedNetwork");
       const nwid = network.nwid || "-";
-      const addresses = Array.isArray(network.assignedAddresses) && network.assignedAddresses.length
-        ? network.assignedAddresses.join(", ")
-        : t("noAddress");
+      const addresses =
+        Array.isArray(network.assignedAddresses) &&
+        network.assignedAddresses.length
+          ? network.assignedAddresses.join(", ")
+          : t("noAddress");
       return `
         <article class="network-table-row">
           <div class="network-table-col network-table-col-name">
@@ -622,12 +669,18 @@ function renderNetworks(data) {
   `;
 }
 
-
 function renderMoonTable(container, rowsHtml) {
   container.innerHTML = `${moonTableHeaderHtml()}${rowsHtml}`;
 }
 
-function renderMoonSection(moons, countEl, emptyEl, listEl, countLabel, rowRenderer) {
+function renderMoonSection(
+  moons,
+  countEl,
+  emptyEl,
+  listEl,
+  countLabel,
+  rowRenderer,
+) {
   countEl.textContent = t(countLabel, { count: moons.length });
   emptyEl.style.display = moons.length ? "none" : "block";
 
@@ -644,7 +697,11 @@ function renderJoinedMoonRow(moon) {
   const waiting = toBool(moon.waiting);
   const { identity, seed, endpointsText } = getMoonRowData(moon);
   const stateClass = !active ? "pill-muted" : waiting ? "pill-warn" : "pill-ok";
-  const stateText = !active ? t("inactive") : waiting ? t("waitingPull") : t("effective");
+  const stateText = !active
+    ? t("inactive")
+    : waiting
+      ? t("waitingPull")
+      : t("effective");
   return `
     <article class="moon-created-row">
       <div class="moon-created-col moon-created-col-id">
@@ -672,7 +729,9 @@ function renderJoinedMoonRow(moon) {
 function renderCreatedMoonRow(moon) {
   const active = toBool(moon.active);
   const { identity, seed, endpointsText } = getMoonRowData(moon);
-  const orbitCommand = moon.orbitCommand || (moon.id && seed !== "-" ? `zerotier-cli orbit ${moon.id} ${seed}` : "");
+  const orbitCommand =
+    moon.orbitCommand ||
+    (moon.id && seed !== "-" ? `zerotier-cli orbit ${moon.id} ${seed}` : "");
   const moonFileBase64 = moon.moonFileBase64 || "";
   const moonFileName = moon.moonFileName || `${String(moon.id || "moon")}.moon`;
   return `
@@ -705,12 +764,26 @@ function renderCreatedMoonRow(moon) {
 
 function renderJoinedMoons(data) {
   const moons = Array.isArray(data.joinedMoons) ? data.joinedMoons : [];
-  renderMoonSection(moons, joinedMoonCountEl, joinedMoonsEmptyEl, joinedMoonListEl, "joinedCount", renderJoinedMoonRow);
+  renderMoonSection(
+    moons,
+    joinedMoonCountEl,
+    joinedMoonsEmptyEl,
+    joinedMoonListEl,
+    "joinedCount",
+    renderJoinedMoonRow,
+  );
 }
 
 function renderCreatedMoons(data) {
   const moons = Array.isArray(data.createdMoons) ? data.createdMoons : [];
-  renderMoonSection(moons, createdMoonCountEl, createdMoonsEmptyEl, createdMoonListEl, "createdCount", renderCreatedMoonRow);
+  renderMoonSection(
+    moons,
+    createdMoonCountEl,
+    createdMoonsEmptyEl,
+    createdMoonListEl,
+    "createdCount",
+    renderCreatedMoonRow,
+  );
 }
 
 function renderMoonCreator(data) {
@@ -720,7 +793,11 @@ function renderMoonCreator(data) {
 
   moonCreateSeedEl.textContent = info.seed || "-";
   moonRootIdentityEl.textContent = info.rootIdentity || error || "-";
-  moonCreateSupportEl.textContent = supported ? (editingCreatedMoonId ? t("editing") : t("readyToCreate")) : t("unavailable");
+  moonCreateSupportEl.textContent = supported
+    ? editingCreatedMoonId
+      ? t("editing")
+      : t("readyToCreate")
+    : t("unavailable");
   moonCreateSupportEl.className = supported
     ? `pill ${editingCreatedMoonId ? "pill-warn" : "pill-muted"}`
     : "pill pill-muted";
@@ -817,13 +894,16 @@ async function refreshStatus(showMessage = false) {
 async function postAction(action, payload, successMessage) {
   setBusy(true);
   try {
-    const data = await requestJson(`../www/api.cgi?action=${encodeURIComponent(action)}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const data = await requestJson(
+      `../www/api.cgi?action=${encodeURIComponent(action)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload || {}),
       },
-      body: JSON.stringify(payload || {}),
-    });
+    );
     renderAll(data);
     showToast(successMessage || data.message || t("success"), "success");
     return data;
@@ -867,7 +947,11 @@ moonForm.addEventListener("submit", async (event) => {
     moonSeedInput.focus();
     return;
   }
-  const data = await postAction("moon_join", { worldId, seed }, t("joinedMoon", { id: worldId }));
+  const data = await postAction(
+    "moon_join",
+    { worldId, seed },
+    t("joinedMoon", { id: worldId }),
+  );
   if (data) {
     resetMoonJoinForm();
   }
@@ -896,7 +980,9 @@ moonCreateForm.addEventListener("submit", async (event) => {
   const payload = editingCreatedMoonId
     ? { oldWorldId: editingCreatedMoonId, worldId, stableEndpoints }
     : { worldId, stableEndpoints };
-  const successMessage = editingCreatedMoonId ? t("updatedMoon", { id: worldId }) : t("createdMoon", { id: worldId });
+  const successMessage = editingCreatedMoonId
+    ? t("updatedMoon", { id: worldId })
+    : t("createdMoon", { id: worldId });
   const data = await postAction(action, payload, successMessage);
   if (data) {
     resetMoonCreateForm();
@@ -965,12 +1051,20 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "start-created-moon") {
-    await postAction("moon_start", { worldId }, t("startedMoon", { id: worldId }));
+    await postAction(
+      "moon_start",
+      { worldId },
+      t("startedMoon", { id: worldId }),
+    );
     return;
   }
 
   if (action === "stop-created-moon") {
-    await postAction("moon_stop", { worldId }, t("stoppedMoon", { id: worldId }));
+    await postAction(
+      "moon_stop",
+      { worldId },
+      t("stoppedMoon", { id: worldId }),
+    );
     if (editingCreatedMoonId && editingCreatedMoonId === worldId) {
       resetMoonCreateForm();
     }
@@ -978,7 +1072,11 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "remove-created-moon") {
-    await postAction("moon_remove", { worldId }, t("removedMoon", { id: worldId }));
+    await postAction(
+      "moon_remove",
+      { worldId },
+      t("removedMoon", { id: worldId }),
+    );
     if (editingCreatedMoonId && editingCreatedMoonId === worldId) {
       resetMoonCreateForm();
     }
@@ -986,7 +1084,11 @@ document.addEventListener("click", async (event) => {
   }
 
   if (action === "leave-joined-moon") {
-    await postAction("moon_leave", { worldId }, t("removedMoon", { id: worldId }));
+    await postAction(
+      "moon_leave",
+      { worldId },
+      t("removedMoon", { id: worldId }),
+    );
     return;
   }
 });
@@ -996,14 +1098,21 @@ document.addEventListener("change", async (event) => {
   if (!checkbox) return;
   const panel = checkbox.closest(".network-table-row");
   if (!panel) return;
-  const network = panel.querySelector(".network-flags")?.getAttribute("data-network") || "";
+  const network =
+    panel.querySelector(".network-flags")?.getAttribute("data-network") || "";
   const setting = checkbox.getAttribute("data-setting") || "";
   if (!network) return;
   if (!setting) return;
-  await postAction("network_set", { network, settings: { [setting]: checkbox.checked } }, t("networkSaved", { id: network }));
+  await postAction(
+    "network_set",
+    { network, settings: { [setting]: checkbox.checked } },
+    t("networkSaved", { id: network }),
+  );
 });
 
 applyPreferences();
-window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyPreferences());
+window
+  .matchMedia?.("(prefers-color-scheme: dark)")
+  .addEventListener?.("change", () => applyPreferences());
 window.addEventListener("storage", () => applyPreferences({ rerender: true }));
 refreshStatus();

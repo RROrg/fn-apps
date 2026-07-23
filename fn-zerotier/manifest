@@ -1,5 +1,5 @@
 appname               = fn-zerotier
-version               = 1.0.7
+version               = 1.0.8
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all

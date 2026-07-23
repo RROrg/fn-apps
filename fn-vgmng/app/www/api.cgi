@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 
-SCRIPT_SOURCE="${BASH_SOURCE[0]:-$0}"
-SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_SOURCE}")" >/dev/null 2>&1 && pwd)"
 APP_VAR_DIR="/var/apps/fn-vgmng/var"
 LOG_FILE="${APP_VAR_DIR}/vgmng.log"
 AUTO_MOUNT_STATE_FILE="${APP_VAR_DIR}/auto-mounts.state"

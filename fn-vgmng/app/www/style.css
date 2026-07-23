@@ -612,7 +612,9 @@ textarea {
   background: rgba(0, 0, 0, 0.42);
 }
 
-.modal.hidden { display: none !important; }
+.modal.hidden {
+  display: none !important;
+}
 
 .modal-content {
   width: min(520px, calc(100vw - 48px));
