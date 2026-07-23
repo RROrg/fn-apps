@@ -55,7 +55,8 @@ const I18N = {
     cancel: "取消",
     warningTitle: "开启前确认",
     about: "关于",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -103,7 +104,8 @@ const I18N = {
     cancel: "Cancel",
     warningTitle: "Before starting",
     about: "About",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -111,7 +113,50 @@ const I18N = {
   },
 };
 
-const countries = ["00", "CN", "US", "JP", "KR", "AU", "CA", "GB", "DE", "FR", "IT", "ES", "NL", "BE", "CH", "AT", "SE", "NO", "DK", "FI", "RU", "IN", "BR", "MX", "AR", "CL", "CO", "PE", "ZA", "TR", "SA", "AE", "IL", "TH", "MY", "SG", "PH", "ID", "VN", "HK", "TW", "MO"];
+const countries = [
+  "00",
+  "CN",
+  "US",
+  "JP",
+  "KR",
+  "AU",
+  "CA",
+  "GB",
+  "DE",
+  "FR",
+  "IT",
+  "ES",
+  "NL",
+  "BE",
+  "CH",
+  "AT",
+  "SE",
+  "NO",
+  "DK",
+  "FI",
+  "RU",
+  "IN",
+  "BR",
+  "MX",
+  "AR",
+  "CL",
+  "CO",
+  "PE",
+  "ZA",
+  "TR",
+  "SA",
+  "AE",
+  "IL",
+  "TH",
+  "MY",
+  "SG",
+  "PH",
+  "ID",
+  "VN",
+  "HK",
+  "TW",
+  "MO",
+];
 
 const els = {
   summary: document.getElementById("statusSummary"),
@@ -140,23 +185,43 @@ const els = {
 };
 
 function safeDecode(value) {
-  try { return decodeURIComponent(value || ""); } catch (_error) { return value || ""; }
+  try {
+    return decodeURIComponent(value || "");
+  } catch (_error) {
+    return value || "";
+  }
 }
 
 function cookieValue(name) {
   const prefix = `${name}=`;
-  return document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix))?.slice(prefix.length) || "";
+  return (
+    document.cookie
+      .split(";")
+      .map((item) => item.trim())
+      .find((item) => item.startsWith(prefix))
+      ?.slice(prefix.length) || ""
+  );
 }
 
 function storedValue(name) {
-  try { return localStorage.getItem(name) || sessionStorage.getItem(name) || ""; } catch (_error) { return ""; }
+  try {
+    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
+  } catch (_error) {
+    return "";
+  }
 }
 
 function parentStoredValue(name) {
   try {
     if (!window.parent || window.parent === window) return "";
-    return window.parent.localStorage.getItem(name) || window.parent.sessionStorage.getItem(name) || "";
-  } catch (_error) { return ""; }
+    return (
+      window.parent.localStorage.getItem(name) ||
+      window.parent.sessionStorage.getItem(name) ||
+      ""
+    );
+  } catch (_error) {
+    return "";
+  }
 }
 
 function queryValue(name) {
@@ -167,14 +232,24 @@ function documentThemeValue(doc) {
   if (!doc) return "";
   const root = doc.documentElement;
   const body = doc.body;
-  return [body?.getAttribute("theme-mode"), body?.dataset?.theme, root?.dataset?.theme, root?.classList?.contains("dark") ? "dark" : "", root?.classList?.contains("light") ? "light" : ""].find(Boolean) || "";
+  return (
+    [
+      body?.getAttribute("theme-mode"),
+      body?.dataset?.theme,
+      root?.dataset?.theme,
+      root?.classList?.contains("dark") ? "dark" : "",
+      root?.classList?.contains("light") ? "light" : "",
+    ].find(Boolean) || ""
+  );
 }
 
 function parentDocumentThemeValue() {
   try {
     if (!window.parent || window.parent === window) return "";
     return documentThemeValue(window.parent.document);
-  } catch (_error) { return ""; }
+  } catch (_error) {
+    return "";
+  }
 }
 
 function normalizeLanguage(value) {
@@ -188,28 +263,58 @@ function normalizeTheme(value) {
   if (theme.includes("light") || theme === "day") return "light";
   if (theme === "10") return "light";
   if (theme === "20") return "dark";
-  if (["system", "auto", "os"].includes(theme)) return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (["system", "auto", "os"].includes(theme))
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   return "";
 }
 
 function currentTheme() {
-  return [queryValue("theme"), cookieValue("fnos-theme-mode"), cookieValue("os-theme-mode"), storedValue("fnos-theme-mode"), storedValue("os-theme-mode"), parentStoredValue("fnos-theme-mode"), parentStoredValue("os-theme-mode"), documentThemeValue(document), parentDocumentThemeValue()].map(normalizeTheme).find(Boolean) || (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  return (
+    [
+      queryValue("theme"),
+      cookieValue("fnos-theme-mode"),
+      cookieValue("os-theme-mode"),
+      storedValue("fnos-theme-mode"),
+      storedValue("os-theme-mode"),
+      parentStoredValue("fnos-theme-mode"),
+      parentStoredValue("os-theme-mode"),
+      documentThemeValue(document),
+      parentDocumentThemeValue(),
+    ]
+      .map(normalizeTheme)
+      .find(Boolean) ||
+    (window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light")
+  );
 }
 
 function t(key, params = {}) {
   const messages = I18N[state.language] || I18N["zh-CN"];
-  return String(messages[key] || I18N["zh-CN"][key] || key).replace(/\{(\w+)\}/g, (_match, name) => params[name] ?? "");
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
+  );
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = normalizeLanguage(cookieValue("language") || queryValue("language") || navigator.language || "zh-CN");
+  const nextLanguage = normalizeLanguage(
+    cookieValue("language") ||
+      queryValue("language") ||
+      navigator.language ||
+      "zh-CN",
+  );
   const changed = nextLanguage !== state.language;
   state.language = nextLanguage;
   state.theme = currentTheme();
   document.documentElement.lang = nextLanguage;
   document.documentElement.dataset.theme = state.theme;
   document.body.dataset.theme = state.theme;
-  document.querySelectorAll("[data-i18n]").forEach((node) => { node.textContent = t(node.dataset.i18n); });
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
   document.title = t("appTitle");
   if (state.status) {
     render();
@@ -252,22 +357,33 @@ async function api(action, { method = "GET", data = null } = {}) {
   const response = await fetch(apiUrl(action), options);
   const result = await response.json();
   if (!response.ok || result.ok === false) {
-    throw new Error(result.error || result.message || `HTTP ${response.status}`);
+    throw new Error(
+      result.error || result.message || `HTTP ${response.status}`,
+    );
   }
   return result;
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        char
+      ],
+  );
 }
 
 function setOptions(select, values, selected, firstLabel = "") {
   const options = [];
-  if (firstLabel) options.push(`<option value="">${escapeHtml(firstLabel)}</option>`);
+  if (firstLabel)
+    options.push(`<option value="">${escapeHtml(firstLabel)}</option>`);
   values.forEach((value) => {
     const label = Array.isArray(value) ? value[1] : value;
     const optionValue = Array.isArray(value) ? value[0] : value;
-    options.push(`<option value="${escapeHtml(optionValue)}">${escapeHtml(label)}</option>`);
+    options.push(
+      `<option value="${escapeHtml(optionValue)}">${escapeHtml(label)}</option>`,
+    );
   });
   select.innerHTML = options.join("");
   select.value = selected || "";
@@ -278,10 +394,25 @@ function channelOptions() {
   const raw = state.channels[band] || [];
   const parsed = raw.map((item) => {
     const [channel, freq, support] = String(item).split(":");
-    return [channel, `${channel} (${freq} MHz${support === "disabled" ? `, ${t("unavailable")}` : ""})`];
+    return [
+      channel,
+      `${channel} (${freq} MHz${support === "disabled" ? `, ${t("unavailable")}` : ""})`,
+    ];
   });
   if (!parsed.length) {
-    return band === "a" ? [["36", "36"], ["40", "40"], ["44", "44"], ["48", "48"], ["149", "149"]] : [["1", "1"], ["6", "6"], ["11", "11"]];
+    return band === "a"
+      ? [
+          ["36", "36"],
+          ["40", "40"],
+          ["44", "44"],
+          ["48", "48"],
+          ["149", "149"],
+        ]
+      : [
+          ["1", "1"],
+          ["6", "6"],
+          ["11", "11"],
+        ];
   }
   return parsed;
 }
@@ -327,7 +458,9 @@ function renderClients(clients) {
     els.clients.innerHTML = `<div class="empty">${t("noClients")}</div>`;
     return;
   }
-  els.clients.innerHTML = clients.map((client) => `
+  els.clients.innerHTML = clients
+    .map(
+      (client) => `
     <div class="client-row">
       <strong>${escapeHtml(client.hostname || "-")}</strong>
       <span>${escapeHtml(client.mac || "-")}</span>
@@ -336,18 +469,25 @@ function renderClients(clients) {
       <span class="client-muted">${formatBytes(client.rxBytes)} / ${formatBytes(client.txBytes)}</span>
       <button class="danger-btn" type="button" data-kick="${escapeHtml(client.mac || "")}">${t("kick")}</button>
     </div>
-  `).join("");
+  `,
+    )
+    .join("");
 }
 
 function render() {
   const status = state.status || {};
   state.running = Boolean(status.running);
-  els.summary.textContent = state.running ? `${t("running")} · ${status.hotspotIface || "-"}` : t("stopped");
+  els.summary.textContent = state.running
+    ? `${t("running")} · ${status.hotspotIface || "-"}`
+    : t("stopped");
   els.toggle.textContent = state.running ? t("stop") : t("start");
   els.statIface.textContent = status.hotspotIface || status.iface || "-";
-  els.statUplink.textContent = status.effectiveUplinkIface || status.uplinkIface || "-";
+  els.statUplink.textContent =
+    status.effectiveUplinkIface || status.uplinkIface || "-";
   els.statIp.textContent = status.ip || "-";
-  els.statInternet.textContent = status.internetStatus ? t("online") : t("offline");
+  els.statInternet.textContent = status.internetStatus
+    ? t("online")
+    : t("offline");
   els.statInternet.className = status.internetStatus ? "ok" : "bad";
 }
 
@@ -363,8 +503,18 @@ async function loadAll() {
     ]);
     state.config = config.config || {};
     state.channels = config.channelOptions || { bg: [], a: [] };
-    setOptions(els.iface, ifaces.ifaces || [], state.config.iface || "", t("autoIface"));
-    setOptions(els.uplink, uplinks.uplinks || [], state.config.uplinkIface || "", t("autoUplink"));
+    setOptions(
+      els.iface,
+      ifaces.ifaces || [],
+      state.config.iface || "",
+      t("autoIface"),
+    );
+    setOptions(
+      els.uplink,
+      uplinks.uplinks || [],
+      state.config.uplinkIface || "",
+      t("autoUplink"),
+    );
     fillForm();
     state.status = status.status || {};
     state.loaded = true;
@@ -443,7 +593,10 @@ async function toggleHotspot() {
       const pre = await api("stpre");
       if (pre.abort) throw new Error(pre.error || "start aborted");
       if (Array.isArray(pre.warnings) && pre.warnings.length) {
-        const ok = await confirmDialog(t("warningTitle"), pre.warnings.join("\n"));
+        const ok = await confirmDialog(
+          t("warningTitle"),
+          pre.warnings.join("\n"),
+        );
         if (!ok) return;
       }
       await api("start");
@@ -455,10 +608,18 @@ async function toggleHotspot() {
   }
 }
 
-els.refresh.addEventListener("click", () => loadAll().catch((error) => showToast(error.message, true)));
-els.save.addEventListener("click", () => saveConfig().catch((error) => showToast(error.message, true)));
-els.toggle.addEventListener("click", () => toggleHotspot().catch((error) => showToast(error.message, true)));
-els.aboutBtn.addEventListener("click", () => els.aboutModal.classList.remove("hidden"));
+els.refresh.addEventListener("click", () =>
+  loadAll().catch((error) => showToast(error.message, true)),
+);
+els.save.addEventListener("click", () =>
+  saveConfig().catch((error) => showToast(error.message, true)),
+);
+els.toggle.addEventListener("click", () =>
+  toggleHotspot().catch((error) => showToast(error.message, true)),
+);
+els.aboutBtn.addEventListener("click", () =>
+  els.aboutModal.classList.remove("hidden"),
+);
 document.addEventListener("click", (event) => {
   if (event.target.closest("[data-close]")) {
     const modal = event.target.closest(".modal");
@@ -470,7 +631,9 @@ document.addEventListener("click", (event) => {
     return;
   }
 });
-els.form.elements.band.addEventListener("change", () => setOptions(els.channel, channelOptions(), ""));
+els.form.elements.band.addEventListener("change", () =>
+  setOptions(els.channel, channelOptions(), ""),
+);
 els.clients.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-kick]");
   if (!button) return;
@@ -483,7 +646,9 @@ els.clients.addEventListener("click", async (event) => {
 });
 
 applyPreferences();
-window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyPreferences());
+window
+  .matchMedia?.("(prefers-color-scheme: dark)")
+  .addEventListener?.("change", () => applyPreferences());
 window.addEventListener("storage", () => applyPreferences({ rerender: true }));
 setInterval(() => refreshLiveData(), 5000);
 setBusy(true);

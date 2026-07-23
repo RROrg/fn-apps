@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import json
 import mimetypes
@@ -20,16 +27,25 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from urllib.parse import parse_qs
 
-
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.environ.get("DATA_DIR", ROOT_DIR)
 CFG_FILE = os.environ.get("CFG_FILE", os.path.join(DATA_DIR, "hotspot.env"))
 NAT_STATE_FILE = os.environ.get("NAT_STATE_FILE", os.path.join(DATA_DIR, "nat.env"))
-PORTS_STATE_FILE = os.environ.get("PORTS_STATE_FILE", os.path.join(DATA_DIR, "ports.state"))
-HOTSPOT_STATE_FILE = os.environ.get("HOTSPOT_STATE_FILE", os.path.join(DATA_DIR, "hotspot.state"))
-DNSMASQ_CONF_FILE = os.environ.get("DNSMASQ_CONF_FILE", os.path.join(DATA_DIR, "hotspot-dnsmasq.conf"))
-DNSMASQ_PID_FILE = os.environ.get("DNSMASQ_PID_FILE", os.path.join(DATA_DIR, "hotspot-dnsmasq.pid"))
-DNSMASQ_LEASE_FILE = os.environ.get("DNSMASQ_LEASE_FILE", os.path.join(DATA_DIR, "hotspot-dnsmasq.leases"))
+PORTS_STATE_FILE = os.environ.get(
+    "PORTS_STATE_FILE", os.path.join(DATA_DIR, "ports.state")
+)
+HOTSPOT_STATE_FILE = os.environ.get(
+    "HOTSPOT_STATE_FILE", os.path.join(DATA_DIR, "hotspot.state")
+)
+DNSMASQ_CONF_FILE = os.environ.get(
+    "DNSMASQ_CONF_FILE", os.path.join(DATA_DIR, "hotspot-dnsmasq.conf")
+)
+DNSMASQ_PID_FILE = os.environ.get(
+    "DNSMASQ_PID_FILE", os.path.join(DATA_DIR, "hotspot-dnsmasq.pid")
+)
+DNSMASQ_LEASE_FILE = os.environ.get(
+    "DNSMASQ_LEASE_FILE", os.path.join(DATA_DIR, "hotspot-dnsmasq.leases")
+)
 
 DEFAULTS = {
     "IFACE": "",
@@ -68,10 +84,13 @@ class ResponseDone(Exception):
 
 
 def current_request():
-    return getattr(REQUEST_CONTEXT, "value", None)
+    return getattr(REQUEST_CONTEXT, "value", {})
 
 
-class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+class ThreadingUnixHTTPServer(
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
+):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -80,7 +99,7 @@ class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStre
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 def ensure_data_dir():
@@ -158,9 +177,11 @@ def write_shell_state(path, mapping):
 
 def http_write(payload):
     request = current_request()
-    handler = request.get("handler") if request else None
+    handler = request.get("handler", None)
     if handler is not None:
-        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
+            "utf-8"
+        )
         handler.send_response(HTTPStatus.OK)
         handler.send_header("Content-Type", "application/json; charset=utf-8")
         handler.send_header("Cache-Control", "no-store")
@@ -179,9 +200,9 @@ def http_write(payload):
 
 def first_query_value(name):
     request = current_request()
-    query = request.get("query") if request else QUERY
-    values = query.get(name)
-    return values[0] if values else ""
+    query = request.get("query", QUERY)
+    values = query.get(name, [""])
+    return values[0]
 
 
 def ui_lang():
@@ -224,20 +245,47 @@ LOCALIZE_REGEX = [
     (r"^allowPorts: missing port", "allowPorts：缺少端口"),
     (r"^allowPorts: port must be number", "allowPorts：端口必须是数字"),
     (r"^allowPorts: port out of range 1-65535", "allowPorts：端口范围必须为 1-65535"),
-    (r"^allowPorts: invalid range start>end", "allowPorts：端口范围无效（起始 > 结束）"),
-    (r"^Device '(.+)' is not a Wi-Fi device\. Wi-Fi devices: (.*)$", r"设备 '\1' 不是 Wi‑Fi 网卡。可用 Wi‑Fi 网卡：\2"),
-    (r"^Device '(.+)' does not appear to support AP/hotspot mode.*$", r"设备 '\1' 似乎不支持 AP/热点模式（iw list 未发现 '* AP'）。请更换无线网卡。"),
-    (r"^uplinkIface cannot be the same as hotspot iface .+unless STA\+AP concurrent mode is available\.$", "uplinkIface 不能与热点网卡相同（除非支持 STA+AP 并发模式）。"),
-    (r"^uplinkIface cannot be the same as hotspot iface (.+)$", r"uplinkIface 不能与热点网卡相同：\1"),
+    (
+        r"^allowPorts: invalid range start>end",
+        "allowPorts：端口范围无效（起始 > 结束）",
+    ),
+    (
+        r"^Device '(.+)' is not a Wi-Fi device\. Wi-Fi devices: (.*)$",
+        r"设备 '\1' 不是 Wi‑Fi 网卡。可用 Wi‑Fi 网卡：\2",
+    ),
+    (
+        r"^Device '(.+)' does not appear to support AP/hotspot mode.*$",
+        r"设备 '\1' 似乎不支持 AP/热点模式（iw list 未发现 '* AP'）。请更换无线网卡。",
+    ),
+    (
+        r"^uplinkIface cannot be the same as hotspot iface .+unless STA\+AP concurrent mode is available\.$",
+        "uplinkIface 不能与热点网卡相同（除非支持 STA+AP 并发模式）。",
+    ),
+    (
+        r"^uplinkIface cannot be the same as hotspot iface (.+)$",
+        r"uplinkIface 不能与热点网卡相同：\1",
+    ),
     (r"^channel: (.+) is disabled \(regdom=(.+)\)$", r"信道：\1 已被禁用（regdom=\2）"),
-    (r"^channel: (.+) is marked 'no IR' \(regdom=(.+)\), hotspot may not be allowed\. Try band bg \(2\.4G\) or set regulatory domain \(e\.g\. iw reg set <CC>\)\.$", r"信道：\1 标记为 'no IR'（regdom=\2），可能不允许开启热点。建议改用 bg (2.4G) 或设置监管域（例如 iw reg set <CC>）。"),
-    (r"^Warning: Country Code is \(00\); 5.0GHz channels may not be enabled\.$", "监管域为 00；5.0GHz 信道可能不可用。"),
+    (
+        r"^channel: (.+) is marked 'no IR' \(regdom=(.+)\), hotspot may not be allowed\. Try band bg \(2\.4G\) or set regulatory domain \(e\.g\. iw reg set <CC>\)\.$",
+        r"信道：\1 标记为 'no IR'（regdom=\2），可能不允许开启热点。建议改用 bg (2.4G) 或设置监管域（例如 iw reg set <CC>）。",
+    ),
+    (
+        r"^Warning: Country Code is \(00\); 5.0GHz channels may not be enabled\.$",
+        "监管域为 00；5.0GHz 信道可能不可用。",
+    ),
     (
         r"^Warning: driver '([^']+)' is reporting very low transmit power \(([^)]+)\)\. Hotspot can start, but discovery/range may be poor\. Try 2\.4GHz/20MHz first; if coverage is still weak, this points to an ([^ ]+) driver/firmware power issue rather than hotspot setup\.$",
         r"警告：驱动 '\1' 当前发射功率很低（\2）。热点可以开启，但发现设备或覆盖范围可能较差。建议先使用 2.4GHz/20MHz；如果覆盖仍然很弱，通常指向 \3 驱动/固件功率问题，而不是热点配置问题。",
     ),
-    (r"^Warning: Adapter does not support STA\+AP; disconnected '([^']*)' on '([^']*)'\.$", r"网卡不支持 STA+AP，已断开 '\1' 在 '\2'。"),
-    (r"^Warning: Adapter does not support STA\+AP; hotspot will use '([^']*)' \(may interrupt Wi‑Fi\)\.$", r"网卡不支持 STA+AP；热点将使用 '\1'（可能中断 Wi‑Fi）。"),
+    (
+        r"^Warning: Adapter does not support STA\+AP; disconnected '([^']*)' on '([^']*)'\.$",
+        r"网卡不支持 STA+AP，已断开 '\1' 在 '\2'。",
+    ),
+    (
+        r"^Warning: Adapter does not support STA\+AP; hotspot will use '([^']*)' \(may interrupt Wi‑Fi\)\.$",
+        r"网卡不支持 STA+AP；热点将使用 '\1'（可能中断 Wi‑Fi）。",
+    ),
     (r"^curl failed on dev (.+)$", r"curl 检查互联网连接失败（设备：\1）。"),
     (r"^dnsmasq failed to start: (.+)$", r"dnsmasq 启动失败：\1"),
     (r"^dnsmasq config write failed: (.+)$", r"dnsmasq 配置写入失败：\1"),
@@ -270,11 +318,13 @@ def notice_line(message):
 
 
 def error_response(http_status, message):
-    http_write({
-        "ok": False,
-        "error": sanitize_text(localize_msg(message or "")),
-        "http_status": http_status,
-    })
+    http_write(
+        {
+            "ok": False,
+            "error": sanitize_text(localize_msg(message or "")),
+            "http_status": http_status,
+        }
+    )
 
 
 def ok_response(payload=None):
@@ -294,8 +344,8 @@ def output_response(output_text, notice=None):
 
 def parse_form_body():
     request = current_request()
-    if request:
-        return request.get("body") or {}
+    if request != {}:
+        return request.get("body", {})
     method = (os.environ.get("REQUEST_METHOD") or "GET").upper()
     if method != "POST":
         return {}
@@ -311,9 +361,9 @@ def parse_form_body():
 
 def first_form_value(name):
     request = current_request()
-    body = request.get("body") if request else BODY
-    values = body.get(name)
-    return values[0] if values else ""
+    body = request.get("body", BODY)
+    values = body.get(name, [""])
+    return values[0]
 
 
 def normalize_country(value):
@@ -361,7 +411,9 @@ def allow_ports_to_rules(spec):
             port_part, proto = token.rsplit("/", 1)
             proto = trim(proto).lower()
         if proto not in {"tcp", "udp"}:
-            raise ValueError(f"allowPorts: protocol must be tcp or udp (token: {token})")
+            raise ValueError(
+                f"allowPorts: protocol must be tcp or udp (token: {token})"
+            )
         port_part = trim(port_part)
         if not port_part:
             raise ValueError(f"allowPorts: missing port (token: {token})")
@@ -762,7 +814,9 @@ def start_local_dnsmasq(hotspot_iface, cfg):
         return False, str(exc)
     except OSError as exc:
         return False, f"dnsmasq config write failed: {exc}"
-    ok, stdout, stderr = run_ok(["dnsmasq", "--test", f"--conf-file={DNSMASQ_CONF_FILE}"])
+    ok, stdout, stderr = run_ok(
+        ["dnsmasq", "--test", f"--conf-file={DNSMASQ_CONF_FILE}"]
+    )
     if not ok:
         return False, f"dnsmasq failed to start: {sanitize_text(stderr or stdout)}"
     ok, stdout, stderr = run_ok(["dnsmasq", f"--conf-file={DNSMASQ_CONF_FILE}"])
@@ -776,12 +830,38 @@ def iptables_allow_port(iface, proto, start, end):
         return
     dport = str(start) if start == end else f"{start}:{end}"
     check_cmd = [
-        "iptables", "-C", "INPUT", "-i", iface, "-p", proto, "--dport", dport,
-        "-m", "comment", "--comment", "fn-hotspot-allow", "-j", "ACCEPT",
+        "iptables",
+        "-C",
+        "INPUT",
+        "-i",
+        iface,
+        "-p",
+        proto,
+        "--dport",
+        dport,
+        "-m",
+        "comment",
+        "--comment",
+        "fn-hotspot-allow",
+        "-j",
+        "ACCEPT",
     ]
     add_cmd = [
-        "iptables", "-A", "INPUT", "-i", iface, "-p", proto, "--dport", dport,
-        "-m", "comment", "--comment", "fn-hotspot-allow", "-j", "ACCEPT",
+        "iptables",
+        "-A",
+        "INPUT",
+        "-i",
+        iface,
+        "-p",
+        proto,
+        "--dport",
+        dport,
+        "-m",
+        "comment",
+        "--comment",
+        "fn-hotspot-allow",
+        "-j",
+        "ACCEPT",
     ]
     ok, _, _ = run_ok(check_cmd)
     if not ok:
@@ -792,10 +872,25 @@ def iptables_remove_port(iface, proto, start, end):
     if not iface or not command_exists("iptables"):
         return
     dport = str(start) if start == end else f"{start}:{end}"
-    run_cmd([
-        "iptables", "-D", "INPUT", "-i", iface, "-p", proto, "--dport", dport,
-        "-m", "comment", "--comment", "fn-hotspot-allow", "-j", "ACCEPT",
-    ])
+    run_cmd(
+        [
+            "iptables",
+            "-D",
+            "INPUT",
+            "-i",
+            iface,
+            "-p",
+            proto,
+            "--dport",
+            dport,
+            "-m",
+            "comment",
+            "--comment",
+            "fn-hotspot-allow",
+            "-j",
+            "ACCEPT",
+        ]
+    )
 
 
 def load_ports_state():
@@ -872,8 +967,28 @@ def iptables_apply_nat(hotspot, uplink):
         return
     checks = [
         (
-            ["iptables", "-t", "nat", "-C", "POSTROUTING", "-o", uplink, "-j", "MASQUERADE"],
-            ["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", uplink, "-j", "MASQUERADE"],
+            [
+                "iptables",
+                "-t",
+                "nat",
+                "-C",
+                "POSTROUTING",
+                "-o",
+                uplink,
+                "-j",
+                "MASQUERADE",
+            ],
+            [
+                "iptables",
+                "-t",
+                "nat",
+                "-A",
+                "POSTROUTING",
+                "-o",
+                uplink,
+                "-j",
+                "MASQUERADE",
+            ],
         ),
         (
             ["iptables", "-C", "FORWARD", "-i", hotspot, "-o", uplink, "-j", "ACCEPT"],
@@ -893,7 +1008,9 @@ def iptables_apply_nat(hotspot, uplink):
 def iptables_remove_nat(hotspot, uplink):
     if not hotspot or not uplink or not command_exists("iptables"):
         return
-    run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", uplink, "-j", "MASQUERADE"])
+    run_cmd(
+        ["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", uplink, "-j", "MASQUERADE"]
+    )
     run_cmd(["iptables", "-D", "FORWARD", "-i", hotspot, "-o", uplink, "-j", "ACCEPT"])
     run_cmd(["iptables", "-D", "FORWARD", "-i", uplink, "-o", hotspot, "-j", "ACCEPT"])
 
@@ -930,7 +1047,12 @@ def iw_supports_sta_ap():
             continue
         if in_section and line and not line.startswith((" ", "\t")):
             in_section = False
-        if in_section and line.lstrip().startswith("*") and "managed" in line and re.search(r"(^|\s)AP(\s|$)", line):
+        if (
+            in_section
+            and line.lstrip().startswith("*")
+            and "managed" in line
+            and re.search(r"(^|\s)AP(\s|$)", line)
+        ):
             return True
     return False
 
@@ -950,7 +1072,9 @@ def ensure_virtual_ap_iface(parent, ap_iface):
     ok, _, _ = run_ok(["iw", "dev", ap_iface, "info"])
     if ok:
         return True
-    ok, _, _ = run_ok(["iw", "dev", parent, "interface", "add", ap_iface, "type", "__ap"])
+    ok, _, _ = run_ok(
+        ["iw", "dev", parent, "interface", "add", ap_iface, "type", "__ap"]
+    )
     if not ok:
         return False
     if command_exists("ip"):
@@ -1106,6 +1230,7 @@ def parse_lease_hosts(cidr):
     for pattern in patterns:
         if "*" in pattern:
             import glob
+
             paths.extend(sorted(glob.glob(pattern)))
         else:
             paths.append(pattern)
@@ -1146,52 +1271,60 @@ def handle_config_get():
         apply_regdom(requested_country)
     regdom = iw_reg_country()
     if requested_country and requested_country != regdom:
-        error_response("400 Bad Request", "system does not support setting country code.")
+        error_response(
+            "400 Bad Request", "system does not support setting country code."
+        )
     ch_bg = iw_channels_for_band("bg")
     ch_a = iw_channels_for_band("a")
     if requested_country and regdom != original_regdom:
         apply_regdom(original_regdom or "00")
-    ok_response({
-        "config": {
-            "iface": cfg["IFACE"],
-            "uplinkIface": cfg["UPLINK_IFACE"],
-            "ipCidr": cfg["IP_CIDR"],
-            "allowPorts": cfg["ALLOW_PORTS"],
-            "ssid": cfg["SSID"],
-            "password": cfg["PASSWORD"],
-            "countryCode": cfg["COUNTRY"],
-            "band": cfg["BAND"],
-            "channel": cfg["CHANNEL"],
-            "channelWidth": cfg["CHANNEL_WIDTH"],
-        },
-        "regdom": regdom,
-        "channelOptions": {"bg": ch_bg, "a": ch_a},
-    })
+    ok_response(
+        {
+            "config": {
+                "iface": cfg["IFACE"],
+                "uplinkIface": cfg["UPLINK_IFACE"],
+                "ipCidr": cfg["IP_CIDR"],
+                "allowPorts": cfg["ALLOW_PORTS"],
+                "ssid": cfg["SSID"],
+                "password": cfg["PASSWORD"],
+                "countryCode": cfg["COUNTRY"],
+                "band": cfg["BAND"],
+                "channel": cfg["CHANNEL"],
+                "channelWidth": cfg["CHANNEL_WIDTH"],
+            },
+            "regdom": regdom,
+            "channelOptions": {"bg": ch_bg, "a": ch_a},
+        }
+    )
 
 
 def handle_config_set():
     global CURRENT_STEP
     CURRENT_STEP = "config_set"
     cfg = load_cfg()
-    cfg.update({
-        "IFACE": first_form_value("iface"),
-        "UPLINK_IFACE": first_form_value("uplinkIface"),
-        "IP_CIDR": first_form_value("ipCidr"),
-        "ALLOW_PORTS": first_form_value("allowPorts"),
-        "SSID": first_form_value("ssid"),
-        "PASSWORD": first_form_value("password"),
-        "COUNTRY": first_form_value("countryCode"),
-        "BAND": first_form_value("band"),
-        "CHANNEL": first_form_value("channel"),
-        "CHANNEL_WIDTH": first_form_value("channelWidth"),
-    })
+    cfg.update(
+        {
+            "IFACE": first_form_value("iface"),
+            "UPLINK_IFACE": first_form_value("uplinkIface"),
+            "IP_CIDR": first_form_value("ipCidr"),
+            "ALLOW_PORTS": first_form_value("allowPorts"),
+            "SSID": first_form_value("ssid"),
+            "PASSWORD": first_form_value("password"),
+            "COUNTRY": first_form_value("countryCode"),
+            "BAND": first_form_value("band"),
+            "CHANNEL": first_form_value("channel"),
+            "CHANNEL_WIDTH": first_form_value("channelWidth"),
+        }
+    )
     ensure_iface(cfg)
     cfg["IFACE"] = normalize_parent_wifi_iface(cfg.get("IFACE", ""))
     cfg_error = validate_cfg(cfg)
     if cfg_error:
         error_response("400 Bad Request", cfg_error)
     if not save_cfg(cfg):
-        error_response("500 Internal Server Error", "save config failed (CFG_FILE not writable)")
+        error_response(
+            "500 Internal Server Error", "save config failed (CFG_FILE not writable)"
+        )
     ok_response()
 
 
@@ -1206,7 +1339,9 @@ def handle_status():
     state = "unknown"
     active = ""
     if command_exists("nmcli"):
-        ok, stdout, _ = run_ok(["nmcli", "-t", "-f", "DEVICE,STATE,CONNECTION", "dev", "status"])
+        ok, stdout, _ = run_ok(
+            ["nmcli", "-t", "-f", "DEVICE,STATE,CONNECTION", "dev", "status"]
+        )
         if ok:
             for line in stdout.splitlines():
                 if line.startswith(f"{hotspot_iface}:"):
@@ -1218,12 +1353,18 @@ def handle_status():
     sta_ap_concurrent = iw_supports_sta_ap()
     parent_active_connection = ""
     if command_exists("nmcli"):
-        ok, stdout, _ = run_ok(["nmcli", "-g", "GENERAL.CONNECTION", "dev", "show", parent_iface])
+        ok, stdout, _ = run_ok(
+            ["nmcli", "-g", "GENERAL.CONNECTION", "dev", "show", parent_iface]
+        )
         if ok and stdout.splitlines():
             parent_active_connection = trim(stdout.splitlines()[0])
             if parent_active_connection == "--":
                 parent_active_connection = ""
-    will_disconnect_sta = hotspot_iface == parent_iface and not sta_ap_concurrent and bool(parent_active_connection)
+    will_disconnect_sta = (
+        hotspot_iface == parent_iface
+        and not sta_ap_concurrent
+        and bool(parent_active_connection)
+    )
     ip_addr = ""
     if command_exists("ip"):
         ok, stdout, _ = run_ok(["ip", "-4", "addr", "show", "dev", hotspot_iface])
@@ -1233,35 +1374,52 @@ def handle_status():
                 ip_addr = match.group(1)
     tx_power = wifi_txpower_dbm(hotspot_iface)
     driver = wifi_driver_name(hotspot_iface)
-    effective_uplink = nat_state["NAT_UPLINK_IFACE"] or cfg["UPLINK_IFACE"] or detect_route_dev("1.1.1.1")
+    effective_uplink = (
+        nat_state["NAT_UPLINK_IFACE"]
+        or cfg["UPLINK_IFACE"]
+        or detect_route_dev("1.1.1.1")
+    )
     internet_status = False
     internet_reason = "null"
     if command_exists("curl"):
-        ok, _, _ = run_ok(["curl", "--max-time", "3", "-I", "http://1.1.1.1", "--silent", "--output", "/dev/null"])
+        ok, _, _ = run_ok(
+            [
+                "curl",
+                "--max-time",
+                "3",
+                "-I",
+                "http://1.1.1.1",
+                "--silent",
+                "--output",
+                "/dev/null",
+            ]
+        )
         if ok:
             internet_status = True
         else:
             internet_reason = f"curl failed on dev {hotspot_iface}"
-    ok_response({
-        "status": {
-            "running": running,
-            "iface": parent_iface,
-            "hotspotIface": hotspot_iface,
-            "state": state,
-            "activeConnection": active,
-            "parentActiveConnection": parent_active_connection,
-            "staApConcurrent": sta_ap_concurrent,
-            "willDisconnectSta": will_disconnect_sta,
-            "ip": ip_addr,
-            "txPowerDbm": tx_power,
-            "wifiDriver": driver,
-            "lowTxPower": wifi_txpower_is_suspiciously_low(hotspot_iface),
-            "uplinkIface": cfg["UPLINK_IFACE"],
-            "effectiveUplinkIface": effective_uplink,
-            "internetStatus": internet_status,
-            "internetReason": internet_reason,
+    ok_response(
+        {
+            "status": {
+                "running": running,
+                "iface": parent_iface,
+                "hotspotIface": hotspot_iface,
+                "state": state,
+                "activeConnection": active,
+                "parentActiveConnection": parent_active_connection,
+                "staApConcurrent": sta_ap_concurrent,
+                "willDisconnectSta": will_disconnect_sta,
+                "ip": ip_addr,
+                "txPowerDbm": tx_power,
+                "wifiDriver": driver,
+                "lowTxPower": wifi_txpower_is_suspiciously_low(hotspot_iface),
+                "uplinkIface": cfg["UPLINK_IFACE"],
+                "effectiveUplinkIface": effective_uplink,
+                "internetStatus": internet_status,
+                "internetReason": internet_reason,
+            }
         }
-    })
+    )
 
 
 def nmcli_connection_down(connection_id):
@@ -1308,15 +1466,22 @@ def handle_start():
         run_cmd(["nmcli", "dev", "connect", cfg["UPLINK_IFACE"]])
     iface_status = require_wifi_iface(cfg)
     if iface_status == 2:
-        error_response("400 Bad Request", "No Wi-Fi device found. Check 'nmcli dev status'.")
+        error_response(
+            "400 Bad Request", "No Wi-Fi device found. Check 'nmcli dev status'."
+        )
     if iface_status == 1:
-        error_response("400 Bad Request", f"Device '{cfg['IFACE']}' is not a Wi-Fi device. Wi-Fi devices: {' '.join(wifi_ifaces())}")
+        error_response(
+            "400 Bad Request",
+            f"Device '{cfg['IFACE']}' is not a Wi-Fi device. Wi-Fi devices: {' '.join(wifi_ifaces())}",
+        )
     parent_iface = cfg["IFACE"]
     hotspot_iface = cfg["IFACE"]
     virtual_iface = ""
     sta_prev_con = ""
     if command_exists("nmcli"):
-        ok, stdout, _ = run_ok(["nmcli", "-g", "GENERAL.CONNECTION", "dev", "show", cfg["IFACE"]])
+        ok, stdout, _ = run_ok(
+            ["nmcli", "-g", "GENERAL.CONNECTION", "dev", "show", cfg["IFACE"]]
+        )
         if ok and stdout.splitlines():
             sta_prev_con = trim(stdout.splitlines()[0])
             if sta_prev_con == "--":
@@ -1328,11 +1493,24 @@ def handle_start():
         else:
             virtual_iface = ""
     if cfg["UPLINK_IFACE"] and cfg["UPLINK_IFACE"] == hotspot_iface:
-        error_response("400 Bad Request", f"uplinkIface cannot be the same as hotspot iface ({hotspot_iface}). Choose another uplink interface or leave uplinkIface empty (auto).")
-    if cfg["UPLINK_IFACE"] and cfg["UPLINK_IFACE"] == cfg["IFACE"] and hotspot_iface == cfg["IFACE"]:
-        error_response("400 Bad Request", f"uplinkIface cannot be the same as hotspot iface ({cfg['IFACE']}) unless STA+AP concurrent mode is available.")
+        error_response(
+            "400 Bad Request",
+            f"uplinkIface cannot be the same as hotspot iface ({hotspot_iface}). Choose another uplink interface or leave uplinkIface empty (auto).",
+        )
+    if (
+        cfg["UPLINK_IFACE"]
+        and cfg["UPLINK_IFACE"] == cfg["IFACE"]
+        and hotspot_iface == cfg["IFACE"]
+    ):
+        error_response(
+            "400 Bad Request",
+            f"uplinkIface cannot be the same as hotspot iface ({cfg['IFACE']}) unless STA+AP concurrent mode is available.",
+        )
     if not nmcli_ap_mode_supported():
-        error_response("400 Bad Request", f"Device '{cfg['IFACE']}' does not appear to support AP/hotspot mode (iw list has no '* AP'). Use another Wi-Fi adapter.")
+        error_response(
+            "400 Bad Request",
+            f"Device '{cfg['IFACE']}' does not appear to support AP/hotspot mode (iw list has no '* AP'). Use another Wi-Fi adapter.",
+        )
     ip_cidr = effective_ip_cidr(cfg)
     if sta_prev_con:
         nmcli_connection_down(sta_prev_con)
@@ -1340,10 +1518,23 @@ def handle_start():
     nmcli_connection_delete(cfg["SSID"])
     nmcli_device_disconnect(hotspot_iface)
     stop_local_dnsmasq()
-    ok, stdout, stderr = run_ok([
-        "nmcli", "con", "add", "type", "wifi", "ifname", hotspot_iface,
-        "con-name", cfg["SSID"], "autoconnect", "no", "ssid", cfg["SSID"],
-    ])
+    ok, stdout, stderr = run_ok(
+        [
+            "nmcli",
+            "con",
+            "add",
+            "type",
+            "wifi",
+            "ifname",
+            hotspot_iface,
+            "con-name",
+            cfg["SSID"],
+            "autoconnect",
+            "no",
+            "ssid",
+            cfg["SSID"],
+        ]
+    )
     out = stdout or stderr
     if not ok:
         nmcli_connection_down(cfg["SSID"])
@@ -1352,19 +1543,34 @@ def handle_start():
         restore_previous_connection(sta_prev_con)
         error_response("500 Internal Server Error", sanitize_text(out))
     mod_cmd = [
-        "nmcli", "con", "mod", cfg["SSID"],
-        "802-11-wireless.mode", "ap",
-        "802-11-wireless.band", cfg["BAND"],
-        "802-11-wireless.channel", cfg["CHANNEL"],
-        "802-11-wireless.powersave", "2",
-        "802-11-wireless-security.key-mgmt", "wpa-psk",
-        "802-11-wireless-security.psk", cfg["PASSWORD"],
-        "802-11-wireless-security.proto", "rsn",
-        "802-11-wireless-security.pairwise", "ccmp",
-        "ipv4.method", "manual",
-        "ipv4.addresses", ip_cidr,
-        "ipv4.never-default", "yes",
-        "ipv6.method", "disabled",
+        "nmcli",
+        "con",
+        "mod",
+        cfg["SSID"],
+        "802-11-wireless.mode",
+        "ap",
+        "802-11-wireless.band",
+        cfg["BAND"],
+        "802-11-wireless.channel",
+        cfg["CHANNEL"],
+        "802-11-wireless.powersave",
+        "2",
+        "802-11-wireless-security.key-mgmt",
+        "wpa-psk",
+        "802-11-wireless-security.psk",
+        cfg["PASSWORD"],
+        "802-11-wireless-security.proto",
+        "rsn",
+        "802-11-wireless-security.pairwise",
+        "ccmp",
+        "ipv4.method",
+        "manual",
+        "ipv4.addresses",
+        ip_cidr,
+        "ipv4.never-default",
+        "yes",
+        "ipv6.method",
+        "disabled",
     ]
     ok, _, stderr = run_ok(mod_cmd)
     if not ok:
@@ -1372,24 +1578,40 @@ def handle_start():
         nmcli_connection_delete(cfg["SSID"])
         nmcli_device_disconnect(hotspot_iface)
         restore_previous_connection(sta_prev_con)
-        error_response("500 Internal Server Error", sanitize_text(stderr or f"nmcli: failed to configure hotspot connection '{cfg['SSID']}'"))
+        error_response(
+            "500 Internal Server Error",
+            sanitize_text(
+                stderr
+                or f"nmcli: failed to configure hotspot connection '{cfg['SSID']}'"
+            ),
+        )
     width = cfg["CHANNEL_WIDTH"]
     if width == "20":
         run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", ""])
         run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.vht-mode", ""])
     elif width == "40":
-        ok, _, _ = run_ok(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", "HT40+"])
+        ok, _, _ = run_ok(
+            ["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", "HT40+"]
+        )
         if not ok:
-            run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", "HT40-"])
+            run_cmd(
+                ["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", "HT40-"]
+            )
         run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.vht-mode", ""])
     elif width == "80":
-        run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.vht-mode", "VHT80"])
+        run_cmd(
+            ["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.vht-mode", "VHT80"]
+        )
         run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", ""])
     elif width == "160":
-        run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.vht-mode", "VHT160"])
+        run_cmd(
+            ["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.vht-mode", "VHT160"]
+        )
         run_cmd(["nmcli", "con", "mod", cfg["SSID"], "802-11-wireless.ht-mode", ""])
     wait_secs = os.environ.get("NMCLI_WAIT_SECS", "20")
-    ok, stdout, stderr = run_ok(["nmcli", "--wait", wait_secs, "con", "up", "id", cfg["SSID"]])
+    ok, stdout, stderr = run_ok(
+        ["nmcli", "--wait", wait_secs, "con", "up", "id", cfg["SSID"]]
+    )
     nmcli_out = stdout or stderr
     if not ok:
         nmcli_connection_down(cfg["SSID"])
@@ -1397,8 +1619,14 @@ def handle_start():
         nmcli_device_disconnect(hotspot_iface)
         restore_previous_connection(sta_prev_con)
         if "timed out" in nmcli_out.lower():
-            error_response("504 Gateway Timeout", f"Hotspot setup timed out after {wait_secs}s.\n{sanitize_text(nmcli_out)}")
-        error_response("500 Internal Server Error", f"nmcli: failed to bring up hotspot connection '{cfg['SSID']}'\n{sanitize_text(nmcli_out)}")
+            error_response(
+                "504 Gateway Timeout",
+                f"Hotspot setup timed out after {wait_secs}s.\n{sanitize_text(nmcli_out)}",
+            )
+        error_response(
+            "500 Internal Server Error",
+            f"nmcli: failed to bring up hotspot connection '{cfg['SSID']}'\n{sanitize_text(nmcli_out)}",
+        )
     ok, dnsmasq_error = start_local_dnsmasq(hotspot_iface, cfg)
     if not ok:
         nmcli_connection_down(cfg["SSID"])
@@ -1452,7 +1680,9 @@ def handle_clients():
     clients = []
     seen = set()
 
-    def emit_client(mac, ip_addr, signal=None, connected=None, rx_bytes=None, tx_bytes=None):
+    def emit_client(
+        mac, ip_addr, signal=None, connected=None, rx_bytes=None, tx_bytes=None
+    ):
         mac = (mac or "").lower()
         if not mac or mac in seen:
             return
@@ -1510,7 +1740,10 @@ def handle_uplinks():
         device = trim(device)
         if not device or device == "lo" or device.startswith("p2p"):
             continue
-        if re.match(r"^(veth|docker|br-|virbr|vnet|tap|tun|wg|zt|tailscale|vboxnet|vmnet)", device):
+        if re.match(
+            r"^(veth|docker|br-|virbr|vnet|tap|tun|wg|zt|tailscale|vboxnet|vmnet)",
+            device,
+        ):
             continue
         uplinks.append(device)
     ok_response({"uplinks": uplinks})
@@ -1534,14 +1767,18 @@ def handle_kick():
     out = stdout or stderr
     if ok:
         if command_exists("ip"):
-            ok_neigh, neigh_stdout, _ = run_ok(["ip", "neigh", "show", "dev", hotspot_dev])
+            ok_neigh, neigh_stdout, _ = run_ok(
+                ["ip", "neigh", "show", "dev", hotspot_dev]
+            )
             if ok_neigh:
                 for line in neigh_stdout.splitlines():
                     parts = line.split()
                     if "lladdr" in parts:
                         index = parts.index("lladdr")
                         if index + 1 < len(parts) and parts[index + 1].lower() == mac:
-                            run_cmd(["ip", "neigh", "del", parts[0], "dev", hotspot_dev])
+                            run_cmd(
+                                ["ip", "neigh", "del", parts[0], "dev", hotspot_dev]
+                            )
                             break
         output_response(out)
     error_response("500 Internal Server Error", f"kick failed: {out}")
@@ -1557,28 +1794,70 @@ def handle_stpre():
     warnings = []
     iface_status = require_wifi_iface(cfg)
     if iface_status == 1:
-        ok_response({"abort": True, "error": localize_msg(f"Device '{cfg['IFACE']}' is not a Wi-Fi device. Wi-Fi devices: {' '.join(wifi_ifaces())}")})
+        ok_response(
+            {
+                "abort": True,
+                "error": localize_msg(
+                    f"Device '{cfg['IFACE']}' is not a Wi-Fi device. Wi-Fi devices: {' '.join(wifi_ifaces())}"
+                ),
+            }
+        )
     if iface_status == 2:
-        ok_response({"abort": True, "error": localize_msg("No Wi-Fi device found. Check 'nmcli dev status'.")})
+        ok_response(
+            {
+                "abort": True,
+                "error": localize_msg(
+                    "No Wi-Fi device found. Check 'nmcli dev status'."
+                ),
+            }
+        )
     sta_prev_con = ""
     if command_exists("nmcli"):
-        ok, stdout, _ = run_ok(["nmcli", "-g", "GENERAL.CONNECTION", "dev", "show", cfg["IFACE"]])
+        ok, stdout, _ = run_ok(
+            ["nmcli", "-g", "GENERAL.CONNECTION", "dev", "show", cfg["IFACE"]]
+        )
         if ok and stdout.splitlines():
             sta_prev_con = trim(stdout.splitlines()[0])
             if sta_prev_con == "--":
                 sta_prev_con = ""
     regdom = iw_reg_country() or "00"
     if regdom == "00":
-        warnings.append(localize_msg("Warning: Country Code is (00); 5.0GHz channels may not be enabled."))
+        warnings.append(
+            localize_msg(
+                "Warning: Country Code is (00); 5.0GHz channels may not be enabled."
+            )
+        )
     if not iw_supports_sta_ap():
         if sta_prev_con:
-            warnings.append(localize_msg(f"Warning: Adapter does not support STA+AP; disconnected '{sta_prev_con}' on '{cfg['IFACE']}'."))
+            warnings.append(
+                localize_msg(
+                    f"Warning: Adapter does not support STA+AP; disconnected '{sta_prev_con}' on '{cfg['IFACE']}'."
+                )
+            )
         else:
-            warnings.append(localize_msg(f"Warning: Adapter does not support STA+AP; hotspot will use '{cfg['IFACE']}' (may interrupt Wi‑Fi)."))
+            warnings.append(
+                localize_msg(
+                    f"Warning: Adapter does not support STA+AP; hotspot will use '{cfg['IFACE']}' (may interrupt Wi‑Fi)."
+                )
+            )
     if cfg["UPLINK_IFACE"] and cfg["UPLINK_IFACE"] == cfg["IFACE"]:
-        ok_response({"abort": True, "error": localize_msg(f"uplinkIface cannot be the same as hotspot iface ({cfg['IFACE']}). Choose another uplink interface or leave uplinkIface empty (auto).")})
+        ok_response(
+            {
+                "abort": True,
+                "error": localize_msg(
+                    f"uplinkIface cannot be the same as hotspot iface ({cfg['IFACE']}). Choose another uplink interface or leave uplinkIface empty (auto)."
+                ),
+            }
+        )
     if not nmcli_ap_mode_supported():
-        ok_response({"abort": True, "error": localize_msg(f"Device '{cfg['IFACE']}' does not appear to support AP/hotspot mode (iw list has no '* AP'). Use another Wi-Fi adapter.")})
+        ok_response(
+            {
+                "abort": True,
+                "error": localize_msg(
+                    f"Device '{cfg['IFACE']}' does not appear to support AP/hotspot mode (iw list has no '* AP'). Use another Wi-Fi adapter."
+                ),
+            }
+        )
     runtime_error = validate_runtime_channel(cfg)
     if runtime_error:
         warnings.append(localize_msg(runtime_error))
@@ -1628,7 +1907,9 @@ def parse_request_body(handler):
     content_type = handler.headers.get("Content-Type", "")
     if "application/json" in content_type:
         payload = json.loads(text or "{}")
-        return {key: ["" if value is None else str(value)] for key, value in payload.items()}
+        return {
+            key: ["" if value is None else str(value)] for key, value in payload.items()
+        }
     return parse_qs(text, keep_blank_values=True)
 
 
@@ -1642,7 +1923,7 @@ def merge_query_action(path, query):
 
 
 def dispatch_api(handler, api_path, query):
-    previous = current_request()
+    request = current_request()
     try:
         REQUEST_CONTEXT.value = {
             "handler": handler,
@@ -1657,23 +1938,28 @@ def dispatch_api(handler, api_path, query):
         handler_fn = ACTIONS.get(action)
         if not handler_fn:
             error_response("404 Not Found", f"unknown action: {action}")
-        handler_fn()
+        else:
+            handler_fn()
     except ResponseDone:
         return
     except Exception as exc:
         try:
-            error_response("500 Internal Server Error", f"unexpected error (step={CURRENT_STEP}): {exc}")
+            error_response(
+                "500 Internal Server Error",
+                f"unexpected error (step={CURRENT_STEP}): {exc}",
+            )
         except ResponseDone:
             return
     finally:
-        if previous is None:
+        if request == {}:
             if hasattr(REQUEST_CONTEXT, "value"):
                 del REQUEST_CONTEXT.value
         else:
-            REQUEST_CONTEXT.value = previous
+            REQUEST_CONTEXT.value = request
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -1688,23 +1974,31 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         self.route()
 
-    def log_message(self, fmt, *args):
-        sys.stdout.write("%s - - %s\n" % (self.client_address, fmt % args))
+    def do_DELETE(self):
+        self.route()
+
+    def log_message(self, format, *args):
+        sys.stdout.write(
+            "%s - - [%s] %s\n"
+            % (self.client_address, self.log_date_time_string(), format % args)
+        )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            location = self.server.base_path + "/"
-            if parsed.query:
-                location += "?" + parsed.query
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", location)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
         path = strip_base_path(parsed.path, self.server.base_path)
-        if path == "/api" or path.startswith("/api/"):
+        if path.startswith("/api"):
             dispatch_api(self, path, parsed.query)
             return
         self.serve_static(path)
@@ -1721,23 +2015,25 @@ class Handler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
-        content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
-        if content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
+        content_type = (
+            mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        )
+        if content_type.startswith("text/") or content_type in {
+            "application/javascript",
+            "application/json",
+        }:
             content_type = f"{content_type}; charset=utf-8"
-        data_size = target.stat().st_size
+        data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(data_size))
-        self.send_header("Cache-Control", "no-store" if target.name in {"index.html", "app.js", "style.css"} else "public, max-age=3600")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header(
+            "Cache-Control",
+            "no-store" if target.name == "index.html" else "public, max-age=60",
+        )
         self.end_headers()
-        if self.command == "HEAD":
-            return
-        with target.open("rb") as handle:
-            while True:
-                chunk = handle.read(1024 * 256)
-                if not chunk:
-                    break
-                self.wfile.write(chunk)
+        if self.command != "HEAD":
+            self.wfile.write(data)
 
 
 def main():
@@ -1762,7 +2058,9 @@ def main():
 
     if os.path.exists(args.unix_socket):
         os.unlink(args.unix_socket)
-    server = ThreadingUnixHTTPServer(args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root)
+    server = ThreadingUnixHTTPServer(
+        args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root
+    )
 
     def shutdown(_signum, _frame):
         server.server_close()

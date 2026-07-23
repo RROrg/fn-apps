@@ -120,9 +120,14 @@ html[data-theme="dark"] {
   --toast-error-bg: rgba(176, 42, 34, 0.96);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body { height: 100%; }
+html,
+body {
+  height: 100%;
+}
 
 body {
   margin: 0;
@@ -131,7 +136,12 @@ body {
   overflow: auto;
 }
 
-button, input, select, textarea { font: inherit; }
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
 
 .container {
   max-width: 720px;
@@ -195,7 +205,9 @@ html[data-theme="dark"] .card {
   gap: 8px;
 }
 
-.card-title .icon { font-size: 18px; }
+.card-title .icon {
+  font-size: 18px;
+}
 
 .step-indicator {
   display: flex;
@@ -271,12 +283,23 @@ html[data-theme="dark"] .card {
 .file-list {
   max-height: 320px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
 }
 
-.file-list::-webkit-scrollbar { width: 6px; }
-.file-list::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--line-strong); }
+@supports (scrollbar-width: thin) {
+  .file-list {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+.file-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
+}
 
 .file-item {
   display: flex;
@@ -362,7 +385,9 @@ html[data-theme="dark"] .card {
   opacity: 0.5;
 }
 
-.empty-state p { font-size: 14px; }
+.empty-state p {
+  font-size: 14px;
+}
 
 .btn {
   display: inline-flex;
@@ -442,7 +467,9 @@ html[data-theme="dark"] .card {
   font-weight: 700;
 }
 
-.install-info { margin-bottom: 16px; }
+.install-info {
+  margin-bottom: 16px;
+}
 
 .info-row {
   display: flex;
@@ -450,7 +477,9 @@ html[data-theme="dark"] .card {
   border-bottom: none;
 }
 
-.info-row:last-child { border-bottom: none; }
+.info-row:last-child {
+  border-bottom: none;
+}
 
 .info-label {
   width: 100px;
@@ -485,7 +514,9 @@ html[data-theme="dark"] .card {
   margin-bottom: 12px;
 }
 
-.wizard-item:last-child { margin-bottom: 0; }
+.wizard-item:last-child {
+  margin-bottom: 0;
+}
 
 .wizard-item label {
   display: block;
@@ -569,7 +600,9 @@ html[data-theme="dark"] .card {
   font-weight: 700;
 }
 
-.hidden { display: none !important; }
+.hidden {
+  display: none !important;
+}
 
 .loading-spinner {
   display: inline-block;
@@ -581,7 +614,11 @@ html[data-theme="dark"] .card {
   animation: spin 0.6s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .refresh-btn {
   background: none;
@@ -593,7 +630,9 @@ html[data-theme="dark"] .card {
   font-weight: 700;
 }
 
-.refresh-btn:hover { text-decoration: underline; }
+.refresh-btn:hover {
+  text-decoration: underline;
+}
 
 .path-input-row {
   display: flex;
@@ -618,7 +657,9 @@ html[data-theme="dark"] .card {
   box-shadow: 0 0 0 2px var(--blue-soft);
 }
 
-.path-input-row input::placeholder { color: var(--muted-2); }
+.path-input-row input::placeholder {
+  color: var(--muted-2);
+}
 
 .toast {
   position: fixed;
@@ -699,14 +740,25 @@ html[data-theme="dark"] .card {
 .dir-list {
   max-height: 280px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
   border-radius: 0 0 8px 8px;
   background: var(--panel-2);
 }
 
-.dir-list::-webkit-scrollbar { width: 6px; }
-.dir-list::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--line-strong); }
+@supports (scrollbar-width: thin) {
+  .dir-list {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+.dir-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dir-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
+}
 
 .dir-entry {
   display: flex;
@@ -853,7 +905,9 @@ html[data-theme="dark"] .card {
   background: var(--modal-backdrop);
 }
 
-.modal.hidden { display: none !important; }
+.modal.hidden {
+  display: none !important;
+}
 
 .modal-content {
   width: min(520px, calc(100vw - 48px));
@@ -969,8 +1023,53 @@ html[data-theme="dark"] .card {
   color: var(--muted);
 }
 
+/* Extracted inline styles from index.html / app.js */
+.no-files-desc {
+  font-size: 12px;
+  color: var(--muted-2);
+  margin-top: 4px;
+}
+
+.loading-spinner.large {
+  margin: 0 auto 12px;
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.empty-state.compact {
+  padding: 20px;
+}
+
+.info-value.error {
+  color: var(--red);
+}
+
+.wizard-tips.step-title {
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.fullscreen-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 @media (max-width: 640px) {
-  .container { padding: 20px 12px 40px; }
-  .step-connector { width: 20px; }
-  .step-label { font-size: 11px; }
+  .container {
+    padding: 20px 12px 40px;
+  }
+
+  .step-connector {
+    width: 20px;
+  }
+
+  .step-label {
+    font-size: 11px;
+  }
 }

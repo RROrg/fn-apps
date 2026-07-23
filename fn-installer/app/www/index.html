@@ -44,7 +44,8 @@
         <button class="scan-all-btn" onclick="loadFiles()" data-i18n="scanAll">扫描全部</button>
       </div>
       <div class="path-input-row">
-        <input type="text" id="customPath" data-i18n-placeholder="pathPlaceholder" placeholder="输入 NAS 目录路径，如 /vol1/docker" />
+        <input type="text" id="customPath" data-i18n-placeholder="pathPlaceholder"
+          placeholder="输入 NAS 目录路径，如 /vol1/docker" />
         <button class="btn btn-default" onclick="browsePath()" data-i18n="browse">浏览</button>
       </div>
       <div id="dirBrowser" class="dir-browser hidden">
@@ -53,7 +54,7 @@
       </div>
       <div id="fileList" class="file-list">
         <div class="empty-state">
-          <div class="loading-spinner" style="margin:0 auto 12px;display:block;width:32px;height:32px;border-width:3px;"></div>
+          <div class="loading-spinner large"></div>
           <p data-i18n="scanning">正在扫描 NAS 中的 FPK 文件...</p>
         </div>
       </div>
@@ -79,7 +80,7 @@
         <div id="volumeSection" class="wizard-section hidden">
           <div class="wizard-title" data-i18n="selectVolume">选择安装卷</div>
           <div class="wizard-item">
-            <select id="volumeSelect" onchange="state.volumeID=parseInt(this.value)||1"></select>
+            <select id="volumeSelect" onchange="state.volumeID=parseInt(this.value)||1" title="选择安装卷"></select>
           </div>
         </div>
         <div id="wizardSection" class="wizard-section hidden"></div>
@@ -134,8 +135,8 @@
         <div class="about-section">
           <h3 data-i18n="communitySupport">社区支持</h3>
           <ul class="about-list">
-            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank"
-                rel="noopener noreferrer" data-i18n="join">点击加入</a></li>
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
             <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
                 rel="noopener noreferrer">RROrg/fn-apps</a></li>
           </ul>
@@ -143,8 +144,8 @@
 
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
-          <img class="about-sponsor-image"
-            src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png" alt="sponsoring">
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring">
         </div>
 
         <div class="about-copyright">

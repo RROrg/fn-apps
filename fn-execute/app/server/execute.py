@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import json
 import mimetypes
@@ -65,7 +72,7 @@ def run_script(task_id, file_path, args_str, cwd_str):
             cmd.append(args_str)
 
     cwd = cwd_str if cwd_str else str(target.parent)
-
+    proc = None
     try:
         proc = subprocess.Popen(
             cmd,
@@ -94,8 +101,12 @@ def run_script(task_id, file_path, args_str, cwd_str):
                 except Exception:
                     pass
 
-        t_out = threading.Thread(target=_read_stream, args=(proc.stdout, "stdout"), daemon=True)
-        t_err = threading.Thread(target=_read_stream, args=(proc.stderr, "stderr"), daemon=True)
+        t_out = threading.Thread(
+            target=_read_stream, args=(proc.stdout, "stdout"), daemon=True
+        )
+        t_err = threading.Thread(
+            target=_read_stream, args=(proc.stderr, "stderr"), daemon=True
+        )
         t_out.start()
         t_err.start()
 
@@ -111,8 +122,9 @@ def run_script(task_id, file_path, args_str, cwd_str):
                 EXEC_TASKS[task_id]["exit_code"] = exit_code
                 EXEC_TASKS[task_id]["finished_at"] = datetime.now().isoformat()
     except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=5)
+        if proc:
+            proc.kill()
+            proc.wait(timeout=5)
         with EXEC_TASKS_LOCK:
             if task_id in EXEC_TASKS:
                 EXEC_TASKS[task_id]["status"] = "timeout"
@@ -129,7 +141,8 @@ def run_script(task_id, file_path, args_str, cwd_str):
 
 
 class ThreadingUnixHTTPServer(
-    socketserver.ThreadingMixIn, socketserver.UnixStreamServer
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
 ):
     daemon_threads = True
     allow_reuse_address = True
@@ -139,10 +152,11 @@ class ThreadingUnixHTTPServer(
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -151,49 +165,54 @@ class Handler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         self.route()
 
-    def log_message(self, fmt, *args):
-        client_addr = self.client_address
-        if isinstance(client_addr, tuple):
-            client_addr = client_addr[0]
-        if not client_addr:
-            client_addr = "-"
+    def do_POST(self):
+        self.route()
+
+    def do_PUT(self):
+        self.route()
+
+    def do_DELETE(self):
+        self.route()
+
+    def log_message(self, format, *args):
         sys.stdout.write(
-            "%s - - [%s] %s\n" % (client_addr, self.log_date_time_string(), fmt % args)
+            "%s - - [%s] %s\n"
+            % (self.client_address, self.log_date_time_string(), format % args)
         )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            location = self.server.base_path + "/"
-            if parsed.query:
-                location += "?" + parsed.query
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", location)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
-
         path = strip_base_path(parsed.path, self.server.base_path)
-        if path.startswith("/api/"):
-            self.handle_api(path, parsed.query)
+        if path.startswith("/api"):
+            self.serve_api(path, parsed.query)
             return
-
         self.serve_static(path)
 
-    def handle_api(self, path, query):
+    def serve_api(self, path, query):
         if path == "/api/file":
-            self.handle_api_file(query)
+            self.serve_api_file(query)
             return
         if path == "/api/execute":
-            self.handle_api_execute(query)
+            self.serve_api_execute(query)
             return
         if path.startswith("/api/task/"):
-            self.handle_api_task(path)
+            self.serve_api_task(path)
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
-    def handle_api_file(self, query):
+    def serve_api_file(self, query):
         params = parse_qs(query, keep_blank_values=True)
         raw_path = params.get("path", [""])[0]
         file_path = unquote(raw_path or "").strip()
@@ -272,7 +291,7 @@ class Handler(BaseHTTPRequestHandler):
         info["preview"] = preview
         self.send_json(HTTPStatus.OK, info)
 
-    def handle_api_execute(self, query):
+    def serve_api_execute(self, query):
         params = parse_qs(query, keep_blank_values=True)
         raw_path = params.get("path", [""])[0]
         file_path = unquote(raw_path or "").strip()
@@ -326,7 +345,7 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_json(HTTPStatus.OK, {"task_id": task_id, "status": "pending"})
 
-    def handle_api_task(self, path):
+    def serve_api_task(self, path):
         parts = path.split("/")
         if len(parts) < 4:
             self.send_json(HTTPStatus.BAD_REQUEST, {"error": "Invalid task URL"})

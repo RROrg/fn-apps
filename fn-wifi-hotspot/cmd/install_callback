@@ -7,8 +7,8 @@ chmod +x ${TRIM_APPDEST}/www/*.cgi 2>/dev/null || true
 
 # fnOS v1.1.28 Fix regulatory.db issue
 # for F in "/usr/lib/firmware/regulatory.db" "/usr/lib/firmware/regulatory.db.p7s"; do
-#   if [ "$(readlink -f "${F}")" = "${F}-debian" ] && [ -f "${F}-upstream" ]; then
-#     rm -f "${F}"
+#   if [ ! "$(readlink -f "${F}" 2>/dev/null || true)" = "${F}-upstream" ] && [ -f "${F}-upstream" ]; then
+#     rm -f "${F}" 2>/dev/null || true
 #     ln -vsf "${F}-upstream" "${F}"
 #     [ $? -ne 0 ] && {
 #       echo "Failed to link ${F}-upstream to ${F}" >$TRIM_TEMP_LOGFILE

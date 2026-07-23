@@ -5,583 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>执行器</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --bg: #f5f6f8;
-      --surface: #ffffff;
-      --panel: #ffffff;
-      --panel-2: #f2f3f5;
-      --field: #f7f8fa;
-      --sidebar-line: #e3e5e8;
-      --line: #dcdfe4;
-      --line-strong: #c8cdd4;
-      --text: #1f2329;
-      --muted: #626973;
-      --subtle: #8a9099;
-      --accent: #1677ff;
-      --accent-hover: #2a86ff;
-      --accent-soft: rgba(22, 119, 255, 0.16);
-      --danger: #ff5c6c;
-      --danger-text: #a92836;
-      --danger-soft: rgba(255, 92, 108, 0.12);
-      --hover: #f1f3f6;
-      --active: #e9f2ff;
-      --icon-bg: #eef1f5;
-      --icon-text: #69717c;
-      --button: #eef0f3;
-      --button-hover: #e3e6ea;
-      --button-text: #30343a;
-      --shadow: 0 16px 40px rgba(22, 30, 45, 0.14);
-      --terminal-bg: #1e1e1e;
-      --terminal-text: #d4d4d4;
-      --terminal-stdout: #d4d4d4;
-      --terminal-stderr: #f48771;
-      --terminal-info: #608b4e;
-      --terminal-error: #f44747;
-      --terminal-divider: #444;
-      --success: #22c55e;
-      --success-soft: rgba(34, 197, 94, 0.12);
-    }
-
-    html[data-theme="dark"] {
-      color-scheme: dark;
-      --bg: #0b0b0c;
-      --surface: #202123;
-      --panel: #242526;
-      --panel-2: #2b2c2e;
-      --field: #1f2021;
-      --sidebar-line: #242426;
-      --line: #3a3b3d;
-      --line-strong: #4a4b4d;
-      --text: #f1f1f2;
-      --muted: #a9aaad;
-      --subtle: #77797d;
-      --accent: #1677ff;
-      --accent-hover: #2a86ff;
-      --accent-soft: rgba(22, 119, 255, 0.16);
-      --danger: #ff5c6c;
-      --danger-text: #ffd8dd;
-      --danger-soft: rgba(255, 92, 108, 0.16);
-      --hover: #18191b;
-      --active: #202124;
-      --icon-bg: #303236;
-      --icon-text: #e8e8ea;
-      --button: #303133;
-      --button-hover: #38393c;
-      --button-text: #dedfe1;
-      --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
-      --terminal-bg: #0d0d0d;
-      --terminal-text: #d4d4d4;
-      --terminal-stdout: #d4d4d4;
-      --terminal-stderr: #f48771;
-      --terminal-info: #6a9955;
-      --terminal-error: #f44747;
-      --terminal-divider: #3a3a3a;
-      --success: #4ade80;
-      --success-soft: rgba(74, 222, 128, 0.12);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: "Inter", "HarmonyOS Sans SC", "Microsoft YaHei UI", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 14px;
-      letter-spacing: 0;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    .app-shell {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: var(--surface);
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 16px 20px 12px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-    }
-
-    .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .topbar h1 {
-      font-size: 18px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .file-path {
-      font-size: 13px;
-      color: var(--muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .primary-btn,
-    .danger-btn,
-    .ghost-btn {
-      height: 32px;
-      border: 0;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 0 16px;
-      font-size: 13px;
-      font-weight: 700;
-      transition: background 0.15s;
-    }
-
-    .primary-btn {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .primary-btn:hover {
-      background: var(--accent-hover);
-    }
-
-    .primary-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .primary-btn:disabled:hover {
-      background: var(--accent);
-    }
-
-    .danger-btn {
-      background: var(--danger);
-      color: #fff;
-    }
-
-    .danger-btn:hover {
-      background: #e04455;
-    }
-
-    .danger-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .danger-btn:disabled:hover {
-      background: var(--danger);
-    }
-
-    .ghost-btn {
-      background: var(--button);
-      color: var(--button-text);
-    }
-
-    .ghost-btn:hover {
-      background: var(--button-hover);
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 20px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--line);
-      flex-wrap: wrap;
-    }
-
-    .toolbar label {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .args-input {
-      flex: 1;
-      min-width: 180px;
-      height: 32px;
-      padding: 0 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--field);
-      color: var(--text);
-      font-size: 13px;
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      outline: none;
-    }
-
-    .args-input:focus {
-      border-color: var(--accent);
-    }
-
-    .args-input:disabled {
-      opacity: 0.6;
-    }
-
-    .args-input::placeholder {
-      color: var(--subtle);
-    }
-
-    .preview-section {
-      border-bottom: 1px solid var(--line);
-      background: var(--panel);
-    }
-
-    .preview-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 20px;
-      font-size: 12px;
-      color: var(--accent);
-      cursor: pointer;
-      background: var(--panel-2);
-      -webkit-user-select: none;
-      user-select: none;
-      font-weight: 600;
-    }
-
-    .preview-toggle:hover {
-      background: var(--hover);
-    }
-
-    .preview-toggle .arrow {
-      display: inline-block;
-      transition: transform 0.2s;
-      font-size: 10px;
-    }
-
-    .preview-toggle .arrow.open {
-      transform: rotate(90deg);
-    }
-
-    .preview-content {
-      padding: 10px 20px;
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: var(--muted);
-      max-height: 150px;
-      overflow: auto;
-      background: var(--field);
-    }
-
-    .output-area {
-      flex: 1;
-      overflow: auto;
-      background: var(--terminal-bg);
-      color: var(--terminal-text);
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      font-size: 13px;
-      padding: 12px 16px;
-      line-height: 1.6;
-    }
-
-    .output-area .line {
-      min-height: 20px;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-
-    .output-area .stdout {
-      color: var(--terminal-stdout);
-    }
-
-    .output-area .stderr {
-      color: var(--terminal-stderr);
-    }
-
-    .output-area .info {
-      color: var(--terminal-info);
-    }
-
-    .output-area .error {
-      color: var(--terminal-error);
-    }
-
-    .output-area .divider {
-      border-top: 1px solid var(--terminal-divider);
-      margin: 8px 0;
-    }
-
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 8px 20px;
-      background: var(--panel);
-      border-top: 1px solid var(--line);
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      flex-shrink: 0;
-    }
-
-    .status-dot.idle {
-      background: var(--subtle);
-    }
-
-    .status-dot.running {
-      background: var(--success);
-      animation: pulse 1s infinite;
-    }
-
-    .status-dot.done {
-      background: var(--success);
-    }
-
-    .status-dot.error,
-    .status-dot.timeout,
-    .status-dot.killed {
-      background: var(--danger);
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.4;
-      }
-    }
-
-    .exit-code {
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      font-weight: 700;
-    }
-
-    .exit-code.success {
-      color: var(--success);
-    }
-
-    .exit-code.fail {
-      color: var(--danger);
-    }
-
-    .toast {
-      position: fixed;
-      right: 22px;
-      bottom: 22px;
-      max-width: min(460px, calc(100vw - 44px));
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--button);
-      box-shadow: var(--shadow);
-      color: var(--text);
-      padding: 11px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      z-index: 100;
-      transition: opacity 0.3s, transform 0.3s;
-    }
-
-    .toast.hidden {
-      opacity: 0;
-      transform: translateY(10px);
-      pointer-events: none;
-    }
-
-    .toast.error {
-      border-color: var(--danger);
-      color: var(--danger-text);
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(0, 0, 0, 0.58);
-    }
-
-    .modal.hidden { display: none !important; }
-
-    .modal-content {
-      width: min(520px, calc(100vw - 48px));
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--panel);
-      box-shadow: var(--shadow);
-      padding: 20px;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 16px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .modal-header h2 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .icon-btn {
-      width: 32px;
-      height: 32px;
-      border: 1px solid var(--line-strong);
-      border-radius: 7px;
-      background: var(--panel-2);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    .about-body {
-      display: grid;
-      gap: 12px;
-    }
-
-    .about-section {
-      display: grid;
-      gap: 8px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: var(--field);
-    }
-
-    .about-section h3 {
-      margin: 0;
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .about-declaration {
-      margin: 0;
-      line-height: 1.6;
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .about-list {
-      margin: 0;
-      padding-left: 18px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .about-list li {
-      color: var(--text);
-      line-height: 1.5;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .about-body a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .about-body a:hover {
-      text-decoration: underline;
-    }
-
-    .about-sponsor-image {
-      width: 100%;
-      max-width: 700px;
-      height: auto;
-      border-radius: 6px;
-    }
-
-    .about-copyright {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 2px 2px 0;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .about-copyright span {
-      color: var(--muted);
-    }
-
-    @media (max-width: 640px) {
-      .topbar {
-        padding: 12px 14px 10px;
-      }
-
-      .toolbar {
-        padding: 8px 14px;
-      }
-
-      .status-bar {
-        padding: 6px 14px;
-      }
-
-      .output-area {
-        padding: 10px 12px;
-      }
-
-      .preview-content {
-        padding: 8px 14px;
-      }
-
-      .preview-toggle {
-        padding: 6px 14px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/app/fn-execute/style.css">
 </head>
 
 <body>
@@ -600,15 +24,16 @@
 
     <div class="toolbar">
       <label data-i18n="argsLabel">参数:</label>
-      <input type="text" class="args-input" id="argsInput" placeholder="输入命令行参数（可选）" data-i18n-placeholder="argsPlaceholder">
+      <input type="text" class="args-input" id="argsInput" placeholder="输入命令行参数（可选）"
+        data-i18n-placeholder="argsPlaceholder">
     </div>
 
-    <div class="preview-section" id="previewSection" style="display:none;">
+    <div class="preview-section is-hidden" id="previewSection">
       <div class="preview-toggle" onclick="togglePreview()">
         <span class="arrow" id="previewArrow">▶</span>
         <span data-i18n="filePreview">文件预览</span>
       </div>
-      <div class="preview-content" id="previewContent" style="display:none;"></div>
+      <div class="preview-content is-hidden" id="previewContent"></div>
     </div>
 
     <div class="output-area" id="outputArea">
@@ -620,10 +45,10 @@
         <span class="status-dot idle" id="statusDot"></span>
         <span id="statusText" data-i18n-dynamic="ready">就绪</span>
       </span>
-      <span id="exitCodeDisplay" style="display:none;">
+      <span id="exitCodeDisplay" class="is-hidden">
         <span data-i18n="exitCode">退出码</span>: <span class="exit-code" id="exitCodeValue"></span>
       </span>
-      <span id="timeDisplay" style="display:none;"></span>
+      <span id="timeDisplay" class="is-hidden"></span>
     </div>
   </div>
 
@@ -643,8 +68,8 @@
         <div class="about-section">
           <h3 data-i18n="communitySupport">社区支持</h3>
           <ul class="about-list">
-            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank"
-                rel="noopener noreferrer" data-i18n="join">点击加入</a></li>
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
             <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
                 rel="noopener noreferrer">RROrg/fn-apps</a></li>
           </ul>
@@ -652,8 +77,8 @@
 
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
-          <img class="about-sponsor-image"
-            src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png" alt="sponsoring">
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring">
         </div>
 
         <div class="about-copyright">
@@ -861,7 +286,7 @@
     }
 
     function setExitCode(code) {
-      exitCodeDisplay.style.display = '';
+      exitCodeDisplay.classList.remove('is-hidden');
       exitCodeValue.textContent = code;
       exitCodeValue.className = 'exit-code ' + (code === 0 ? 'success' : 'fail');
     }
@@ -875,11 +300,11 @@
     function togglePreview() {
       const content = previewContent;
       const arrow = previewArrow;
-      if (content.style.display === 'none') {
-        content.style.display = '';
+      if (content.classList.contains('is-hidden')) {
+        content.classList.remove('is-hidden');
         arrow.classList.add('open');
       } else {
-        content.style.display = 'none';
+        content.classList.add('is-hidden');
         arrow.classList.remove('open');
       }
     }
@@ -891,7 +316,7 @@
         .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
         .then(data => {
           if (data.preview) {
-            previewSection.style.display = '';
+            previewSection.classList.remove('is-hidden');
             previewContent.textContent = data.preview;
           }
         })
@@ -912,13 +337,13 @@
 
       setStatus('running', 'running');
       setRunning(true);
-      exitCodeDisplay.style.display = 'none';
-      timeDisplay.style.display = 'none';
+      exitCodeDisplay.classList.add('is-hidden');
+      timeDisplay.classList.add('is-hidden');
 
       const startTime = Date.now();
       const timerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        timeDisplay.style.display = '';
+        timeDisplay.classList.remove('is-hidden');
         timeDisplay.textContent = t('elapsedTime', { time: elapsed });
       }, 1000);
 

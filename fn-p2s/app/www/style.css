@@ -126,7 +126,7 @@ select {
 }
 
 .filter-field span,
-.settings-label > span {
+.settings-label>span {
   color: var(--text);
   font-size: var(--ui-caption-size);
   font-weight: var(--ui-caption-weight);
@@ -183,8 +183,23 @@ select {
   position: relative;
   min-height: 0;
   overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+}
+
+@supports (scrollbar-width: thin) {
+  .table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+.table-wrap::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
 }
 
 .app-table {
@@ -547,7 +562,7 @@ html[data-theme="dark"] .row-btn {
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
-.toggle input:checked + span {
+.toggle input:checked+span {
   background: var(--green);
   transform: translateX(20px);
 }

@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 
 import argparse
 import json
@@ -23,7 +29,18 @@ APP_CENTER_SOCKET = "/var/run/com.trim.app.center.sock"
 VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
 SETTINGS_FILE = VAR_DIR / "settings.json"
 SKIP_DIR_PREFIXES = (".", "@")
-SKIP_DIR_NAMES = {"docker", "appcenter", "appcenter-downloads", "thumb", "mediasrv.transcode", "recycle", "lost+found", "proc", "sys", "dev"}
+SKIP_DIR_NAMES = {
+    "docker",
+    "appcenter",
+    "appcenter-downloads",
+    "thumb",
+    "mediasrv.transcode",
+    "recycle",
+    "lost+found",
+    "proc",
+    "sys",
+    "dev",
+}
 MAX_SCAN_DEPTH = 3
 MAX_RESULTS = 200
 SCAN_TIMEOUT = 15
@@ -58,8 +75,7 @@ def request_context(method, query="", headers=None, body=b"", handler=None):
 
 
 def current_request():
-    return getattr(REQUEST_CONTEXT, "value", None)
-
+    return getattr(REQUEST_CONTEXT, "value", {})
 
 
 def header_value(headers, name):
@@ -73,8 +89,10 @@ def header_value(headers, name):
 
 
 class ThreadingUnixHTTPServer(
-    socketserver.ThreadingMixIn, socketserver.UnixStreamServer
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
 ):
+
     daemon_threads = True
     allow_reuse_address = True
 
@@ -83,10 +101,11 @@ class ThreadingUnixHTTPServer(
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -104,21 +123,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self.route()
 
-    def log_message(self, fmt, *args):
+    def log_message(self, format, *args):
         sys.stdout.write(
             "%s - - [%s] %s\n"
-            % (self.client_address, self.log_date_time_string(), fmt % args)
+            % (self.client_address, self.log_date_time_string(), format % args)
         )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            location = self.server.base_path + "/"
-            if parsed.query:
-                location += "?" + parsed.query
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header("Location", location)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
@@ -140,7 +161,6 @@ class Handler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
-
         content_type = (
             mimetypes.guess_type(str(target))[0] or "application/octet-stream"
         )
@@ -149,22 +169,17 @@ class Handler(BaseHTTPRequestHandler):
             "application/json",
         }:
             content_type = f"{content_type}; charset=utf-8"
-        size = target.stat().st_size
+        data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(size))
+        self.send_header("Content-Length", str(len(data)))
         self.send_header(
             "Cache-Control",
             "no-store" if target.name == "index.html" else "public, max-age=60",
         )
         self.end_headers()
         if self.command != "HEAD":
-            with target.open("rb") as handle:
-                while True:
-                    chunk = handle.read(1024 * 256)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
+            self.wfile.write(data)
 
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
@@ -193,7 +208,7 @@ def normalize_base_path(path):
 def strip_base_path(path, base_path):
     normalized = path or "/"
     if base_path != "/" and normalized.startswith(base_path):
-        normalized = normalized[len(base_path):] or "/"
+        normalized = normalized[len(base_path) :] or "/"
     return normalized
 
 
@@ -209,7 +224,7 @@ def normalize_status(status):
             phrase = HTTPStatus(status).phrase
         except Exception:
             phrase = "OK"
-        return status, f"{status} {status.phrase}"
+        return status, f"{status} {phrase}"
     text = str(status or "200 OK").strip()
     if not text:
         return 200, "200 OK"
@@ -231,7 +246,7 @@ def json_response(payload, status="200 OK"):
     )
     code, status_text = normalize_status(status)
     request = current_request()
-    handler = request.get("handler") if request else None
+    handler = request.get("handler", None)
     if handler is not None:
         handler.send_response(code)
         handler.send_header("Content-Type", "application/json; charset=utf-8")
@@ -249,7 +264,7 @@ def json_response(payload, status="200 OK"):
 
 def request_body():
     request = current_request()
-    if request:
+    if request != {}:
         method = request.get("method", "GET").upper()
         body = request.get("body", b"") or b""
         query_string = request.get("query", "") or ""
@@ -280,14 +295,18 @@ def request_body():
 
 def incoming_token():
     request = current_request()
-    if not request:
+    if request == {}:
         return ""
 
-    auth = header_value(request.get("headers", {}), "Authorization") or os.environ.get("Authorization", "")
+    auth = header_value(request.get("headers", {}), "Authorization") or os.environ.get(
+        "Authorization", ""
+    )
     if auth.lower().startswith("trim "):
         return auth.split(None, 1)[1].strip()
 
-    cookie = header_value(request.get("headers", {}), "Cookie") or os.environ.get("HTTP_COOKIE", "")
+    cookie = header_value(request.get("headers", {}), "Cookie") or os.environ.get(
+        "HTTP_COOKIE", ""
+    )
     if cookie:
         parsed = {}
         for part in str(cookie).split(";"):
@@ -316,7 +335,7 @@ def decode_chunked(data):
         index = line_end + 2
         if size == 0:
             break
-        output.extend(data[index: index + size])
+        output.extend(data[index : index + size])
         index += size + 2
     return bytes(output)
 
@@ -341,7 +360,10 @@ def unix_http(method, path, payload=None, timeout=30):
             ["Content-Type: application/json", f"Content-Length: {len(body)}"]
         )
     request_data = ("\r\n".join(headers) + "\r\n\r\n").encode("utf-8") + body
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+    with socket.socket(
+        socket.AF_UNIX,  # pyright: ignore[reportAttributeAccessIssue]
+        socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
+    ) as client:
         client.settimeout(timeout)
         client.connect(APP_CENTER_SOCKET)
         client.sendall(request_data)
@@ -406,19 +428,23 @@ def scan_fpk_in_dir(directory, depth=0, deadline=None):
                 last_dash = stem.rfind("-")
                 if last_dash > 0:
                     app_id = stem[:last_dash]
-                    version = stem[last_dash + 1:]
+                    version = stem[last_dash + 1 :]
                 else:
                     app_id = stem
                     version = ""
-                result.append({
-                    "name": entry.name,
-                    "path": entry.path,
-                    "appId": app_id,
-                    "version": version,
-                    "size": st.st_size,
-                    "mtime": int(st.st_mtime),
-                })
-            elif entry.is_dir(follow_symlinks=False) and not _should_skip_dir(entry.name):
+                result.append(
+                    {
+                        "name": entry.name,
+                        "path": entry.path,
+                        "appId": app_id,
+                        "version": version,
+                        "size": st.st_size,
+                        "mtime": int(st.st_mtime),
+                    }
+                )
+            elif entry.is_dir(follow_symlinks=False) and not _should_skip_dir(
+                entry.name
+            ):
                 result.extend(scan_fpk_in_dir(entry.path, depth + 1, deadline))
         except (PermissionError, OSError):
             continue
@@ -451,8 +477,12 @@ def scan_nas_fpk_files():
             if time.time() > deadline:
                 break
             try:
-                if entry.is_dir(follow_symlinks=False) and not _should_skip_dir(entry.name):
-                    result.extend(scan_fpk_in_dir(entry.path, depth=1, deadline=deadline))
+                if entry.is_dir(follow_symlinks=False) and not _should_skip_dir(
+                    entry.name
+                ):
+                    result.extend(
+                        scan_fpk_in_dir(entry.path, depth=1, deadline=deadline)
+                    )
             except (PermissionError, OSError):
                 continue
     return result[:MAX_RESULTS]
@@ -478,7 +508,7 @@ def list_dir_entries(directory):
                 last_dash = stem.rfind("-")
                 if last_dash > 0:
                     info["appId"] = stem[:last_dash]
-                    info["version"] = stem[last_dash + 1:]
+                    info["version"] = stem[last_dash + 1 :]
                 else:
                     info["appId"] = stem
                     info["version"] = ""
@@ -494,11 +524,18 @@ def list_dir_entries(directory):
 
 def parse_fpk_manifest(fpk_path):
     for tar_flag in ("-xzf", "-xf"):
-        for manifest_name in ("manifest", "./manifest", "META-INF/manifest", "./META-INF/manifest"):
+        for manifest_name in (
+            "manifest",
+            "./manifest",
+            "META-INF/manifest",
+            "./META-INF/manifest",
+        ):
             try:
                 proc = subprocess.run(
                     ["tar", tar_flag, str(fpk_path), "-O", manifest_name],
-                    capture_output=True, text=True, timeout=10
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
                 )
                 if proc.returncode == 0 and proc.stdout.strip():
                     manifest = {}
@@ -513,13 +550,14 @@ def parse_fpk_manifest(fpk_path):
 
     try:
         proc = subprocess.run(
-            ["tar", "-tzf", str(fpk_path)],
-            capture_output=True, text=True, timeout=10
+            ["tar", "-tzf", str(fpk_path)], capture_output=True, text=True, timeout=10
         )
         if proc.returncode != 0:
             proc = subprocess.run(
                 ["tar", "-tf", str(fpk_path)],
-                capture_output=True, text=True, timeout=10
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
         if proc.returncode == 0 and proc.stdout.strip():
             for line in proc.stdout.strip().splitlines():
@@ -528,7 +566,9 @@ def parse_fpk_manifest(fpk_path):
                     try:
                         extract_proc = subprocess.run(
                             ["tar", "-xf", str(fpk_path), "-O", line.strip()],
-                            capture_output=True, text=True, timeout=10
+                            capture_output=True,
+                            text=True,
+                            timeout=10,
                         )
                         if extract_proc.returncode == 0 and extract_proc.stdout.strip():
                             manifest = {}
@@ -548,7 +588,7 @@ def parse_fpk_manifest(fpk_path):
 
 def get_language():
     request = current_request()
-    if request:
+    if request != {}:
         query = request.get("query", "")
         parsed = urllib.parse.parse_qs(query, keep_blank_values=True)
         lang = parsed.get("language", [None])[0]
@@ -601,7 +641,9 @@ def _find_installed_app(app_name):
     for app in apps:
         if not isinstance(app, dict):
             continue
-        name = str(app.get("appName", "") or app.get("name", "") or app.get("packageName", "")).strip()
+        name = str(
+            app.get("appName", "") or app.get("name", "") or app.get("packageName", "")
+        ).strip()
         if name == app_name:
             installed_version = str(app.get("installedVersion", "") or "").strip()
             installed_volume = str(app.get("installedVolumeID", "") or "").strip()
@@ -642,7 +684,7 @@ def api_download_task():
         last_dash = stem.rfind("-")
         if last_dash > 0:
             app_name = stem[:last_dash]
-            version = stem[last_dash + 1:]
+            version = stem[last_dash + 1 :]
 
     volume_id = 1
     for prefix in ("/vol1/", "/vol2/", "/vol3/"):
@@ -676,7 +718,9 @@ def api_download_task():
         )
     )
     if not task_id:
-        raise RuntimeError(f"failed to create download task: {json.dumps(result, ensure_ascii=False)[:500]}")
+        raise RuntimeError(
+            f"failed to create download task: {json.dumps(result, ensure_ascii=False)[:500]}"
+        )
 
     task_key = f"parse:{file_path}"
     INSTALL_TASKS[task_key] = {
@@ -738,7 +782,14 @@ def api_download_status():
             status_value = str(raw_status)
     elif isinstance(raw_status, str):
         lower = raw_status.lower()
-        if lower in ("done", "success", "succeed", "finished", "completed", "downloaded"):
+        if lower in (
+            "done",
+            "success",
+            "succeed",
+            "finished",
+            "completed",
+            "downloaded",
+        ):
             is_done = True
             status_value = "success"
         elif lower in ("fail", "failed", "error"):
@@ -796,24 +847,37 @@ def api_download_status():
             existing = _find_installed_app(app_name)
             if existing:
                 installed = True
-                installed_version = str(existing.get("installedVersion", "") or existing.get("version", "")).strip()
+                installed_version = str(
+                    existing.get("installedVersion", "") or existing.get("version", "")
+                ).strip()
                 if not installed_info:
                     installed_info = {
-                        "name": existing.get("displayName", "") or existing.get("name", "") or app_name,
+                        "name": existing.get("displayName", "")
+                        or existing.get("name", "")
+                        or app_name,
                         "version": installed_version,
-                        "volumeID": existing.get("installedVolumeID", "") or existing.get("volumeID", ""),
+                        "volumeID": existing.get("installedVolumeID", "")
+                        or existing.get("volumeID", ""),
                     }
         if installed and version:
-            installed_version = installed_info.get("version", "") if installed_info else ""
+            installed_version = (
+                installed_info.get("version", "") if installed_info else ""
+            )
             if not installed_version:
                 existing = _find_installed_app(app_name)
                 if existing:
-                    installed_version = str(existing.get("installedVersion", "") or existing.get("version", "")).strip()
+                    installed_version = str(
+                        existing.get("installedVersion", "")
+                        or existing.get("version", "")
+                    ).strip()
                     if not installed_info:
                         installed_info = {
-                            "name": existing.get("displayName", "") or existing.get("name", "") or app_name,
+                            "name": existing.get("displayName", "")
+                            or existing.get("name", "")
+                            or app_name,
                             "version": installed_version,
-                            "volumeID": existing.get("installedVolumeID", "") or existing.get("volumeID", ""),
+                            "volumeID": existing.get("installedVolumeID", "")
+                            or existing.get("volumeID", ""),
                         }
             if installed_version and version != installed_version:
                 can_update = True
@@ -838,7 +902,7 @@ def api_volumes():
         if not os.path.isdir(vol_path):
             continue
         try:
-            stat = os.statvfs(vol_path)
+            stat = os.statvfs(vol_path)  # pyright: ignore[reportAttributeAccessIssue]
             total = stat.f_blocks * stat.f_frsize
             free = stat.f_bfree * stat.f_frsize
             used = total - free
@@ -847,13 +911,15 @@ def api_volumes():
                 vol_id = int(vol_id) if vol_id else 1
             except ValueError:
                 vol_id = 1
-            volumes.append({
-                "id": vol_id,
-                "name": os.path.basename(vol_path),
-                "path": vol_path,
-                "size": total,
-                "used": used,
-            })
+            volumes.append(
+                {
+                    "id": vol_id,
+                    "name": os.path.basename(vol_path),
+                    "path": vol_path,
+                    "size": total,
+                    "used": used,
+                }
+            )
         except (PermissionError, OSError):
             continue
     if not volumes:
@@ -918,10 +984,12 @@ def custom_parameters_list(parameters):
         return []
     result = []
     for key, value in parameters.items():
-        result.append({
-            "key": str(key),
-            "value": "" if value is None else str(value),
-        })
+        result.append(
+            {
+                "key": str(key),
+                "value": "" if value is None else str(value),
+            }
+        )
     return result
 
 
@@ -949,11 +1017,16 @@ def api_install_info():
     installed_info = {}
     can_update = False
     if existing:
-        installed_version = str(existing.get("installedVersion", "") or existing.get("version", "")).strip()
+        installed_version = str(
+            existing.get("installedVersion", "") or existing.get("version", "")
+        ).strip()
         installed_info = {
-            "name": existing.get("displayName", "") or existing.get("name", "") or app_name,
+            "name": existing.get("displayName", "")
+            or existing.get("name", "")
+            or app_name,
             "version": installed_version,
-            "volumeID": existing.get("installedVolumeID", "") or existing.get("volumeID", ""),
+            "volumeID": existing.get("installedVolumeID", "")
+            or existing.get("volumeID", ""),
         }
         if version and installed_version and version != installed_version:
             can_update = True
@@ -996,10 +1069,14 @@ def api_install_info():
             continue
         if code == 10371 and is_update and installed:
             existing = _find_installed_app(app_name)
-            upgrade_info = existing.get("upgradeInfo") if isinstance(existing, dict) else None
+            upgrade_info = (
+                existing.get("upgradeInfo") if isinstance(existing, dict) else None
+            )
             if isinstance(upgrade_info, dict) and upgrade_info.get("version"):
                 cloud_version = str(upgrade_info.get("version", "")).strip()
-                source_id = upgrade_info.get("sourceID") or (existing.get("sourceID") if isinstance(existing, dict) else None)
+                source_id = upgrade_info.get("sourceID") or (
+                    existing.get("sourceID") if isinstance(existing, dict) else None
+                )
                 version_id = upgrade_info.get("versionID")
                 cloud_url = f"/app-center/v1/update/info?updateVersion={urllib.parse.quote(cloud_version)}&appName={urllib.parse.quote(app_name)}&packageType=cloud&language={language}"
                 if source_id:
@@ -1007,7 +1084,9 @@ def api_install_info():
                 if version_id:
                     cloud_url += f"&versionID={str(version_id)}"
                 cloud_result = unix_http("GET", cloud_url)
-                cloud_code = cloud_result.get("code", 0) if isinstance(cloud_result, dict) else 0
+                cloud_code = (
+                    cloud_result.get("code", 0) if isinstance(cloud_result, dict) else 0
+                )
                 if cloud_code == 0:
                     INSTALL_TASKS[f"install-info:{app_name}:{version}"] = {
                         "appName": app_name,
@@ -1025,7 +1104,11 @@ def api_install_info():
                     }
             fallback_url = f"/app-center/v1/install/info?version={urllib.parse.quote(version)}&appName={urllib.parse.quote(app_name)}&packageType={resolved_package_type}&language={language}"
             fallback_result = unix_http("GET", fallback_url)
-            fallback_code = fallback_result.get("code", 0) if isinstance(fallback_result, dict) else 0
+            fallback_code = (
+                fallback_result.get("code", 0)
+                if isinstance(fallback_result, dict)
+                else 0
+            )
             if fallback_code == 0:
                 INSTALL_TASKS[f"install-info:{app_name}:{version}"] = {
                     "appName": app_name,
@@ -1046,7 +1129,9 @@ def api_install_info():
         last_error = result
         break
 
-    raise RuntimeError(f"install info failed: {json.dumps(last_error, ensure_ascii=False)[:500]}")
+    raise RuntimeError(
+        f"install info failed: {json.dumps(last_error, ensure_ascii=False)[:500]}"
+    )
 
 
 def _try_cloud_download(app_name, version, language):
@@ -1072,7 +1157,9 @@ def _try_cloud_download(app_name, version, language):
         download_payload["sourceID"] = str(source_id)
     if version_id:
         download_payload["versionID"] = str(version_id)
-    log(f"_try_cloud_download: payload={json.dumps(download_payload, ensure_ascii=False)}")
+    log(
+        f"_try_cloud_download: payload={json.dumps(download_payload, ensure_ascii=False)}"
+    )
     result = unix_http("POST", "/app-center/v1/download/task", download_payload)
     log(f"_try_cloud_download: response={json.dumps(result, ensure_ascii=False)[:500]}")
     code = result.get("code", 0) if isinstance(result, dict) else 0
@@ -1086,14 +1173,20 @@ def _try_cloud_download(app_name, version, language):
     if not task_id:
         log(f"_try_cloud_download: no taskId in response")
         return None
-    log(f"_try_cloud_download: download task created, taskId={task_id}, polling status...")
+    log(
+        f"_try_cloud_download: download task created, taskId={task_id}, polling status..."
+    )
     for i in range(120):
         time.sleep(1)
         status_result = unix_http(
             "GET",
             f"/app-center/v1/download/status?downloadTaskId={urllib.parse.quote(task_id)}&language={language}",
         )
-        status_data = status_result.get("data", status_result) if isinstance(status_result, dict) else status_result
+        status_data = (
+            status_result.get("data", status_result)
+            if isinstance(status_result, dict)
+            else status_result
+        )
         if not isinstance(status_data, dict):
             status_data = status_result
         raw_status = pick(status_data, ("status", "downloadStatus"), "")
@@ -1104,7 +1197,14 @@ def _try_cloud_download(app_name, version, language):
                 status_int = int(raw_status)
             except ValueError:
                 lower = raw_status.lower()
-                if lower in ("done", "success", "succeed", "finished", "completed", "downloaded"):
+                if lower in (
+                    "done",
+                    "success",
+                    "succeed",
+                    "finished",
+                    "completed",
+                    "downloaded",
+                ):
                     status_int = 2
                 elif lower in ("fail", "failed", "error"):
                     status_int = 3
@@ -1113,10 +1213,19 @@ def _try_cloud_download(app_name, version, language):
         else:
             status_int = 0
         if status_int == 2:
-            package_type = str(status_data.get("packageType", "") or status_data.get("packageSourceType", "")).strip()
+            package_type = str(
+                status_data.get("packageType", "")
+                or status_data.get("packageSourceType", "")
+            ).strip()
             package_path = str(status_data.get("path", "")).strip()
-            log(f"_try_cloud_download: download complete, packageType={package_type}, path={package_path}")
-            return {"packageType": package_type, "path": package_path, "version": upgrade_version}
+            log(
+                f"_try_cloud_download: download complete, packageType={package_type}, path={package_path}"
+            )
+            return {
+                "packageType": package_type,
+                "path": package_path,
+                "version": upgrade_version,
+            }
         if status_int in (3, 4, 5):
             log(f"_try_cloud_download: download failed with status {status_int}")
             return None
@@ -1126,7 +1235,9 @@ def _try_cloud_download(app_name, version, language):
     return None
 
 
-def _try_cloud_update(app_name, version, language, system_parameters, custom_parameters):
+def _try_cloud_update(
+    app_name, version, language, system_parameters, custom_parameters
+):
     download_info = _try_cloud_download(app_name, version, language)
     if not download_info or not isinstance(download_info, dict):
         return None
@@ -1141,7 +1252,9 @@ def _try_cloud_update(app_name, version, language, system_parameters, custom_par
         "packageType": package_type,
         "volumeID": system_parameters.get("installVolumeID", 1),
         "installVolumeID": system_parameters.get("installVolumeID", 1),
-        "dataVolumeID": system_parameters.get("dataVolumeID", system_parameters.get("installVolumeID", 1)),
+        "dataVolumeID": system_parameters.get(
+            "dataVolumeID", system_parameters.get("installVolumeID", 1)
+        ),
         "language": language,
         "immediateStart": True,
         "upgrade": True,
@@ -1151,9 +1264,13 @@ def _try_cloud_update(app_name, version, language, system_parameters, custom_par
     install_payload["systemParameters"] = system_parameters
     if custom_parameters:
         install_payload["customParameters"] = custom_parameters_list(custom_parameters)
-    log(f"_try_cloud_update: install/task payload={json.dumps(install_payload, ensure_ascii=False)}")
+    log(
+        f"_try_cloud_update: install/task payload={json.dumps(install_payload, ensure_ascii=False)}"
+    )
     result = unix_http("POST", "/app-center/v1/install/task", install_payload)
-    log(f"_try_cloud_update: install/task response={json.dumps(result, ensure_ascii=False)[:500]}")
+    log(
+        f"_try_cloud_update: install/task response={json.dumps(result, ensure_ascii=False)[:500]}"
+    )
     code = result.get("code", 0) if isinstance(result, dict) else 0
     if code == 0 or (isinstance(result, dict) and result.get("data")):
         return result
@@ -1165,7 +1282,9 @@ def _try_cloud_update(app_name, version, language, system_parameters, custom_par
         "immediateStart": True,
         "systemParameters": {
             "installVolumeID": system_parameters.get("installVolumeID", 1),
-            "dataVolumeID": system_parameters.get("dataVolumeID", system_parameters.get("installVolumeID", 1)),
+            "dataVolumeID": system_parameters.get(
+                "dataVolumeID", system_parameters.get("installVolumeID", 1)
+            ),
         },
     }
     if package_path and package_type == "path":
@@ -1182,9 +1301,13 @@ def _try_cloud_update(app_name, version, language, system_parameters, custom_par
                 update_payload["sourceID"] = str(source_id)
             if version_id:
                 update_payload["versionID"] = str(version_id)
-    log(f"_try_cloud_update: update/task payload={json.dumps(update_payload, ensure_ascii=False)}")
+    log(
+        f"_try_cloud_update: update/task payload={json.dumps(update_payload, ensure_ascii=False)}"
+    )
     result = unix_http("POST", "/app-center/v1/update/task", update_payload)
-    log(f"_try_cloud_update: update/task response={json.dumps(result, ensure_ascii=False)[:500]}")
+    log(
+        f"_try_cloud_update: update/task response={json.dumps(result, ensure_ascii=False)[:500]}"
+    )
     code = result.get("code", 0) if isinstance(result, dict) else 0
     if code == 0 or (isinstance(result, dict) and result.get("data")):
         return result
@@ -1279,7 +1402,9 @@ def api_install_task():
         install_payload["wizardData"] = wizard_data
     install_payload["systemParameters"] = merged_system_parameters
     if merged_custom_parameters:
-        install_payload["customParameters"] = custom_parameters_list(merged_custom_parameters)
+        install_payload["customParameters"] = custom_parameters_list(
+            merged_custom_parameters
+        )
 
     update_payload = {
         "appName": app_name,
@@ -1293,7 +1418,9 @@ def api_install_task():
         },
     }
     if merged_custom_parameters:
-        update_payload["customParameters"] = custom_parameters_list(merged_custom_parameters)
+        update_payload["customParameters"] = custom_parameters_list(
+            merged_custom_parameters
+        )
 
     code_messages = {
         10100: "invalid parameters or app not ready for installation",
@@ -1309,24 +1436,40 @@ def api_install_task():
     used_update_api = False
 
     if is_update:
-        log(f"is_update=true, trying update/task with packageType={resolved_package_type}")
+        log(
+            f"is_update=true, trying update/task with packageType={resolved_package_type}"
+        )
         result = unix_http("POST", "/app-center/v1/update/task", update_payload)
         log(f"update/task response: {json.dumps(result, ensure_ascii=False)[:500]}")
         code = result.get("code", 0) if isinstance(result, dict) else 0
         if code == 0 or (isinstance(result, dict) and result.get("data")):
             used_update_api = True
         else:
-            log(f"update/task failed (code={code}), trying install/task with upgrade=true")
+            log(
+                f"update/task failed (code={code}), trying install/task with upgrade=true"
+            )
             install_upgrade_payload = dict(install_payload)
             install_upgrade_payload["upgrade"] = True
-            result = unix_http("POST", "/app-center/v1/install/task", install_upgrade_payload)
-            log(f"install/task (upgrade) response: {json.dumps(result, ensure_ascii=False)[:500]}")
+            result = unix_http(
+                "POST", "/app-center/v1/install/task", install_upgrade_payload
+            )
+            log(
+                f"install/task (upgrade) response: {json.dumps(result, ensure_ascii=False)[:500]}"
+            )
             code = result.get("code", 0) if isinstance(result, dict) else 0
             if code == 0 or (isinstance(result, dict) and result.get("data")):
                 pass
             elif code in (10236, 10371, 10100):
-                log(f"install/task upgrade failed (code={code}), trying cloud download + install")
-                cloud_result = _try_cloud_update(app_name, version, language, merged_system_parameters, merged_custom_parameters)
+                log(
+                    f"install/task upgrade failed (code={code}), trying cloud download + install"
+                )
+                cloud_result = _try_cloud_update(
+                    app_name,
+                    version,
+                    language,
+                    merged_system_parameters,
+                    merged_custom_parameters,
+                )
                 if cloud_result is not None:
                     result = cloud_result
                     used_update_api = True
@@ -1343,7 +1486,13 @@ def api_install_task():
         if code != 0 and not (isinstance(result, dict) and result.get("data")):
             if code == 10236:
                 log(f"install/task got 10236 (already installed), trying cloud update")
-                cloud_result = _try_cloud_update(app_name, version, language, merged_system_parameters, merged_custom_parameters)
+                cloud_result = _try_cloud_update(
+                    app_name,
+                    version,
+                    language,
+                    merged_system_parameters,
+                    merged_custom_parameters,
+                )
                 if cloud_result is not None:
                     result = cloud_result
                     used_update_api = True
@@ -1369,7 +1518,9 @@ def api_install_task():
         )
     )
     if not install_task_id:
-        raise RuntimeError(f"failed to create install task: {json.dumps(result, ensure_ascii=False)[:500]}")
+        raise RuntimeError(
+            f"failed to create install task: {json.dumps(result, ensure_ascii=False)[:500]}"
+        )
 
     task_key = f"install:{app_name}"
     INSTALL_TASKS[task_key] = {
@@ -1389,7 +1540,12 @@ def api_install_task():
         "createdAt": int(time.time()),
     }
 
-    return {"ok": True, "taskId": install_task_id, "appName": app_name, "isUpdate": is_update}
+    return {
+        "ok": True,
+        "taskId": install_task_id,
+        "appName": app_name,
+        "isUpdate": is_update,
+    }
 
 
 def api_install_status():
@@ -1432,10 +1588,17 @@ def api_install_status():
         raw_status = pick(data, ("status", "installStatus"), "")
         if isinstance(raw_status, (int, float)) and int(raw_status) == 5:
             fallback_result = query_install_status(task_id, not used_update_api)
-            fallback_data = fallback_result.get("data", fallback_result) if isinstance(fallback_result, dict) else fallback_result
+            fallback_data = (
+                fallback_result.get("data", fallback_result)
+                if isinstance(fallback_result, dict)
+                else fallback_result
+            )
             if isinstance(fallback_data, dict):
                 fallback_status = pick(fallback_data, ("status", "installStatus"), "")
-                if isinstance(fallback_status, (int, float)) and int(fallback_status) != 5:
+                if (
+                    isinstance(fallback_status, (int, float))
+                    and int(fallback_status) != 5
+                ):
                     result = fallback_result
                     data = fallback_data
 
@@ -1448,7 +1611,11 @@ def api_install_status():
     output_text = str(pick(data, ("outputText", "message", "msg"), ""))
     if not output_text and isinstance(result, dict):
         output_text = str(result.get("msg", "") or result.get("message", "") or "")
-    error_code = data.get("errorCode") or data.get("code") or (result.get("code") if isinstance(result, dict) else 0)
+    error_code = (
+        data.get("errorCode")
+        or data.get("code")
+        or (result.get("code") if isinstance(result, dict) else 0)
+    )
     if error_code and not output_text:
         output_text = f"error code: {error_code}"
     is_done = False
@@ -1473,12 +1640,21 @@ def api_install_status():
             is_done = True
             status_value = "failed"
             if not output_text:
-                output_text = "task not found in app center, install may have failed to start"
+                output_text = (
+                    "task not found in app center, install may have failed to start"
+                )
         else:
             status_value = str(raw_status)
     elif isinstance(raw_status, str):
         lower = raw_status.lower()
-        if lower in ("done", "success", "succeed", "finished", "completed", "installed"):
+        if lower in (
+            "done",
+            "success",
+            "succeed",
+            "finished",
+            "completed",
+            "installed",
+        ):
             is_done = True
             status_value = "success"
         elif lower in ("fail", "failed", "error"):
@@ -1545,14 +1721,19 @@ def api_installed_app():
     existing = _find_installed_app(app_name)
     if not existing:
         return {"ok": True, "installed": False, "installedInfo": {}}
-    installed_version = str(existing.get("installedVersion", "") or existing.get("version", "")).strip()
+    installed_version = str(
+        existing.get("installedVersion", "") or existing.get("version", "")
+    ).strip()
     return {
         "ok": True,
         "installed": True,
         "installedInfo": {
-            "name": existing.get("displayName", "") or existing.get("name", "") or app_name,
+            "name": existing.get("displayName", "")
+            or existing.get("name", "")
+            or app_name,
             "version": installed_version,
-            "volumeID": existing.get("installedVolumeID", "") or existing.get("volumeID", ""),
+            "volumeID": existing.get("installedVolumeID", "")
+            or existing.get("volumeID", ""),
         },
     }
 
@@ -1586,7 +1767,9 @@ def dispatch():
     elif action == "installed-app":
         json_response(api_installed_app())
     else:
-        json_response({"ok": False, "message": f"unsupported action: {action}"}, "400 Bad Request")
+        json_response(
+            {"ok": False, "message": f"unsupported action: {action}"}, "400 Bad Request"
+        )
 
 
 def main():

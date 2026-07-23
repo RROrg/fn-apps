@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
 import argparse
 import gzip
 import http.client
@@ -49,7 +56,10 @@ SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 BaseUnixServer = getattr(socketserver, "UnixStreamServer", socketserver.TCPServer)
 
 
-class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, BaseUnixServer):
+class ThreadingUnixHTTPServer(
+    socketserver.ThreadingMixIn,
+    socketserver.UnixStreamServer,  # pyright: ignore[reportAttributeAccessIssue]
+):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -58,12 +68,12 @@ class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, BaseUnixServer):
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
-        super().__init__(socket_path, handler_cls)
+        super().__init__(socket_path, handler_cls)  # pyright: ignore[reportCallIssue]
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: ThreadingUnixHTTPServer  # type: ignore[reportIncompatibleVariableOverride]
     protocol_version = "HTTP/1.1"
-    server_version = "fn-p2s/1.0"
 
     def do_GET(self):
         self.route()
@@ -86,21 +96,27 @@ class Handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.route()
 
-    def log_message(self, fmt, *args):
-        sys.stdout.write("%s - - [%s] %s\n" % (self.client_address, self.log_date_time_string(), fmt % args))
+    def log_message(self, format, *args):
+        sys.stdout.write(
+            "%s - - [%s] %s\n"
+            % (self.client_address, self.log_date_time_string(), format % args)
+        )
         sys.stdout.flush()
 
     def route(self):
         parsed = urlsplit(self.path)
-        base_path = route_base_path(self, parsed.path)
-        if parsed.path == base_path:
-            location = public_base_path(self, parsed.path) + "/"
-            if parsed.query:
-                location += "?" + parsed.query
-            self.send_empty(HTTPStatus.MOVED_PERMANENTLY, {"Location": location})
+        if parsed.path == self.server.base_path:
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header(
+                "Location",
+                self.server.base_path
+                + "/"
+                + (("?" + parsed.query) if parsed.query else ""),
+            )
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
-
-        path = strip_base_path(parsed.path, base_path)
+        path = strip_base_path(parsed.path, self.server.base_path)
         if path.startswith("/api"):
             self.serve_api(parsed.query)
             return
@@ -137,22 +153,25 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
 
-        content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
-        if content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
+        content_type = (
+            mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        )
+        if content_type.startswith("text/") or content_type in {
+            "application/javascript",
+            "application/json",
+        }:
             content_type = f"{content_type}; charset=utf-8"
-        size = target.stat().st_size
+        data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(size))
-        self.send_header("Cache-Control", "no-store" if target.name == "index.html" else "public, max-age=60")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header(
+            "Cache-Control",
+            "no-store" if target.name == "index.html" else "public, max-age=60",
+        )
         self.end_headers()
         if self.command != "HEAD":
-            with target.open("rb") as handle:
-                while True:
-                    chunk = handle.read(1024 * 256)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
+            self.wfile.write(data)
 
     def serve_sw(self, mapping):
         sw_path = self.server.www_root / "sw.js"
@@ -176,17 +195,30 @@ class Handler(BaseHTTPRequestHandler):
                 json_response(self, {"ok": True, "mappings": read_mappings()})
             elif action == "save":
                 mapping = save_mapping(payload.get("mapping") or {})
-                json_response(self, {"ok": True, "mapping": mapping, "mappings": read_mappings()})
+                json_response(
+                    self, {"ok": True, "mapping": mapping, "mappings": read_mappings()}
+                )
             elif action == "delete":
                 delete_mapping(str(payload.get("slug") or ""))
                 json_response(self, {"ok": True, "mappings": read_mappings()})
             elif action == "test":
-                mapping = normalize_mapping(payload.get("mapping") or {}, existing_slug=str(payload.get("existingSlug") or ""))
+                mapping = normalize_mapping(
+                    payload.get("mapping") or {},
+                    existing_slug=str(payload.get("existingSlug") or ""),
+                )
                 json_response(self, {"ok": True, "reachable": test_mapping(mapping)})
             else:
-                json_response(self, {"ok": False, "message": "unsupported action"}, HTTPStatus.BAD_REQUEST)
+                json_response(
+                    self,
+                    {"ok": False, "message": "unsupported action"},
+                    HTTPStatus.BAD_REQUEST,
+                )
         except Exception as exc:
-            json_response(self, {"ok": False, "message": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            json_response(
+                self,
+                {"ok": False, "message": str(exc)},
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
 
     def forward_http(self, mapping, rest_path, query):
         upstream_path = rest_path or "/"
@@ -199,7 +231,11 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length else None
         headers = build_upstream_headers(self, mapping)
 
-        conn_cls = http.client.HTTPSConnection if mapping.get("scheme") == "https" else http.client.HTTPConnection
+        conn_cls = (
+            http.client.HTTPSConnection
+            if mapping.get("scheme") == "https"
+            else http.client.HTTPConnection
+        )
         conn = conn_cls(mapping["host"], int(mapping["port"]), timeout=60)
         try:
             conn.request(self.command, upstream_path, body=body, headers=headers)
@@ -215,7 +251,9 @@ class Handler(BaseHTTPRequestHandler):
         response_body, decoded = decode_response_body(response_headers, response_body)
         content_type = header_lookup(response_headers, "Content-Type")
         is_html = "text/html" in (content_type or "").lower()
-        response_body, content_length = maybe_rewrite_body(self, mapping, rest_path, response_body, content_type)
+        response_body, content_length = maybe_rewrite_body(
+            self, mapping, rest_path, response_body, content_type
+        )
 
         self.send_response(response.status, response.reason)
         for name, value in response_headers:
@@ -240,7 +278,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(content_length))
         if is_html:
             self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Fn-P2S-Upstream", f"{mapping['scheme']}://{mapping['host']}:{mapping['port']}")
+        self.send_header(
+            "X-Fn-P2S-Upstream",
+            f"{mapping['scheme']}://{mapping['host']}:{mapping['port']}",
+        )
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(response_body)
@@ -250,15 +291,21 @@ class Handler(BaseHTTPRequestHandler):
         if query:
             upstream_path += "?" + query
         try:
-            upstream = socket.create_connection((mapping["host"], int(mapping["port"])), timeout=20)
+            upstream = socket.create_connection(
+                (mapping["host"], int(mapping["port"])), timeout=20
+            )
             if mapping.get("scheme") == "https":
                 context = ssl.create_default_context()
-                upstream = context.wrap_socket(upstream, server_hostname=mapping["host"])
+                upstream = context.wrap_socket(
+                    upstream, server_hostname=mapping["host"]
+                )
             headers = build_websocket_headers(self, mapping, upstream_path)
             upstream.sendall(headers)
             response = read_until_header_end(upstream)
             self.connection.sendall(response)
-            if not response.startswith(b"HTTP/1.1 101") and not response.startswith(b"HTTP/1.0 101"):
+            if not response.startswith(b"HTTP/1.1 101") and not response.startswith(
+                b"HTTP/1.0 101"
+            ):
                 upstream.close()
                 return
             relay_sockets(self.connection, upstream)
@@ -295,7 +342,7 @@ def normalize_base_path(path):
 def strip_base_path(path, base_path):
     normalized = path or "/"
     if base_path != "/" and normalized.startswith(base_path):
-        return normalized[len(base_path):] or "/"
+        return normalized[len(base_path) :] or "/"
     return normalized
 
 
@@ -342,7 +389,9 @@ def forwarded_prefix(handler):
 
 
 def route_base_path(handler, path=None):
-    return configured_base_in_path(path or urlsplit(handler.path).path, handler.server.base_path)
+    return configured_base_in_path(
+        path or urlsplit(handler.path).path, handler.server.base_path
+    )
 
 
 def public_base_path(handler, path=None):
@@ -398,14 +447,16 @@ def normalize_mapping(raw, *, existing_slug="", allow_duplicate=False):
         raise RuntimeError("mapping must be an object")
     slug = str(raw.get("slug") or "").strip().strip("/")
     if not SLUG_RE.match(slug) or slug.lower() in RESERVED_SLUGS:
-        raise RuntimeError("slug must be 1-64 letters, numbers, '-' or '_' and cannot be reserved")
+        raise RuntimeError(
+            "slug must be 1-64 letters, numbers, '-' or '_' and cannot be reserved"
+        )
     host = str(raw.get("host") or "127.0.0.1").strip()
     if not host:
         host = "127.0.0.1"
     try:
-        port = int(raw.get("port"))
+        port = int(raw.get("port", 0))
     except Exception:
-        raise RuntimeError("port must be a number")
+        port = 0
     if port < 1 or port > 65535:
         raise RuntimeError("port must be between 1 and 65535")
     scheme = str(raw.get("scheme") or "http").lower()
@@ -438,10 +489,16 @@ def normalize_mapping(raw, *, existing_slug="", allow_duplicate=False):
 
 
 def save_mapping(raw):
-    existing_slug = str(raw.get("existingSlug") or raw.get("slug") or "").strip().strip("/")
+    existing_slug = (
+        str(raw.get("existingSlug") or raw.get("slug") or "").strip().strip("/")
+    )
     mapping = normalize_mapping(raw, existing_slug=existing_slug)
     data = read_settings()
-    mappings = [item for item in data.get("mappings", []) if item.get("slug") != existing_slug and item.get("slug") != mapping["slug"]]
+    mappings = [
+        item
+        for item in data.get("mappings", [])
+        if item.get("slug") != existing_slug and item.get("slug") != mapping["slug"]
+    ]
     mappings.append(mapping)
     mappings.sort(key=lambda item: item["slug"].lower())
     data["mappings"] = mappings
@@ -452,7 +509,9 @@ def save_mapping(raw):
 def delete_mapping(slug):
     slug = slug.strip().strip("/")
     data = read_settings()
-    data["mappings"] = [item for item in data.get("mappings", []) if item.get("slug") != slug]
+    data["mappings"] = [
+        item for item in data.get("mappings", []) if item.get("slug") != slug
+    ]
     write_settings(data)
 
 
@@ -470,7 +529,9 @@ def mapping_for_path(path):
 
 def test_mapping(mapping):
     try:
-        with socket.create_connection((mapping["host"], int(mapping["port"])), timeout=3):
+        with socket.create_connection(
+            (mapping["host"], int(mapping["port"])), timeout=3
+        ):
             return True
     except Exception:
         return False
@@ -490,7 +551,9 @@ def request_payload(handler, query):
 
 
 def json_response(handler, payload, status=HTTPStatus.OK):
-    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
     handler.send_response(int(status))
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
@@ -551,7 +614,12 @@ def rewrite_location(handler, mapping, value):
         target_origin = f"{parsed.scheme}://{parsed.netloc}"
         if target_origin == origin:
             path = parsed.path or "/"
-            return local_prefix(handler, mapping) + path + (("?" + parsed.query) if parsed.query else "") + (("#" + parsed.fragment) if parsed.fragment else "")
+            return (
+                local_prefix(handler, mapping)
+                + path
+                + (("?" + parsed.query) if parsed.query else "")
+                + (("#" + parsed.fragment) if parsed.fragment else "")
+            )
         return value
     if value.startswith("/"):
         return local_prefix(handler, mapping) + value
@@ -563,7 +631,9 @@ def rewrite_refresh(handler, mapping, value):
         return value
 
     def replace_url(match):
-        return match.group(1) + rewrite_location(handler, mapping, match.group(2).strip())
+        return match.group(1) + rewrite_location(
+            handler, mapping, match.group(2).strip()
+        )
 
     return re.sub(r"(?i)(url\s*=\s*)([^;]+)", replace_url, value, count=1)
 
@@ -589,8 +659,12 @@ def rewrite_request_referer(handler, mapping, value):
         local_host = (handler.headers.get("Host") or "").lower()
         prefix = local_prefix(handler, mapping)
         if parsed.netloc.lower() == local_host and parsed.path.startswith(prefix):
-            path = parsed.path[len(prefix):] or "/"
-            return upstream_origin(mapping) + path + (("?" + parsed.query) if parsed.query else "")
+            path = parsed.path[len(prefix) :] or "/"
+            return (
+                upstream_origin(mapping)
+                + path
+                + (("?" + parsed.query) if parsed.query else "")
+            )
     except Exception:
         pass
     return value
@@ -645,7 +719,9 @@ def rewrite_css_body(handler, mapping, rest_path, body):
 
     def rewrite_css_url(value):
         value = value.strip()
-        if not value or value.startswith(("data:", "javascript:", "mailto:", "#", "http://", "https://", "//")):
+        if not value or value.startswith(
+            ("data:", "javascript:", "mailto:", "#", "http://", "https://", "//")
+        ):
             return value
         if value.startswith("/"):
             return prefix + value
@@ -663,7 +739,12 @@ def rewrite_css_body(handler, mapping, rest_path, body):
         new_value = rewrite_css_url(value)
         if new_value == value:
             return match.group(0)
-        return match.group("prefix") + new_value + match.group("suffix") + match.group("tail")
+        return (
+            match.group("prefix")
+            + new_value
+            + match.group("suffix")
+            + match.group("tail")
+        )
 
     text = CSS_URL_PATTERN.sub(rewrite_url, text)
     text = CSS_IMPORT_PATTERN.sub(rewrite_import, text)
@@ -742,7 +823,12 @@ def rewrite_html_urls(text, handler, mapping):
         value = match.group(3)
         if value.startswith(prefix + "/") or value.startswith(prefix):
             return match.group(0)
-        return match.group(1) + match.group(2) + rewrite_srcset(prefix, value) + match.group(2)
+        return (
+            match.group(1)
+            + match.group(2)
+            + rewrite_srcset(prefix, value)
+            + match.group(2)
+        )
 
     return HTML_SRCSET_PATTERN.sub(replace_srcset, text)
 
@@ -751,7 +837,11 @@ def rewrite_srcset(prefix, value):
     parts = []
     for candidate in str(value).split(","):
         chunks = candidate.strip().split()
-        if chunks and chunks[0].startswith("/") and not chunks[0].startswith(prefix + "/"):
+        if (
+            chunks
+            and chunks[0].startswith("/")
+            and not chunks[0].startswith(prefix + "/")
+        ):
             chunks[0] = prefix + chunks[0]
         parts.append(" ".join(chunks))
     return ", ".join(parts)
@@ -763,7 +853,9 @@ def rewrite_html_head(text, handler, mapping):
     def replace_base(match):
         tag = match.group(0)
         if re.search(r"(?is)\bhref\s*=", tag):
-            return re.sub(r"(?is)\bhref\s*=\s*(['\"])[^'\"]*\1", f'href="{root}"', tag, count=1)
+            return re.sub(
+                r"(?is)\bhref\s*=\s*(['\"])[^'\"]*\1", f'href="{root}"', tag, count=1
+            )
         return tag[:-1].rstrip() + f' href="{root}">'
 
     rewritten, count = re.subn(r"(?is)<base\b[^>]*>", replace_base, text, count=1)
@@ -777,49 +869,53 @@ def rewrite_html_head(text, handler, mapping):
 
 def proxy_bootstrap(handler, mapping, include_base=True):
     root = json.dumps(local_root(handler, mapping), ensure_ascii=False)
-    base = '<base href="%s">' % html_escape(local_root(handler, mapping)) if include_base else ""
+    base = (
+        '<base href="%s">' % html_escape(local_root(handler, mapping))
+        if include_base
+        else ""
+    )
     return (
-        '%s'
+        "%s"
         '<script id="fn-p2s-bootstrap">(function(){'
         '"use strict";'
         'var root=%s,rootPath=root.replace(/\\/$/,"");'
-        'var skip=/^(?:about|blob|data|javascript|mailto|tel):/i;'
-        'function baseHref(){return document.baseURI||location.href;}'
+        "var skip=/^(?:about|blob|data|javascript|mailto|tel):/i;"
+        "function baseHref(){return document.baseURI||location.href;}"
         'function sameOrigin(x){return x.origin===location.origin||x.origin==="null"&&location.origin==="null"}'
-        'function localUrl(u){try{if(u==null)return u;var raw=String(u);if(skip.test(raw))return u;'
+        "function localUrl(u){try{if(u==null)return u;var raw=String(u);if(skip.test(raw))return u;"
         'var x=new URL(raw,baseHref());if(sameOrigin(x)&&x.pathname.charAt(0)==="/"&&x.pathname.indexOf(root)!==0&&x.pathname!==rootPath){x.pathname=rootPath+x.pathname;}'
-        'return x.href;}catch(e){return u;}}'
-        'function localWsUrl(u){try{var y=new URL(String(u),baseHref());var same=(y.hostname===location.hostname&&y.port===location.port);'
+        "return x.href;}catch(e){return u;}}"
+        "function localWsUrl(u){try{var y=new URL(String(u),baseHref());var same=(y.hostname===location.hostname&&y.port===location.port);"
         'if(same&&y.pathname.charAt(0)==="/"&&y.pathname.indexOf(root)!==0&&y.pathname!==rootPath)y.pathname=rootPath+y.pathname;'
         'y.protocol=y.protocol==="https:"?"wss:":y.protocol==="http:"?"ws:":y.protocol;return y.href;}catch(e){var x=localUrl(u);return String(x).replace(/^http/,"ws");}}'
         'var _lp=Location.prototype,_opn=Object.getOwnPropertyDescriptor(_lp,"pathname");'
         'if(_opn){Object.defineProperty(_lp,"pathname",{'
         'get:function(){var r=_opn.get.call(this);return r===rootPath?"/":r.indexOf(rootPath+"/")===0?r.substring(rootPath.length):r;},'
         'set:function(v){var s=String(v);_opn.set.call(this,s.charAt(0)==="/"&&s.indexOf(rootPath+"/")!==0&&s!==rootPath?rootPath+s:s);},'
-        'configurable:true,enumerable:true});}'
+        "configurable:true,enumerable:true});}"
         'var _ohl=Object.getOwnPropertyDescriptor(_lp,"href");'
         'if(_ohl){Object.defineProperty(_lp,"href",{'
-        'get:_ohl.get,'
+        "get:_ohl.get,"
         'set:function(v){var s=String(v);if(s.charAt(0)==="/"){_ohl.set.call(this,s.indexOf(rootPath+"/")!==0&&s!==rootPath?rootPath+s:s);}else{try{var u=new URL(s,_ohl.get.call(this));if(u.origin===location.origin&&u.pathname.charAt(0)==="/"&&u.pathname.indexOf(rootPath+"/")!==0&&u.pathname!==rootPath)u.pathname=rootPath+u.pathname;_ohl.set.call(this,u.href);}catch(e){_ohl.set.call(this,s);}}},'
-        'configurable:true,enumerable:true});}'
-        'var _as=_lp.assign;if(_as)_lp.assign=function(u){return _as.call(this,localUrl(u));};'
-        'var _rp=_lp.replace;if(_rp)_lp.replace=function(u){return _rp.call(this,localUrl(u));};'
-        'function patchCtor(name,mapper){var C=window[name];if(!C)return;var P=function(a,b){return b!==undefined?new C(mapper(a),b):new C(mapper(a));};'
-        'try{Object.setPrototypeOf(P,C);P.prototype=C.prototype;window[name]=P;}catch(e){}}'
+        "configurable:true,enumerable:true});}"
+        "var _as=_lp.assign;if(_as)_lp.assign=function(u){return _as.call(this,localUrl(u));};"
+        "var _rp=_lp.replace;if(_rp)_lp.replace=function(u){return _rp.call(this,localUrl(u));};"
+        "function patchCtor(name,mapper){var C=window[name];if(!C)return;var P=function(a,b){return b!==undefined?new C(mapper(a),b):new C(mapper(a));};"
+        "try{Object.setPrototypeOf(P,C);P.prototype=C.prototype;window[name]=P;}catch(e){}}"
         'var f=window.fetch;if(f){window.fetch=function(r,i){try{if(typeof r==="string"||r instanceof URL){r=localUrl(r);}'
-        'else if(window.Request&&r instanceof Request){r=new Request(localUrl(r.url),r);}}catch(e){}return f.call(this,r,i);};}'
-        'var open=window.XMLHttpRequest&&XMLHttpRequest.prototype.open;if(open){XMLHttpRequest.prototype.open=function(m,u){arguments[1]=localUrl(u);return open.apply(this,arguments);};}'
+        "else if(window.Request&&r instanceof Request){r=new Request(localUrl(r.url),r);}}catch(e){}return f.call(this,r,i);};}"
+        "var open=window.XMLHttpRequest&&XMLHttpRequest.prototype.open;if(open){XMLHttpRequest.prototype.open=function(m,u){arguments[1]=localUrl(u);return open.apply(this,arguments);};}"
         'patchCtor("WebSocket",localWsUrl);patchCtor("EventSource",localUrl);patchCtor("Worker",localUrl);patchCtor("SharedWorker",localUrl);'
-        'var sb=navigator.sendBeacon;if(sb){navigator.sendBeacon=function(u,d){return sb.call(this,localUrl(u),d);};}'
+        "var sb=navigator.sendBeacon;if(sb){navigator.sendBeacon=function(u,d){return sb.call(this,localUrl(u),d);};}"
         'var wo=window.open;if(wo){window.open=function(u,n,f){var t=String(n||"").toLowerCase();if(t==="_top"||t==="_parent"||t==="_self"){location.href=localUrl(u);return window;}return wo.call(this,u?localUrl(u):u,n,f);};}'
         '["pushState","replaceState"].forEach(function(n){var h=history[n];if(h){history[n]=function(s,t,u){if(u!==undefined)u=localUrl(u);return h.call(this,s,t,u);};}});'
         'var attrs={A:["href"],AREA:["href"],LINK:["href"],SCRIPT:["src"],IMG:["src","srcset"],IFRAME:["src"],SOURCE:["src","srcset"],VIDEO:["src","poster"],AUDIO:["src"],FORM:["action"],OBJECT:["data"],EMBED:["src"]};'
         'function mapSrcset(v){return String(v).split(",").map(function(p){var s=p.trim().split(/\\s+/);if(s[0])s[0]=localUrl(s[0]);return s.join(" ");}).join(", ");}'
         'function fixAttr(el,a){var v=el.getAttribute&&el.getAttribute(a);if(!v)return;el.setAttribute(a,a==="srcset"?mapSrcset(v):localUrl(v));}'
-        'function fixEl(el){if(!el||el.nodeType!==1)return;var list=attrs[el.tagName];if(list)list.forEach(function(a){fixAttr(el,a);});}'
-        'var sa=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){var a=String(n).toLowerCase();'
+        "function fixEl(el){if(!el||el.nodeType!==1)return;var list=attrs[el.tagName];if(list)list.forEach(function(a){fixAttr(el,a);});}"
+        "var sa=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){var a=String(n).toLowerCase();"
         'if((a==="href"||a==="src"||a==="action"||a==="poster"||a==="data")&&v!=null)v=localUrl(v);else if(a==="srcset"&&v!=null)v=mapSrcset(v);return sa.call(this,n,v);};'
-        'function prop(proto,name,mapper){try{var d=Object.getOwnPropertyDescriptor(proto,name);if(!d||!d.set)return;Object.defineProperty(proto,name,{get:d.get,set:function(v){d.set.call(this,mapper(v));},configurable:true,enumerable:d.enumerable});}catch(e){}}'
+        "function prop(proto,name,mapper){try{var d=Object.getOwnPropertyDescriptor(proto,name);if(!d||!d.set)return;Object.defineProperty(proto,name,{get:d.get,set:function(v){d.set.call(this,mapper(v));},configurable:true,enumerable:d.enumerable});}catch(e){}}"
         '[[window.HTMLAnchorElement&&HTMLAnchorElement.prototype,"href",localUrl],[window.HTMLAreaElement&&HTMLAreaElement.prototype,"href",localUrl],[window.HTMLLinkElement&&HTMLLinkElement.prototype,"href",localUrl],[window.HTMLScriptElement&&HTMLScriptElement.prototype,"src",localUrl],[window.HTMLImageElement&&HTMLImageElement.prototype,"src",localUrl],[window.HTMLIFrameElement&&HTMLIFrameElement.prototype,"src",localUrl],[window.HTMLFormElement&&HTMLFormElement.prototype,"action",localUrl]].forEach(function(x){if(x[0])prop(x[0],x[1],x[2]);});'
         'document.addEventListener("click",function(e){if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;'
         'var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(!a)return;var href=a.getAttribute("href"),t=String(a.getAttribute("target")||"").toLowerCase();'
@@ -830,32 +926,46 @@ def proxy_bootstrap(handler, mapping, include_base=True):
         'Array.prototype.forEach.call(document.querySelectorAll("*"),fixEl);'
         'if(window.MutationObserver){new MutationObserver(function(ms){ms.forEach(function(m){Array.prototype.forEach.call(m.addedNodes,function(n){fixEl(n);if(n.querySelectorAll)Array.prototype.forEach.call(n.querySelectorAll("*"),fixEl);});});}).observe(document.documentElement,{childList:true,subtree:true});}'
         "if('serviceWorker' in navigator){navigator.serviceWorker.register(rootPath+'/sw.js',{scope:root}).catch(function(){});}"
-        '})();</script>'
+        "})();</script>"
     ) % (base, root)
 
 
 def html_escape(value):
-    return str(value).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+    return (
+        str(value)
+        .replace("&", "&amp;")
+        .replace('"', "&quot;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
 
 
 def is_websocket_upgrade(headers):
-    return "upgrade" in (headers.get("Connection") or "").lower() and (headers.get("Upgrade") or "").lower() == "websocket"
+    return (
+        "upgrade" in (headers.get("Connection") or "").lower()
+        and (headers.get("Upgrade") or "").lower() == "websocket"
+    )
 
 
 def build_websocket_headers(handler, mapping, upstream_path):
-    lines = [f"{handler.command} {upstream_path} HTTP/1.1", f"Host: {mapping['host']}:{mapping['port']}"]
+    lines = [
+        f"{handler.command} {upstream_path} HTTP/1.1",
+        f"Host: {mapping['host']}:{mapping['port']}",
+    ]
     for name, value in handler.headers.items():
         lower = name.lower()
         if lower in {"host", "proxy-connection"}:
             continue
         lines.append(f"{name}: {value}")
-    lines.extend([
-        f"X-Forwarded-Host: {handler.headers.get('Host', '')}",
-        "X-Forwarded-Proto: https",
-        f"X-Forwarded-Prefix: {local_prefix(handler, mapping)}",
-        "",
-        "",
-    ])
+    lines.extend(
+        [
+            f"X-Forwarded-Host: {handler.headers.get('Host', '')}",
+            "X-Forwarded-Proto: https",
+            f"X-Forwarded-Prefix: {local_prefix(handler, mapping)}",
+            "",
+            "",
+        ]
+    )
     return "\r\n".join(lines).encode("iso-8859-1", "replace")
 
 
@@ -905,7 +1015,9 @@ def main():
     if os.path.exists(args.unix_socket):
         os.unlink(args.unix_socket)
 
-    server = ThreadingUnixHTTPServer(args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root)
+    server = ThreadingUnixHTTPServer(
+        args.unix_socket, Handler, base_path=args.base_path, www_root=args.www_root
+    )
 
     def shutdown(_signum, _frame):
         server.server_close()

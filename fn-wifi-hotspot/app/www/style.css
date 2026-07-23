@@ -56,7 +56,9 @@ html[data-theme="dark"] {
   --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -69,7 +71,11 @@ body {
   letter-spacing: 0;
 }
 
-button, input, select { font: inherit; }
+button,
+input,
+select {
+  font: inherit;
+}
 
 .app-shell {
   display: grid;
@@ -122,14 +128,17 @@ button, input, select { font: inherit; }
   min-height: 0;
 }
 
-.section-head, .row-actions, .modal-actions {
+.section-head,
+.row-actions,
+.modal-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.row-actions, .modal-actions {
+.row-actions,
+.modal-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
 }
@@ -144,7 +153,9 @@ button, input, select { font: inherit; }
   font-weight: 800;
 }
 
-.primary-btn, .ghost-btn, .danger-btn {
+.primary-btn,
+.ghost-btn,
+.danger-btn {
   height: 30px;
   border: 0;
   border-radius: 6px;
@@ -154,12 +165,33 @@ button, input, select { font: inherit; }
   font-weight: 800;
 }
 
-.primary-btn { background: var(--accent); color: #fff; }
-.primary-btn:hover:not(:disabled) { background: var(--accent-hover); }
-.ghost-btn { background: var(--button); color: var(--button-text); }
-.ghost-btn:hover:not(:disabled) { background: var(--button-hover); }
-.danger-btn { background: rgba(255, 92, 108, 0.14); color: var(--danger-text); }
-button:disabled { cursor: not-allowed; opacity: 0.58; }
+.primary-btn {
+  background: var(--accent);
+  color: #fff;
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.ghost-btn {
+  background: var(--button);
+  color: var(--button-text);
+}
+
+.ghost-btn:hover:not(:disabled) {
+  background: var(--button-hover);
+}
+
+.danger-btn {
+  background: rgba(255, 92, 108, 0.14);
+  color: var(--danger-text);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
 
 .stats-grid {
   display: grid;
@@ -175,7 +207,8 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   padding: 10px 12px;
 }
 
-.stat span, .meta {
+.stat span,
+.meta {
   display: block;
   color: var(--muted);
   font-size: 12px;
@@ -205,7 +238,8 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   font-weight: 700;
 }
 
-.field input, .field select {
+.field input,
+.field select {
   width: 100%;
   min-height: 36px;
   border: 1px solid var(--line);
@@ -218,7 +252,8 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   font-weight: 700;
 }
 
-.field input:focus, .field select:focus {
+.field input:focus,
+.field select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.16);
 }
@@ -228,7 +263,8 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   gap: 8px;
 }
 
-.client-row, .empty {
+.client-row,
+.empty {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) minmax(150px, 1fr) minmax(120px, 1fr) minmax(80px, 0.6fr) minmax(120px, 1fr) max-content;
   align-items: center;
@@ -250,9 +286,17 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   border-style: dashed;
 }
 
-.client-muted { color: var(--muted); }
-.ok { color: var(--success); }
-.bad { color: var(--danger-text); }
+.client-muted {
+  color: var(--muted);
+}
+
+.ok {
+  color: var(--success);
+}
+
+.bad {
+  color: var(--danger-text);
+}
 
 .modal {
   position: fixed;
@@ -265,7 +309,9 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   background: rgba(0, 0, 0, 0.58);
 }
 
-.hidden { display: none !important; }
+.hidden {
+  display: none !important;
+}
 
 .modal-content {
   width: min(520px, calc(100vw - 48px));
@@ -286,6 +332,7 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
   color: var(--text);
   line-height: 1.6;
   white-space: pre-wrap;
+  -webkit-user-select: text;
   user-select: text;
   word-break: break-word;
 }
@@ -411,9 +458,27 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
 }
 
 @media (max-width: 860px) {
-  body { overflow: auto; }
-  .app-shell { height: auto; min-height: 100vh; }
-  .topbar { align-items: stretch; flex-direction: column; }
-  .row-actions { justify-content: flex-start; }
-  .stats-grid, .grid, .client-row { grid-template-columns: 1fr; }
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
+  }
+
+  .stats-grid,
+  .grid,
+  .client-row {
+    grid-template-columns: 1fr;
+  }
 }

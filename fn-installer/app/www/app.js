@@ -87,9 +87,11 @@ const I18N = {
     updateFailed: "更新失败",
     sameVersion: "当前已是最新版本",
     updateConfirmTitle: "发现新版本",
-    updateConfirmDesc: "当前已安装 {installedVersion}，发现新版本 {newVersion}，是否更新？",
+    updateConfirmDesc:
+      "当前已安装 {installedVersion}，发现新版本 {newVersion}，是否更新？",
     about: "关于",
-    aboutDeclaration: "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
@@ -132,7 +134,8 @@ const I18N = {
     appVolumeID: "Volume ID",
     wizardConfig: "Installation Config",
     wizardTips: "Configuration Tips",
-    errorTokenNotFound: "Auth failed: authorization token not found, please open this app from system desktop",
+    errorTokenNotFound:
+      "Auth failed: authorization token not found, please open this app from system desktop",
     errorNetwork: "Network request failed",
     errorUnknown: "Unknown error",
     loading: "Loading...",
@@ -158,9 +161,11 @@ const I18N = {
     updateFailed: "Update Failed",
     sameVersion: "Already on the latest version",
     updateConfirmTitle: "New Version Available",
-    updateConfirmDesc: "Currently installed {installedVersion}, new version {newVersion} available. Update now?",
+    updateConfirmDesc:
+      "Currently installed {installedVersion}, new version {newVersion} available. Update now?",
     about: "About",
-    aboutDeclaration: "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
@@ -198,7 +203,11 @@ function storedValue(name) {
 function parentStoredValue(name) {
   try {
     if (!window.parent || window.parent === window) return "";
-    return window.parent.localStorage.getItem(name) || window.parent.sessionStorage.getItem(name) || "";
+    return (
+      window.parent.localStorage.getItem(name) ||
+      window.parent.sessionStorage.getItem(name) ||
+      ""
+    );
   } catch (_error) {
     return "";
   }
@@ -212,13 +221,15 @@ function documentThemeValue(doc) {
   if (!doc) return "";
   const root = doc.documentElement;
   const body = doc.body;
-  return [
-    body?.getAttribute("theme-mode"),
-    body?.dataset?.theme,
-    root?.dataset?.theme,
-    root?.classList?.contains("dark") ? "dark" : "",
-    root?.classList?.contains("light") ? "light" : "",
-  ].find(Boolean) || "";
+  return (
+    [
+      body?.getAttribute("theme-mode"),
+      body?.dataset?.theme,
+      root?.dataset?.theme,
+      root?.classList?.contains("dark") ? "dark" : "",
+      root?.classList?.contains("light") ? "light" : "",
+    ].find(Boolean) || ""
+  );
 }
 
 function parentDocumentThemeValue() {
@@ -332,20 +343,24 @@ function formatSize(bytes) {
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[char]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[char],
+  );
 }
 
 function authToken() {
   return safeDecode(
     cookieValue("fnos-token") ||
       cookieValue("trim_token") ||
-      cookieValue("token")
+      cookieValue("token"),
   );
 }
 
@@ -420,7 +435,7 @@ function renderFileList(files) {
       <div class="empty-state">
         <div class="icon">📂</div>
         <p>${t("noFiles")}</p>
-        <p style="font-size:12px;color:var(--muted-2);margin-top:4px;">${t("noFilesDesc")}</p>
+        <p class="no-files-desc">${t("noFilesDesc")}</p>
       </div>`;
     return;
   }
@@ -438,7 +453,7 @@ function renderFileList(files) {
         </div>
       </div>
       <div class="file-check">${state.selectedFile?.path === file.path ? "✓" : ""}</div>
-    </div>`
+    </div>`,
     )
     .join("");
 }
@@ -458,7 +473,7 @@ async function loadFiles() {
   list.classList.remove("hidden");
   list.innerHTML = `
     <div class="empty-state">
-      <div class="loading-spinner" style="margin:0 auto 12px;display:block;width:32px;height:32px;border-width:3px;"></div>
+      <div class="loading-spinner large"></div>
       <p>${t("scanning")}</p>
     </div>`;
   state.selectedFile = null;
@@ -474,7 +489,10 @@ async function loadFiles() {
         <div class="icon">❌</div>
         <p>${escapeHtml(error.message)}</p>
       </div>`;
-    if (error.message.includes("authorization token not found") || error.message.includes("token not found")) {
+    if (
+      error.message.includes("authorization token not found") ||
+      error.message.includes("token not found")
+    ) {
       showToast(t("errorTokenNotFound"), true);
     }
   }
@@ -496,8 +514,8 @@ async function browseDir(dir) {
   state.currentDir = dir;
 
   dirList.innerHTML = `
-    <div class="empty-state" style="padding:20px;">
-      <div class="loading-spinner" style="margin:0 auto 12px;display:block;width:32px;height:32px;border-width:3px;"></div>
+    <div class="empty-state compact">
+      <div class="loading-spinner large"></div>
       <p>${t("loading")}</p>
     </div>`;
 
@@ -508,11 +526,14 @@ async function browseDir(dir) {
     renderDirEntries(state._dirEntries, dir);
   } catch (error) {
     dirList.innerHTML = `
-      <div class="empty-state" style="padding:20px;">
+      <div class="empty-state compact">
         <div class="icon">❌</div>
         <p>${escapeHtml(error.message)}</p>
       </div>`;
-    if (error.message.includes("authorization token not found") || error.message.includes("token not found")) {
+    if (
+      error.message.includes("authorization token not found") ||
+      error.message.includes("token not found")
+    ) {
       showToast(t("errorTokenNotFound"), true);
     }
   }
@@ -538,7 +559,10 @@ function renderBreadcrumb(dir) {
 
 function renderDirEntries(entries, currentDir) {
   const dirList = document.getElementById("dirList");
-  const parentPath = currentDir === "/" ? "" : currentDir.split("/").slice(0, -1).join("/") || "/";
+  const parentPath =
+    currentDir === "/"
+      ? ""
+      : currentDir.split("/").slice(0, -1).join("/") || "/";
 
   let html = "";
   if (parentPath) {
@@ -550,7 +574,7 @@ function renderDirEntries(entries, currentDir) {
   }
 
   if (entries.length === 0 && !parentPath) {
-    html += `<div class="empty-state" style="padding:20px;"><p>${t("emptyDir")}</p></div>`;
+    html += `<div class="empty-state compact"><p>${t("emptyDir")}</p></div>`;
   }
 
   const dirs = entries.filter((e) => e.isDir);
@@ -612,7 +636,7 @@ async function scanCurrentDir() {
 
   fileList.innerHTML = `
     <div class="empty-state">
-      <div class="loading-spinner" style="margin:0 auto 12px;display:block;width:32px;height:32px;border-width:3px;"></div>
+      <div class="loading-spinner large"></div>
       <p>${t("scanning")}</p>
     </div>`;
 
@@ -645,7 +669,9 @@ async function goToStep2() {
   btnInstall.disabled = true;
 
   try {
-    const result = await api("parse-task", { filePath: state.selectedFile.path });
+    const result = await api("parse-task", {
+      filePath: state.selectedFile.path,
+    });
     state.downloadTaskId = result.taskId;
     state.appName = result.appName || "";
     state.version = result.version || "";
@@ -658,7 +684,10 @@ async function goToStep2() {
     downloadStatusText.textContent = error.message;
     downloadProgressBar.classList.add("error");
     downloadProgressBar.style.width = "100%";
-    if (error.message.includes("authorization token not found") || error.message.includes("token not found")) {
+    if (
+      error.message.includes("authorization token not found") ||
+      error.message.includes("token not found")
+    ) {
       showToast(t("errorTokenNotFound"), true);
     } else {
       showToast(error.message, true);
@@ -677,9 +706,13 @@ function pollDownloadStatus() {
 
   const checkStatus = async () => {
     try {
-      const result = await api("parse-status", { taskId: state.downloadTaskId });
+      const result = await api("parse-status", {
+        taskId: state.downloadTaskId,
+      });
       const progress = result.progress || 0;
-      const downloadProgressBar = document.getElementById("downloadProgressBar");
+      const downloadProgressBar = document.getElementById(
+        "downloadProgressBar",
+      );
       const downloadStatusText = document.getElementById("downloadStatusText");
 
       if (result.appName) {
@@ -717,7 +750,9 @@ function pollDownloadStatus() {
         if (result.status === "success") {
           downloadProgressBar.classList.add("success");
           downloadProgressBar.style.width = "100%";
-          downloadStatusText.textContent = t("parseProgress", { progress: 100 });
+          downloadStatusText.textContent = t("parseProgress", {
+            progress: 100,
+          });
 
           if (state.isUpdate && state.installedInfo) {
             if (state.installedInfo.volumeID) {
@@ -748,7 +783,8 @@ function pollDownloadStatus() {
       if (pollCount >= 3) {
         clearInterval(state.polling);
         state.polling = null;
-        document.getElementById("downloadStatusText").textContent = error.message;
+        document.getElementById("downloadStatusText").textContent =
+          error.message;
         document.getElementById("downloadProgressBar").classList.add("error");
         showToast(error.message, true);
       }
@@ -789,12 +825,30 @@ async function loadInstallInfo() {
       const wizardInfo = data.wizardInfo || data;
       const rows = [];
 
-      const displayName = wizardInfo.name || data.name || data.display_name || wizardInfo.appName || data.appName || data.app_name || "";
+      const displayName =
+        wizardInfo.name ||
+        data.name ||
+        data.display_name ||
+        wizardInfo.appName ||
+        data.appName ||
+        data.app_name ||
+        "";
       const appVersion = wizardInfo.version || data.version || "";
       const maintainer = wizardInfo.maintainer || data.maintainer || "";
-      const desc = wizardInfo.desc || data.desc || wizardInfo.description || data.description || "";
-      const installType = wizardInfo.installType || data.installType || data.install_type || "";
-      const volumeID = wizardInfo.installedVolumeID || data.volumeID || data.volume_id || data.installVolumeID || "";
+      const desc =
+        wizardInfo.desc ||
+        data.desc ||
+        wizardInfo.description ||
+        data.description ||
+        "";
+      const installType =
+        wizardInfo.installType || data.installType || data.install_type || "";
+      const volumeID =
+        wizardInfo.installedVolumeID ||
+        data.volumeID ||
+        data.volume_id ||
+        data.installVolumeID ||
+        "";
 
       state.installType = installType;
 
@@ -806,7 +860,9 @@ async function loadInstallInfo() {
       }
 
       if (state.isUpdate && state.installedInfo) {
-        rows.push(infoRow(t("installedVersion"), state.installedInfo.version || ""));
+        rows.push(
+          infoRow(t("installedVersion"), state.installedInfo.version || ""),
+        );
         rows.push(infoRow(t("newVersion"), appVersion));
       }
 
@@ -841,8 +897,15 @@ async function loadInstallInfo() {
       }
 
       const wizardSection = document.getElementById("wizardSection");
-      const wizardItems = wizardInfo.wizardContent || wizardInfo.steps || data.wizard || data.wizardData || [];
-      const hasWizard = wizardInfo.hasWizard || (Array.isArray(wizardItems) && wizardItems.length > 0);
+      const wizardItems =
+        wizardInfo.wizardContent ||
+        wizardInfo.steps ||
+        data.wizard ||
+        data.wizardData ||
+        [];
+      const hasWizard =
+        wizardInfo.hasWizard ||
+        (Array.isArray(wizardItems) && wizardItems.length > 0);
 
       if (hasWizard && Array.isArray(wizardItems) && wizardItems.length > 0) {
         state._wizardInfo = wizardInfo;
@@ -881,10 +944,14 @@ async function loadInstallInfo() {
     }
   }
 
-  installInfo.innerHTML = `<div class="info-row"><span class="info-value" style="color:var(--red);">${escapeHtml(lastError ? lastError.message : t("errorUnknown"))}</span></div>`;
+  installInfo.innerHTML = `<div class="info-row"><span class="info-value error">${escapeHtml(lastError ? lastError.message : t("errorUnknown"))}</span></div>`;
   installInfoSection.classList.remove("hidden");
   btnInstall.disabled = true;
-  if (lastError && (lastError.message.includes("authorization token not found") || lastError.message.includes("token not found"))) {
+  if (
+    lastError &&
+    (lastError.message.includes("authorization token not found") ||
+      lastError.message.includes("token not found"))
+  ) {
     showToast(t("errorTokenNotFound"), true);
   }
 }
@@ -920,11 +987,13 @@ async function loadVolumes(defaultVolumeID, installType) {
     }
     const select = document.getElementById("volumeSelect");
     if (select) {
-      select.innerHTML = volumes.map((vol) => {
-        const free = vol.size - vol.used;
-        const selected = vol.id == sysDefaultVolume ? " selected" : "";
-        return `<option value="${vol.id}"${selected}>${escapeHtml(vol.name)} (${formatSize(free)} ${t("volumeFree")})</option>`;
-      }).join("");
+      select.innerHTML = volumes
+        .map((vol) => {
+          const free = vol.size - vol.used;
+          const selected = vol.id == sysDefaultVolume ? " selected" : "";
+          return `<option value="${vol.id}"${selected}>${escapeHtml(vol.name)} (${formatSize(free)} ${t("volumeFree")})</option>`;
+        })
+        .join("");
       state.volumeID = parseInt(select.value) || sysDefaultVolume || 1;
       select.disabled = volumes.length === 1;
     }
@@ -950,7 +1019,7 @@ function renderWizard(items, container) {
   for (const item of items) {
     if (item.items && Array.isArray(item.items)) {
       if (item.stepTitle) {
-        html += `<div class="wizard-tips" style="font-weight:800;margin-bottom:8px;">${escapeHtml(item.stepTitle)}</div>`;
+        html += `<div class="wizard-tips step-title">${escapeHtml(item.stepTitle)}</div>`;
       }
       flatItems.push(...item.items);
     } else {
@@ -961,10 +1030,19 @@ function renderWizard(items, container) {
   flatItems.forEach((item, index) => {
     const key = item.field || item.key || item.name || `wizard_${index}`;
     const value = item.initValue ?? item.defaultValue ?? item.value ?? "";
-    const required = Boolean(item.required || (item.rules || []).some((rule) => rule.required));
-    const pattern = (item.rules || []).find((rule) => rule.pattern)?.pattern || item.pattern || "";
-    const minLength = (item.rules || []).find((rule) => rule.min)?.min || item.min || "";
-    const message = (item.rules || []).find((rule) => rule.message)?.message || item.message || "";
+    const required = Boolean(
+      item.required || (item.rules || []).some((rule) => rule.required),
+    );
+    const pattern =
+      (item.rules || []).find((rule) => rule.pattern)?.pattern ||
+      item.pattern ||
+      "";
+    const minLength =
+      (item.rules || []).find((rule) => rule.min)?.min || item.min || "";
+    const message =
+      (item.rules || []).find((rule) => rule.message)?.message ||
+      item.message ||
+      "";
 
     if (item.type === "tips" && !item.field && !item.key && !item.name) {
       html += `<div class="wizard-tips">${escapeHtml(item.helpText || item.tips || item.label || item.title || "")}</div>`;
@@ -975,12 +1053,18 @@ function renderWizard(items, container) {
           <label>${escapeHtml(item.label || item.title || `${t("wizardConfig")} ${index + 1}`)}</label>
           <select data-wizard-key="${escapeHtml(key)}"
                   ${required ? "required" : ""}>
-            ${item.options.map((opt) => {
-              const optValue = typeof opt === "string" ? opt : opt.value || opt.name || "";
-              const optLabel = typeof opt === "string" ? opt : opt.label || opt.name || opt.value || "";
-              const selected = optValue === value ? " selected" : "";
-              return `<option value="${escapeHtml(optValue)}"${selected}>${escapeHtml(optLabel)}</option>`;
-            }).join("")}
+            ${item.options
+              .map((opt) => {
+                const optValue =
+                  typeof opt === "string" ? opt : opt.value || opt.name || "";
+                const optLabel =
+                  typeof opt === "string"
+                    ? opt
+                    : opt.label || opt.name || opt.value || "";
+                const selected = optValue === value ? " selected" : "";
+                return `<option value="${escapeHtml(optValue)}"${selected}>${escapeHtml(optLabel)}</option>`;
+              })
+              .join("")}
           </select>
         </div>`;
     } else if (item.type === "select" && item.options) {
@@ -990,16 +1074,28 @@ function renderWizard(items, container) {
           <label>${escapeHtml(item.label || item.title || `${t("wizardConfig")} ${index + 1}`)}</label>
           <select data-wizard-key="${escapeHtml(key)}"
                   ${required ? "required" : ""}>
-            ${item.options.map((opt) => {
-              const optValue = typeof opt === "string" ? opt : opt.value || opt.name || "";
-              const optLabel = typeof opt === "string" ? opt : opt.label || opt.name || opt.value || "";
-              const selected = optValue === value ? " selected" : "";
-              return `<option value="${escapeHtml(optValue)}"${selected}>${escapeHtml(optLabel)}</option>`;
-            }).join("")}
+            ${item.options
+              .map((opt) => {
+                const optValue =
+                  typeof opt === "string" ? opt : opt.value || opt.name || "";
+                const optLabel =
+                  typeof opt === "string"
+                    ? opt
+                    : opt.label || opt.name || opt.value || "";
+                const selected = optValue === value ? " selected" : "";
+                return `<option value="${escapeHtml(optValue)}"${selected}>${escapeHtml(optLabel)}</option>`;
+              })
+              .join("")}
           </select>
         </div>`;
     } else if (item.type === "checkbox" || item.type === "switch") {
-      const checked = value === true || value === "true" || value === "1" || item.checked === true ? " checked" : "";
+      const checked =
+        value === true ||
+        value === "true" ||
+        value === "1" ||
+        item.checked === true
+          ? " checked"
+          : "";
       html += `
         <label class="wizard-check">
           <input type="checkbox"
@@ -1040,7 +1136,8 @@ function renderWizard(items, container) {
 function collectWizardData() {
   const data = {};
   document.querySelectorAll("[data-wizard-key]").forEach((el) => {
-    data[el.dataset.wizardKey] = el.dataset.wizardType === "checkbox" ? el.checked : el.value;
+    data[el.dataset.wizardKey] =
+      el.dataset.wizardType === "checkbox" ? el.checked : el.value;
   });
   return data;
 }
@@ -1097,7 +1194,9 @@ async function goToStep3() {
   }
 
   if (!state.isUpdate) {
-    const invalidWizardField = document.querySelector("[data-wizard-key]:invalid");
+    const invalidWizardField = document.querySelector(
+      "[data-wizard-key]:invalid",
+    );
     if (invalidWizardField) {
       invalidWizardField.reportValidity();
       return;
@@ -1116,7 +1215,9 @@ async function goToStep3() {
   const installStatusText = document.getElementById("installStatusText");
   const installProgressBar = document.getElementById("installProgressBar");
 
-  installStatusText.textContent = state.isUpdate ? t("updatingApp") : t("installingApp");
+  installStatusText.textContent = state.isUpdate
+    ? t("updatingApp")
+    : t("installingApp");
   installProgressBar.style.width = "0%";
   installProgressBar.classList.remove("success", "error");
 
@@ -1136,17 +1237,23 @@ async function goToStep3() {
     };
     if (state.wizardData && Object.keys(state.wizardData).length > 0) {
       installPayload.wizardData = state.wizardData;
-      installPayload.customParameters = Object.entries(state.wizardData).map(([key, value]) => ({
-        key,
-        value: String(value ?? ""),
-      }));
+      installPayload.customParameters = Object.entries(state.wizardData).map(
+        ([key, value]) => ({
+          key,
+          value: String(value ?? ""),
+        }),
+      );
     }
     const result = await api("install-task", installPayload);
     state.installTaskId = result.taskId;
     pollInstallStatus();
   } catch (error) {
     const msg = error.message || "";
-    if (msg.includes("10236") || msg.includes("already installed") || msg.includes("已安装")) {
+    if (
+      msg.includes("10236") ||
+      msg.includes("already installed") ||
+      msg.includes("已安装")
+    ) {
       if (!state.isUpdate) {
         installProgressBar.classList.add("success");
         installProgressBar.style.width = "100%";
@@ -1154,7 +1261,8 @@ async function goToStep3() {
         showStep(4);
         document.getElementById("resultSuccess").classList.remove("hidden");
         document.getElementById("resultError").classList.add("hidden");
-        document.getElementById("resultSuccessDesc").textContent = t("alreadyInstalled");
+        document.getElementById("resultSuccessDesc").textContent =
+          t("alreadyInstalled");
       } else {
         installProgressBar.classList.add("error");
         installProgressBar.style.width = "100%";
@@ -1169,7 +1277,10 @@ async function goToStep3() {
       installStatusText.textContent = msg;
       installProgressBar.classList.add("error");
       installProgressBar.style.width = "100%";
-      if (msg.includes("authorization token not found") || msg.includes("token not found")) {
+      if (
+        msg.includes("authorization token not found") ||
+        msg.includes("token not found")
+      ) {
         showToast(t("errorTokenNotFound"), true);
       } else {
         showToast(msg, true);
@@ -1208,16 +1319,21 @@ function pollInstallStatus() {
         if (result.status === "success") {
           installProgressBar.classList.add("success");
           installProgressBar.style.width = "100%";
-          installStatusText.textContent = state.isUpdate ? t("updateSuccess") : t("installSuccess");
+          installStatusText.textContent = state.isUpdate
+            ? t("updateSuccess")
+            : t("installSuccess");
           showStep(4);
           document.getElementById("resultSuccess").classList.remove("hidden");
           document.getElementById("resultError").classList.add("hidden");
-          document.getElementById("resultSuccessDesc").textContent = state.appName;
+          document.getElementById("resultSuccessDesc").textContent =
+            state.appName;
         } else {
           installProgressBar.classList.add("error");
           installProgressBar.style.width = "100%";
           const message = result.message || result.status;
-          installStatusText.textContent = state.isUpdate ? t("updateFailed") : t("installFailed");
+          installStatusText.textContent = state.isUpdate
+            ? t("updateFailed")
+            : t("installFailed");
           showStep(4);
           document.getElementById("resultSuccess").classList.add("hidden");
           document.getElementById("resultError").classList.remove("hidden");
@@ -1238,7 +1354,8 @@ function pollInstallStatus() {
       if (pollCount >= 3) {
         clearInterval(state.polling);
         state.polling = null;
-        const installProgressBar = document.getElementById("installProgressBar");
+        const installProgressBar =
+          document.getElementById("installProgressBar");
         const installStatusText = document.getElementById("installStatusText");
         installStatusText.textContent = error.message;
         installProgressBar.classList.add("error");
@@ -1330,8 +1447,7 @@ async function openFileFromPath(filePath) {
         ? `${result.manifest.appname}-${result.manifest.version || "unknown"}.fpk`
         : state.selectedFile.name;
     }
-  } catch (_error) {
-  }
+  } catch (_error) {}
 
   document.getElementById("btnNext1").disabled = false;
   goToStep2();
@@ -1377,11 +1493,15 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingFilePath = null;
       } else if (!isPrimaryWindow) {
         document.body.innerHTML =
-          '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:var(--muted);font-size:14px;">' +
-          t("installing") + ": " + escapeHtml(decodedPath.split("/").pop()) +
+          '<div class="fullscreen-message">' +
+          t("installing") +
+          ": " +
+          escapeHtml(decodedPath.split("/").pop()) +
           "</div>";
         setTimeout(function () {
-          try { window.close(); } catch (e) {}
+          try {
+            window.close();
+          } catch (e) {}
         }, 1500);
       }
     }, 500);
