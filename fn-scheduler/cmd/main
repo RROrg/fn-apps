@@ -8,12 +8,12 @@ SOCKET_PATH="${TRIM_APPDEST}/fn-scheduler.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 # if [ ! -d ${TRIM_APPDEST}/server/.venv ]; then
-#     echo "Creating virtual environment..."
-#     ${PYTHON_BIN} -m venv ${TRIM_APPDEST}/server/.venv
-#     source ${TRIM_APPDEST}/server/.venv/bin/activate
-#     ${PYTHON_BIN} -m pip install -r ${TRIM_APPDEST}/server/requirements.txt
-#     # source ${TRIM_APPDEST}/server/.venv/bin/activate # activate virtual environment
-#     # deactivate                                       # deactivate virtual environment
+#   echo "Creating virtual environment..."
+#   ${PYTHON_BIN} -m venv ${TRIM_APPDEST}/server/.venv
+#   source ${TRIM_APPDEST}/server/.venv/bin/activate
+#   ${PYTHON_BIN} -m pip install -r ${TRIM_APPDEST}/server/requirements.txt
+#   # source ${TRIM_APPDEST}/server/.venv/bin/activate # activate virtual environment
+#   # deactivate                                       # deactivate virtual environment
 # fi
 
 CMD=(

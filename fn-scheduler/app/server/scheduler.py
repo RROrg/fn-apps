@@ -1,7 +1,13 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Ing <https://github.com/wjz304>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
 
 """Lightweight scheduler backend with REST API and static file hosting."""
+
 from __future__ import annotations
 
 import argparse
@@ -48,7 +54,9 @@ DB_LATEST_VERSION = 4
 TASK_TIMEOUT = int(os.environ.get("SCHEDULER_TASK_TIMEOUT", "900"))
 CONDITION_TIMEOUT = int(os.environ.get("SCHEDULER_CONDITION_TIMEOUT", "60"))
 MAX_LOOKAHEAD_MINUTES = 60 * 24 * 366  # one leap year
-RESULT_LOG_PREVIEW_LIMIT = int(os.environ.get("SCHEDULER_RESULT_LOG_PREVIEW_LIMIT", "4000"))
+RESULT_LOG_PREVIEW_LIMIT = int(
+    os.environ.get("SCHEDULER_RESULT_LOG_PREVIEW_LIMIT", "4000")
+)
 CONDITION_LOG_PREVIEW_LIMIT = int(
     os.environ.get("SCHEDULER_CONDITION_LOG_PREVIEW_LIMIT", "240")
 )
@@ -120,7 +128,9 @@ def parse_bool_value(value: Any, default: bool = False) -> bool:
     return bool(value)
 
 
-def summarize_log_text(text: Optional[str], limit: int = CONDITION_LOG_PREVIEW_LIMIT) -> str:
+def summarize_log_text(
+    text: Optional[str], limit: int = CONDITION_LOG_PREVIEW_LIMIT
+) -> str:
     normalized = str(text or "").strip().replace("\r\n", "\n").replace("\r", "\n")
     if not normalized:
         return ""
@@ -197,13 +207,17 @@ class SchedulerSettings:
                 with self._lock:
                     self._data = self._sanitize(loaded)
         except Exception as exc:  # pylint: disable=broad-except
-            logger.warning("Failed to load scheduler settings from %s: %s", self.path, exc)
+            logger.warning(
+                "Failed to load scheduler settings from %s: %s", self.path, exc
+            )
 
     def _save(self) -> None:
         settings_dir = os.path.dirname(self.path)
         if settings_dir:
             os.makedirs(settings_dir, exist_ok=True)
-        fd, tmp_path = tempfile.mkstemp(prefix="scheduler-settings-", suffix=".json", dir=settings_dir or None)
+        fd, tmp_path = tempfile.mkstemp(
+            prefix="scheduler-settings-", suffix=".json", dir=settings_dir or None
+        )
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as fp:
                 json.dump(self._data, fp, ensure_ascii=False, indent=2, sort_keys=True)
@@ -348,7 +362,7 @@ def prepare_task_account_context(
 
     target_uid = pw_record.pw_uid
     target_gid = pw_record.pw_gid
-    current_uid = os.geteuid()
+    current_uid = os.geteuid()  # pyright: ignore[reportAttributeAccessIssue]
 
     if current_uid == target_uid:
         return (None, pw_record.pw_dir)
@@ -369,10 +383,10 @@ def prepare_task_account_context(
     groups = sorted(set([target_gid, *supplemental]))
 
     def _changer() -> None:
-        os.setgid(target_gid)
+        os.setgid(target_gid)  # pyright: ignore[reportAttributeAccessIssue]
         if groups:
-            os.setgroups(groups)
-        os.setuid(target_uid)
+            os.setgroups(groups)  # pyright: ignore[reportAttributeAccessIssue]
+        os.setuid(target_uid)  # pyright: ignore[reportAttributeAccessIssue]
 
     return (_changer, pw_record.pw_dir)
 
@@ -511,7 +525,9 @@ class CronExpression:
 
 
 class Database:
-    def __init__(self, path: str, result_retention_per_task: int = RESULT_RETENTION_PER_TASK):
+    def __init__(
+        self, path: str, result_retention_per_task: int = RESULT_RETENTION_PER_TASK
+    ):
         self.path = path
         self.result_retention_per_task = result_retention_per_task
         db_dir = os.path.dirname(path)
@@ -567,8 +583,7 @@ class Database:
                     except sqlite3.OperationalError as exc:
                         if "duplicate column name" not in str(exc).lower():
                             raise
-                cur.execute(
-                    """
+                cur.execute("""
                     UPDATE tasks
                     SET
                         latest_status = (
@@ -598,8 +613,7 @@ class Database:
                     WHERE EXISTS (
                         SELECT 1 FROM task_results WHERE task_results.task_id = tasks.id
                     )
-                    """
-                )
+                    """)
                 cur.execute("PRAGMA user_version=4;")
                 version = 4
             if version < DB_LATEST_VERSION:
@@ -623,8 +637,7 @@ class Database:
                 count = int(row[0]) if row else 0
                 if count == 0:
                     # 兼容 ≤ v1.0.7 升级场景；如果 templates 表不存在，创建之（与 _create_schema 中定义一致）
-                    cur.executescript(
-                        """
+                    cur.executescript("""
                         CREATE TABLE IF NOT EXISTS templates (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             key TEXT NOT NULL UNIQUE,
@@ -633,16 +646,14 @@ class Database:
                             created_at TEXT NOT NULL,
                             updated_at TEXT NOT NULL
                         );
-                        """
-                    )
+                        """)
                     self._conn.commit()
         except Exception:
             logger.exception("Failed to create templates tables")
             pass
 
     def _create_schema(self, cur: sqlite3.Cursor) -> None:
-        cur.executescript(
-            """
+        cur.executescript("""
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
@@ -688,8 +699,7 @@ class Database:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
-            """
-        )
+            """)
 
     def close(self) -> None:
         with self._lock:
@@ -902,7 +912,9 @@ class Database:
         payload = dict(payload)
         existing_is_active = parse_bool_value(existing.get("is_active"), default=True)
         next_trigger_type = payload.get("trigger_type", existing.get("trigger_type"))
-        next_event_type = payload.get("event_type", existing.get("event_type") or EVENT_TYPE_SCRIPT)
+        next_event_type = payload.get(
+            "event_type", existing.get("event_type") or EVENT_TYPE_SCRIPT
+        )
         next_is_active = parse_bool_value(
             payload.get("is_active"), default=existing_is_active
         )
@@ -913,11 +925,7 @@ class Database:
         # 检查 Cron 表达式是否变更，变更则强制 next_run_at 重新计算
         old_expr = existing.get("schedule_expression")
         new_expr = payload.get("schedule_expression", old_expr)
-        if (
-            was_schedule
-            and old_expr != new_expr
-            and new_expr
-        ):
+        if was_schedule and old_expr != new_expr and new_expr:
             payload["next_run_at"] = None  # 让 _prepare_task_payload 自动计算
 
         if is_schedule and (reactivated or not was_schedule):
@@ -937,11 +945,11 @@ class Database:
                 and (payload.get("condition_script") or "").strip()
                 != (existing.get("condition_script") or "").strip()
             )
-            condition_interval_changed = (
-                "condition_interval" in payload
-                and int(payload.get("condition_interval", existing.get("condition_interval", 60)))
-                != int(existing.get("condition_interval", 60))
-            )
+            condition_interval_changed = "condition_interval" in payload and int(
+                payload.get(
+                    "condition_interval", existing.get("condition_interval", 60)
+                )
+            ) != int(existing.get("condition_interval", 60))
             if (
                 reactivated
                 or switched_to_script_event
@@ -1044,7 +1052,7 @@ class Database:
                 task_id, "running", trigger_reason, now, None
             )
             self._conn.commit()
-            return cur.lastrowid
+            return cur.lastrowid or 0
 
     def _update_task_latest_result_locked(
         self,
@@ -1444,6 +1452,8 @@ class TaskRunner(threading.Thread):
         logger.info("Executing task %s (%s)", task_id, self.trigger_reason)
         result_id = self.db.record_result_start(task_id, self.trigger_reason)
         execution_timeout = self.settings.task_timeout or None
+        status: str = "failed"
+        log_text: str = "unknown error"
         try:
             log_text, status = self._execute_script(
                 self.task["script_body"], execution_timeout
@@ -1457,14 +1467,19 @@ class TaskRunner(threading.Thread):
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(
                     "Failed to finalize result %s for task %s: %s",
-                    result_id, task_id, exc, exc_info=True,
+                    result_id,
+                    task_id,
+                    exc,
+                    exc_info=True,
                 )
             try:
                 self.db.update_last_run(task_id)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(
                     "Failed to update last_run for task %s: %s",
-                    task_id, exc, exc_info=True,
+                    task_id,
+                    exc,
+                    exc_info=True,
                 )
 
     def _execute_script(self, script: str, timeout: Optional[int]) -> tuple[str, str]:
@@ -1486,7 +1501,7 @@ class TaskRunner(threading.Thread):
         except TimeoutExpired as exc:
             try:
                 process.kill()  # type: ignore[name-defined]
-                process.communicate()
+                process.communicate()  # type: ignore[name-defined]
             except Exception:
                 pass
             return f"task execution timeout (> {timeout}s): {exc}", "failed"
@@ -1639,7 +1654,9 @@ class TaskRunner(threading.Thread):
 
         for pid in survivors:
             try:
-                os.kill(pid, signal.SIGKILL)
+                os.kill(
+                    pid, signal.SIGKILL  # pyright: ignore[reportAttributeAccessIssue]
+                )
                 killed += 1
             except ProcessLookupError:
                 already_exited += 1
@@ -1831,9 +1848,7 @@ class SchedulerEngine:
                 continue
             finished_at = result.get("finished_at") or result.get("started_at") or "-"
             trigger_reason = result.get("trigger_reason") or "-"
-            reasons.append(
-                f"{dep_label}={status}@{finished_at}[{trigger_reason}]"
-            )
+            reasons.append(f"{dep_label}={status}@{finished_at}[{trigger_reason}]")
         return reasons
 
     def _log_dependency_block(self, task: Dict[str, Any], context: str) -> None:
@@ -1914,7 +1929,9 @@ class SchedulerEngine:
 
 
 class SchedulerContext:
-    def __init__(self, db: Database, engine: SchedulerEngine, settings: SchedulerSettings):
+    def __init__(
+        self, db: Database, engine: SchedulerEngine, settings: SchedulerSettings
+    ):
         self.db = db
         self.engine = engine
         self.settings = settings
@@ -1955,14 +1972,21 @@ class SchedulerHTTPServer(ThreadingHTTPServer):
                     os.unlink(unix_socket_path)
             except Exception:
                 pass
-            uds = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            uds = socket.socket(
+                socket.AF_UNIX,  # pyright: ignore[reportAttributeAccessIssue]
+                socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
+            )
             uds.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             uds.bind(unix_socket_path)
             # let HTTPServer.server_activate perform the listen
             self.socket = uds
-            self.address_family = socket.AF_UNIX
+            self.address_family = (
+                socket.AF_UNIX  # pyright: ignore[reportAttributeAccessIssue]
+            )
             # set a human-readable server_address
-            self.server_address = unix_socket_path
+            self.server_address = (
+                unix_socket_path  # pyright: ignore[reportAttributeAccessIssue]
+            )
             # activate server (calls listen)
             self.server_activate()
         else:
@@ -2350,11 +2374,16 @@ class SchedulerRequestHandler(BaseHTTPRequestHandler):
                 runner = TaskRunner(ctx.db, task, "manual", ctx.settings)
                 runner.start()
                 runners.append(runner)
-                if task.get("trigger_type") == "schedule" and task.get("schedule_expression"):
+                if task.get("trigger_type") == "schedule" and task.get(
+                    "schedule_expression"
+                ):
                     try:
                         ctx.db.schedule_next_run(task_id, task["schedule_expression"])
                     except Exception:
-                        logger.exception("Failed to reschedule task %s after batch manual run", task_id)
+                        logger.exception(
+                            "Failed to reschedule task %s after batch manual run",
+                            task_id,
+                        )
                 result.setdefault("queued", []).append(task_id)
                 continue
 
@@ -2398,16 +2427,16 @@ class SchedulerRequestHandler(BaseHTTPRequestHandler):
                 if reason == "condition"
                 else "dependencies are not met"
             )
-            self._json_response(
-                {"error": error_message}, status=HTTPStatus.BAD_REQUEST
-            )
+            self._json_response({"error": error_message}, status=HTTPStatus.BAD_REQUEST)
             return
         TaskRunner(ctx.db, task, "manual", ctx.settings).start()
         if task.get("trigger_type") == "schedule" and task.get("schedule_expression"):
             try:
                 ctx.db.schedule_next_run(task_id, task["schedule_expression"])
             except Exception:
-                logger.exception("Failed to reschedule task %s after manual run", task_id)
+                logger.exception(
+                    "Failed to reschedule task %s after manual run", task_id
+                )
         self._json_response({"queued": True})
 
     def _stop_task(self, task_id: int) -> None:
@@ -2699,7 +2728,7 @@ class SchedulerRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def log_message(self, format_: str, *args: Any) -> None:  # noqa: D401
+    def log_message(self, format: str, *args: Any) -> None:
         if not LOG_POLLING_REQUESTS:
             request_line = str(args[0]) if args else ""
             try:
@@ -2727,7 +2756,7 @@ class SchedulerRequestHandler(BaseHTTPRequestHandler):
             addr = ca[0]
         else:
             addr = ca or "-"
-        logger.info("%s - - %s", addr, format_ % args)
+        logger.info("%s - - %s", addr, format % args)
 
     def _require_auth(self) -> bool:
         # Authentication handled by front-end/proxy; backend accepts requests.
@@ -2831,12 +2860,19 @@ def run_server(
 ) -> None:
     db_path = strip_wrapping_quotes(db_path) or DEFAULT_DB_PATH
     base_path = strip_wrapping_quotes(base_path) or "/"
-    www_root = strip_wrapping_quotes(
-        www_root or os.environ.get("SCHEDULER_WWW_ROOT", DEFAULT_WWW_ROOT)
-    ) or DEFAULT_WWW_ROOT
-    settings_path = strip_wrapping_quotes(settings_path) or strip_wrapping_quotes(
-        os.environ.get("SCHEDULER_SETTINGS_PATH", DEFAULT_SETTINGS_PATH)
-    ) or DEFAULT_SETTINGS_PATH
+    www_root = (
+        strip_wrapping_quotes(
+            www_root or os.environ.get("SCHEDULER_WWW_ROOT", DEFAULT_WWW_ROOT)
+        )
+        or DEFAULT_WWW_ROOT
+    )
+    settings_path = (
+        strip_wrapping_quotes(settings_path)
+        or strip_wrapping_quotes(
+            os.environ.get("SCHEDULER_SETTINGS_PATH", DEFAULT_SETTINGS_PATH)
+        )
+        or DEFAULT_SETTINGS_PATH
+    )
 
     settings = SchedulerSettings(settings_path)
     database = Database(

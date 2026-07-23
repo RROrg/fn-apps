@@ -2,12 +2,13 @@ export default {
   "zh-CN": {
     "app.title": "任务计划",
     "app.subtitle": "管理定时与条件触发的脚本任务",
-    "about": "关于",
-    "close": "关闭",
-    "aboutDeclaration": "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
-    "communitySupport": "社区支持",
-    "sponsorSupport": "赞助支持",
-    "join": "点击加入",
+    about: "关于",
+    close: "关闭",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    communitySupport: "社区支持",
+    sponsorSupport: "赞助支持",
+    join: "点击加入",
     "btn.refresh": "刷新",
     "btn.settings": "设置",
     "btn.create": "新建",
@@ -45,7 +46,8 @@ export default {
     "event.interval_label": "检测间隔（秒）",
     "btn.apply_cron": "填入 Cron",
     "cron.current_expression": "当前表达式：",
-    "cron.hint": "顺序：分钟 小时 日 月 周；自定义字段可使用数字、*、/、,、-，为空时默认 *",
+    "cron.hint":
+      "顺序：分钟 小时 日 月 周；自定义字段可使用数字、*、/、,、-，为空时默认 *",
     "cron.placeholder": "例如：*/5 * * * *",
     "cron.generator_subtitle": "通过选择常见规则快速生成 Cron 表达式",
     "cron.field.minute": "分钟",
@@ -94,9 +96,11 @@ export default {
     "template.script_label": "脚本内容",
     "validation.required_fields": "请完整填写必填字段",
     "validation.accounts_loading": "账号列表加载中，请稍后重试",
-    "validation.no_accounts_posix": "未找到可用账号，请确认系统组 0 / 1000 / 1001 中存在账号",
+    "validation.no_accounts_posix":
+      "未找到可用账号，请确认系统组 0 / 1000 / 1001 中存在账号",
     "validation.no_default_account": "未能检测到默认账号，请重新登录或刷新页面",
-    "validation.account_not_in_group": "请选择属于系统组 0 / 1000 / 1001 的账号",
+    "validation.account_not_in_group":
+      "请选择属于系统组 0 / 1000 / 1001 的账号",
     "validation.cron_required": "Cron 表达式不能为空",
     "validation.script_required": "请填写条件脚本",
     "msg.task_updated": "任务已更新",
@@ -111,20 +115,23 @@ export default {
     "filepicker.import_to_local": "从本地导入",
     "filepicker.export_selected": "导出到该文件",
     "filepicker.export_to_local": "导出到本地",
-    "loading": "加载中...",
-    "loading_accounts": "正在获取可用账号...",
-    "no_accounts": "无可用账号",
-    "not_available": "暂不可用",
+    loading: "加载中...",
+    loading_accounts: "正在获取可用账号...",
+    no_accounts: "无可用账号",
+    not_available: "暂不可用",
     "account.not_found_posix": "未找到属于系统组 0 / 1000 / 1001 的账号",
-    "account.windows_not_detected": "Windows 环境未能检测到当前用户，请重新登录后再试",
+    "account.windows_not_detected":
+      "Windows 环境未能检测到当前用户，请重新登录后再试",
     "label.current_logged_in_account": "当前登录账号",
     "label.trigger": "触发：",
     "placeholder.needs_reselect": "（需重新选择）",
-    "error.task_account_not_allowed": "当前任务账号 {acc} 不在允许范围，请重新选择",
+    "error.task_account_not_allowed":
+      "当前任务账号 {acc} 不在允许范围，请重新选择",
     "error.load_accounts": "加载账号失败：{err}",
     "cron.invalid": "表达式无效",
     "cron.preview": "执行时间预览：",
-    "cron.search_exceeded": "已超出搜索范围（{months} 个月），可能在更远时间触发",
+    "cron.search_exceeded":
+      "已超出搜索范围（{months} 个月），可能在更远时间触发",
     "list.sep": "；",
     "error.load_tasks": "加载任务失败：{err}",
     "field.pre_tasks": "前置任务",
@@ -143,9 +150,11 @@ export default {
     "modal.settings.title": "运行设置",
     "modal.settings.subtitle": "调整结果保留与执行超时等全局参数",
     "settings.group.results.title": "结果与日志",
-    "settings.group.results.subtitle": "控制执行记录保留数量，以及结果列表默认显示多少日志内容。",
+    "settings.group.results.subtitle":
+      "控制执行记录保留数量，以及结果列表默认显示多少日志内容。",
     "settings.group.execution.title": "执行与超时",
-    "settings.group.execution.subtitle": "控制任务脚本和条件脚本的最长执行时间，避免任务长时间卡住。",
+    "settings.group.execution.subtitle":
+      "控制任务脚本和条件脚本的最长执行时间，避免任务长时间卡住。",
     "btn.clear": "清空",
     "modal.templates.title": "模板管理",
     "modal.templates.subtitle": "增加、编辑、删除模板，或导入/导出为 JSON",
@@ -211,13 +220,17 @@ export default {
     "msg.unchanged_count": "{n} 个任务状态本已满足",
     "msg.no_tasks_completed": "没有任务完成{verb}",
     "field.settings.result_retention": "结果保留条数",
-    "field.settings.result_retention_hint": "每个任务最多保留多少条已完成结果，0 表示不限制。",
+    "field.settings.result_retention_hint":
+      "每个任务最多保留多少条已完成结果，0 表示不限制。",
     "field.settings.task_timeout": "任务超时时间（秒）",
-    "field.settings.task_timeout_hint": "脚本执行超过该时间会被终止，0 表示不限制。",
+    "field.settings.task_timeout_hint":
+      "脚本执行超过该时间会被终止，0 表示不限制。",
     "field.settings.condition_timeout": "条件脚本超时时间（秒）",
-    "field.settings.condition_timeout_hint": "条件脚本执行超过该时间会被终止，最小 1 秒。",
+    "field.settings.condition_timeout_hint":
+      "条件脚本执行超过该时间会被终止，最小 1 秒。",
     "field.settings.result_preview_limit": "结果预览长度",
-    "field.settings.result_preview_limit_hint": "前端结果列表默认展示的日志摘要长度，最小 256 字符。",
+    "field.settings.result_preview_limit_hint":
+      "前端结果列表默认展示的日志摘要长度，最小 256 字符。",
     "msg.settings_saved": "设置已保存",
     "msg.settings_saved_pruned": "设置已保存，并清理了 {n} 条旧结果",
     "confirm.clear_results": "确认清空当前任务的全部执行记录？",
@@ -227,17 +240,18 @@ export default {
     "results.collapse_log": "收起完整日志",
     "results.loading_log": "加载中...",
     "results.log_truncated": "日志较大，已显示前 {limit} 个字符，总长度 {n}。",
-    "results.log_full": "当前已显示完整日志。"
+    "results.log_full": "当前已显示完整日志。",
   },
-  "en": {
+  en: {
     "app.title": "Scheduler",
     "app.subtitle": "Manage scheduled and condition-triggered script tasks",
-    "about": "About",
-    "close": "Close",
-    "aboutDeclaration": "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
-    "communitySupport": "Community Support",
-    "sponsorSupport": "Sponsor Support",
-    "join": "Join",
+    about: "About",
+    close: "Close",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    communitySupport: "Community Support",
+    sponsorSupport: "Sponsor Support",
+    join: "Join",
     "btn.refresh": "Refresh",
     "btn.settings": "Settings",
     "btn.create": "Create",
@@ -265,7 +279,8 @@ export default {
     "trigger.condition": "Condition",
     "trigger.manual": "Manual",
     "field.cron": "Cron expression",
-    "field.cron_hint": "Standard 5-field cron: minute hour day month weekday (weekday 0=Mon)",
+    "field.cron_hint":
+      "Standard 5-field cron: minute hour day month weekday (weekday 0=Mon)",
     "btn.cron_generator": "Generator",
     "field.event_type": "Event Type",
     "field.event_hint": "System boot/shutdown triggers on service start/stop",
@@ -275,9 +290,11 @@ export default {
     "event.interval_label": "Check interval (seconds)",
     "btn.apply_cron": "Apply Cron",
     "cron.current_expression": "Current expression:",
-    "cron.hint": "Order: minute hour day month weekday; use numbers, *, /, , and -; default *",
+    "cron.hint":
+      "Order: minute hour day month weekday; use numbers, *, /, , and -; default *",
     "cron.placeholder": "e.g.: */5 * * * *",
-    "cron.generator_subtitle": "Quickly build cron expressions by selecting common rules",
+    "cron.generator_subtitle":
+      "Quickly build cron expressions by selecting common rules",
     "cron.field.minute": "Minute",
     "cron.field.hour": "Hour",
     "cron.field.day": "Day (date)",
@@ -336,24 +353,32 @@ export default {
     "btn.save": "Save",
     "modal.results.title": "Execution Results",
     "modal.settings.title": "Runtime Settings",
-    "modal.settings.subtitle": "Adjust global limits such as retained results and execution timeouts",
+    "modal.settings.subtitle":
+      "Adjust global limits such as retained results and execution timeouts",
     "settings.group.results.title": "Results and logs",
-    "settings.group.results.subtitle": "Control how many execution records are kept and how much log content is shown by default.",
+    "settings.group.results.subtitle":
+      "Control how many execution records are kept and how much log content is shown by default.",
     "settings.group.execution.title": "Execution and timeouts",
-    "settings.group.execution.subtitle": "Control how long task and condition scripts may run before being stopped.",
+    "settings.group.execution.subtitle":
+      "Control how long task and condition scripts may run before being stopped.",
     "btn.clear": "Clear",
     "modal.templates.title": "Template Manager",
-    "modal.templates.subtitle": "Add, edit, delete templates or import/export JSON",
+    "modal.templates.subtitle":
+      "Add, edit, delete templates or import/export JSON",
     "btn.add": "Add",
     "btn.preview": "Preview",
     "btn.import": "Import JSON",
     "btn.export": "Export JSON",
     "cron.generator_title": "Cron Generator",
     "validation.required_fields": "Please fill required fields",
-    "validation.accounts_loading": "Account list is loading, please try again later",
-    "validation.no_accounts_posix": "No available accounts found; ensure system groups 0 / 1000 / 1001 contain accounts",
-    "validation.no_default_account": "Default account not detected, please re-login or refresh the page",
-    "validation.account_not_in_group": "Please select an account in system group 0 / 1000 / 1001",
+    "validation.accounts_loading":
+      "Account list is loading, please try again later",
+    "validation.no_accounts_posix":
+      "No available accounts found; ensure system groups 0 / 1000 / 1001 contain accounts",
+    "validation.no_default_account":
+      "Default account not detected, please re-login or refresh the page",
+    "validation.account_not_in_group":
+      "Please select an account in system group 0 / 1000 / 1001",
     "validation.cron_required": "Cron expression is required",
     "validation.script_required": "Please provide a condition script",
     "msg.task_updated": "Task updated",
@@ -368,20 +393,24 @@ export default {
     "filepicker.import_to_local": "Import from local",
     "filepicker.export_selected": "Export to this path",
     "filepicker.export_to_local": "Export to local",
-    "loading": "Loading...",
-    "loading_accounts": "Fetching available accounts...",
-    "no_accounts": "No accounts available",
-    "not_available": "Not available",
-    "account.not_found_posix": "No accounts found in system groups 0 / 1000 / 1001",
-    "account.windows_not_detected": "Windows environment could not detect the current user; please re-login",
+    loading: "Loading...",
+    loading_accounts: "Fetching available accounts...",
+    no_accounts: "No accounts available",
+    not_available: "Not available",
+    "account.not_found_posix":
+      "No accounts found in system groups 0 / 1000 / 1001",
+    "account.windows_not_detected":
+      "Windows environment could not detect the current user; please re-login",
     "label.current_logged_in_account": "Current logged-in account",
     "label.trigger": "Trigger:",
     "placeholder.needs_reselect": "(needs reselect)",
-    "error.task_account_not_allowed": "Current task account {acc} is not allowed, please re-select",
+    "error.task_account_not_allowed":
+      "Current task account {acc} is not allowed, please re-select",
     "error.load_accounts": "Failed to load accounts: {err}",
     "cron.invalid": "Invalid expression",
     "cron.preview": "Execution preview:",
-    "cron.search_exceeded": "Search range exceeded ({months} months), next occurrences may be further in time",
+    "cron.search_exceeded":
+      "Search range exceeded ({months} months), next occurrences may be further in time",
     "list.sep": "; ",
     "error.load_tasks": "Failed to load tasks: {err}",
     "status.pretask_failed": "Pretask failed",
@@ -405,11 +434,14 @@ export default {
     "template.created": "Template created",
     "template.deleted": "Template deleted",
     "error.task_name_exists": "Task name already exists, please choose another",
-    "error.template_key_exists": "Template key already exists, please choose another",
-    "error.database_integrity": "Database integrity error, please check your input",
+    "error.template_key_exists":
+      "Template key already exists, please choose another",
+    "error.database_integrity":
+      "Database integrity error, please check your input",
     "error.save_template": "Save template failed: {err}",
     "error.delete_template": "Delete failed: {err}",
-    "file.import_result": "Import finished: inserted {inserted}, updated {updated}",
+    "file.import_result":
+      "Import finished: inserted {inserted}, updated {updated}",
     "file.import_failed": "Import failed: {err}",
     "file.save_result": "Saved to {path}",
     "file.save_local_result": "Saved to local",
@@ -441,22 +473,28 @@ export default {
     "msg.unchanged_count": "{n} tasks already satisfied",
     "msg.no_tasks_completed": "No tasks completed ({verb})",
     "field.settings.result_retention": "Retained results",
-    "field.settings.result_retention_hint": "Maximum finished results kept per task; 0 means unlimited.",
+    "field.settings.result_retention_hint":
+      "Maximum finished results kept per task; 0 means unlimited.",
     "field.settings.task_timeout": "Task timeout (seconds)",
-    "field.settings.task_timeout_hint": "A script running longer than this will be terminated; 0 means unlimited.",
+    "field.settings.task_timeout_hint":
+      "A script running longer than this will be terminated; 0 means unlimited.",
     "field.settings.condition_timeout": "Condition script timeout (seconds)",
-    "field.settings.condition_timeout_hint": "A condition script running longer than this will be terminated; minimum 1 second.",
+    "field.settings.condition_timeout_hint":
+      "A condition script running longer than this will be terminated; minimum 1 second.",
     "field.settings.result_preview_limit": "Result preview length",
-    "field.settings.result_preview_limit_hint": "Default log preview length shown in the result list; minimum 256 characters.",
+    "field.settings.result_preview_limit_hint":
+      "Default log preview length shown in the result list; minimum 256 characters.",
     "msg.settings_saved": "Settings saved",
     "msg.settings_saved_pruned": "Settings saved and pruned {n} old results",
-    "confirm.clear_results": "Clear all execution records for the current task?",
+    "confirm.clear_results":
+      "Clear all execution records for the current task?",
     "msg.results_cleared": "Execution records cleared",
     "results.no_records": "No execution records",
     "results.expand_log": "Expand full log",
     "results.collapse_log": "Collapse full log",
     "results.loading_log": "Loading...",
-    "results.log_truncated": "Large log: showing the first {limit} characters out of {n}.",
-    "results.log_full": "Showing the full log."
-  }
+    "results.log_truncated":
+      "Large log: showing the first {limit} characters out of {n}.",
+    "results.log_full": "Showing the full log.",
+  },
 };

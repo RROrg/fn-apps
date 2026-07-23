@@ -18,23 +18,27 @@ const state = {
 function _t(key, vars) {
   try {
     const fn = window.__i18n && window.__i18n.translate;
-    let msg = typeof fn === 'function' ? fn(key) : key;
-    if (vars && typeof vars === 'object') {
-      Object.keys(vars).forEach(k => {
-        msg = msg.replace(new RegExp(`\\{${k}\\}`, 'g'), String(vars[k]));
+    let msg = typeof fn === "function" ? fn(key) : key;
+    if (vars && typeof vars === "object") {
+      Object.keys(vars).forEach((k) => {
+        msg = msg.replace(new RegExp(`\\{${k}\\}`, "g"), String(vars[k]));
       });
     }
     return msg;
-  } catch (e) { return key; }
+  } catch (e) {
+    return key;
+  }
 }
 
 // Map common backend error messages to localized, user-friendly messages
 function mapApiErrorMessage(raw) {
   if (!raw) return null;
   const s = String(raw).toLowerCase();
-  if (s.includes('task name already exists')) return _t('error.task_name_exists');
-  if (s.includes('template key already exists')) return _t('error.template_key_exists');
-  if (s.includes('database integrity')) return _t('error.database_integrity');
+  if (s.includes("task name already exists"))
+    return _t("error.task_name_exists");
+  if (s.includes("template key already exists"))
+    return _t("error.template_key_exists");
+  if (s.includes("database integrity")) return _t("error.database_integrity");
   return null;
 }
 
@@ -108,18 +112,18 @@ async function loadTemplates() {
 }
 
 function renderTemplateOptions() {
-  const select = document.getElementById('templateSelect');
+  const select = document.getElementById("templateSelect");
   if (!select) return;
   // 保留首项 "无模板（自定义）"
-  const current = select.value || '';
-  select.innerHTML = '';
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = _t('template.placeholder');
+  const current = select.value || "";
+  select.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = _t("template.placeholder");
   select.appendChild(placeholder);
   Object.keys(taskTemplates || {}).forEach((key) => {
     const tpl = taskTemplates[key];
-    const opt = document.createElement('option');
+    const opt = document.createElement("option");
     opt.value = key;
     opt.textContent = tpl.name || key;
     select.appendChild(opt);
@@ -137,9 +141,9 @@ const templatesState = {
 
 function updateTemplateActionState() {
   const hasSelection = Boolean(templatesState.selectedId);
-  const editButton = document.getElementById('btnEditTemplate');
-  const deleteButton = document.getElementById('btnDeleteTemplate');
-  const previewButton = document.getElementById('btnPreviewTemplate');
+  const editButton = document.getElementById("btnEditTemplate");
+  const deleteButton = document.getElementById("btnDeleteTemplate");
+  const previewButton = document.getElementById("btnPreviewTemplate");
   if (editButton) editButton.disabled = !hasSelection;
   if (deleteButton) deleteButton.disabled = !hasSelection;
   if (previewButton) previewButton.disabled = !hasSelection;
@@ -155,36 +159,36 @@ async function refreshTemplatesList() {
     }
     renderTemplatesTable();
   } catch (err) {
-    showToast(_t('file.import_failed', { err: err.message }), true);
+    showToast(_t("file.import_failed", { err: err.message }), true);
   }
 }
 
 function renderTemplatesTable() {
-  const tbody = document.querySelector('#templatesTable tbody');
+  const tbody = document.querySelector("#templatesTable tbody");
   if (!tbody) {
     updateTemplateActionState();
     return;
   }
-  tbody.innerHTML = '';
+  tbody.innerHTML = "";
   templatesState.templates.forEach((t) => {
-    const tr = document.createElement('tr');
+    const tr = document.createElement("tr");
     tr.dataset.id = t.id;
-    tr.dataset.key = t.key || '';
-    tr.innerHTML = `<td>${escapeHtml(t.key || '')}</td><td>${escapeHtml(t.name || '')}</td><td>${escapeHtml((t.script_body || '').split('\n')[0] || '')}</td>`;
+    tr.dataset.key = t.key || "";
+    tr.innerHTML = `<td>${escapeHtml(t.key || "")}</td><td>${escapeHtml(t.name || "")}</td><td>${escapeHtml((t.script_body || "").split("\n")[0] || "")}</td>`;
     tr.tabIndex = 0;
     if (String(templatesState.selectedId) === String(t.id)) {
-      tr.classList.add('selected');
-      tr.setAttribute('aria-selected', 'true');
+      tr.classList.add("selected");
+      tr.setAttribute("aria-selected", "true");
     } else {
-      tr.setAttribute('aria-selected', 'false');
+      tr.setAttribute("aria-selected", "false");
     }
     tbody.appendChild(tr);
   });
   // click selection
-  const tbodyEl = document.querySelector('#templatesTable tbody');
+  const tbodyEl = document.querySelector("#templatesTable tbody");
   if (tbodyEl) {
     tbodyEl.onclick = (ev) => {
-      const row = ev.target.closest('tr');
+      const row = ev.target.closest("tr");
       if (!row) return;
       const id = Number(row.dataset.id);
       if (templatesState.selectedId === id) {
@@ -195,34 +199,40 @@ function renderTemplatesTable() {
       renderTemplatesTable();
     };
     tbodyEl.ondblclick = (ev) => {
-      const row = ev.target.closest('tr');
+      const row = ev.target.closest("tr");
       if (!row) return;
       const id = Number(row.dataset.id);
-      const tpl = templatesState.templates.find(t => Number(t.id) === Number(id));
+      const tpl = templatesState.templates.find(
+        (t) => Number(t.id) === Number(id),
+      );
       if (tpl) openTemplateEditModal(tpl);
     };
     tbodyEl.onkeydown = (ev) => {
-      const row = ev.target.closest('tr');
+      const row = ev.target.closest("tr");
       if (!row) return;
       const id = Number(row.dataset.id);
       // 空格或回车切换选择，回车为编辑
-      if (ev.key === ' ' || ev.key === 'Spacebar') {
+      if (ev.key === " " || ev.key === "Spacebar") {
         ev.preventDefault();
         if (templatesState.selectedId === id) templatesState.selectedId = null;
         else templatesState.selectedId = id;
         renderTemplatesTable();
         return;
       }
-      if (ev.key === 'Enter') {
+      if (ev.key === "Enter") {
         ev.preventDefault();
-        const tpl = templatesState.templates.find(t => Number(t.id) === Number(id));
+        const tpl = templatesState.templates.find(
+          (t) => Number(t.id) === Number(id),
+        );
         if (tpl) openTemplateEditModal(tpl);
       }
     };
   }
   // 尝试将焦点移到被选中的行以便用户看到高亮
   if (templatesState.selectedId) {
-    const selRow = document.querySelector(`#templatesTable tbody tr[data-id="${templatesState.selectedId}"]`);
+    const selRow = document.querySelector(
+      `#templatesTable tbody tr[data-id="${templatesState.selectedId}"]`,
+    );
     if (selRow) selRow.focus();
   }
   updateTemplateActionState();
@@ -230,41 +240,41 @@ function renderTemplatesTable() {
 
 function openTemplatesModal() {
   refreshTemplatesList();
-  const modal = document.getElementById('templatesModal');
+  const modal = document.getElementById("templatesModal");
   if (modal) openModal(modal);
 }
 
 function openTemplateEditModal(editing = null) {
   templatesState.editingId = editing ? editing.id : null;
-  const modal = document.getElementById('templateEditModal');
-  const form = document.getElementById('templateForm');
-  const title = document.getElementById('templateEditTitle');
+  const modal = document.getElementById("templateEditModal");
+  const form = document.getElementById("templateForm");
+  const title = document.getElementById("templateEditTitle");
   if (!form || !modal) return;
   form.reset();
   if (editing) {
-    title.textContent = `${_t('btn.edit')}：${editing.name}`;
-    form.key.value = editing.key || '';
-    form.name.value = editing.name || '';
-    form.script_body.value = editing.script_body || '';
+    title.textContent = `${_t("btn.edit")}：${editing.name}`;
+    form.key.value = editing.key || "";
+    form.name.value = editing.name || "";
+    form.script_body.value = editing.script_body || "";
   } else {
-    title.textContent = _t('btn.add');
+    title.textContent = _t("btn.add");
   }
   openModal(modal);
 }
 
 function openTemplatePreview(tpl) {
-  const modal = document.getElementById('templatePreviewModal');
-  const subtitle = document.getElementById('templatePreviewSubtitle');
-  const content = document.getElementById('templatePreviewContent');
+  const modal = document.getElementById("templatePreviewModal");
+  const subtitle = document.getElementById("templatePreviewSubtitle");
+  const content = document.getElementById("templatePreviewContent");
   if (!modal || !content) return;
-  subtitle.textContent = tpl ? `${tpl.key || ''} · ${tpl.name || ''}` : '';
-  content.textContent = tpl ? (tpl.script_body || '') : '';
+  subtitle.textContent = tpl ? `${tpl.key || ""} · ${tpl.name || ""}` : "";
+  content.textContent = tpl ? tpl.script_body || "" : "";
   openModal(modal);
 }
 
 async function saveTemplateFromForm(ev) {
   ev.preventDefault();
-  const form = document.getElementById('templateForm');
+  const form = document.getElementById("templateForm");
   if (!form) return;
   const data = {
     key: form.key.value.trim(),
@@ -274,36 +284,41 @@ async function saveTemplateFromForm(ev) {
   try {
     if (templatesState.editingId) {
       await api.updateTemplate(templatesState.editingId, data);
-      showToast(_t('template.updated'));
+      showToast(_t("template.updated"));
     } else {
       await api.createTemplate(data);
-      showToast(_t('template.created'));
+      showToast(_t("template.created"));
     }
-    closeModal(document.getElementById('templateEditModal'));
+    closeModal(document.getElementById("templateEditModal"));
     refreshTemplatesList();
     await loadTemplates();
   } catch (err) {
-    showToast(_t('error.save_template', { err: err.message }), true);
+    showToast(_t("error.save_template", { err: err.message }), true);
   }
 }
 
 async function deleteSelectedTemplate() {
   const id = templatesState.selectedId;
-  if (!id) { showToast(_t('prompt.select_template')); return; }
-  if (!(await showConfirm(_t('confirm.delete_template')))) { return; }
+  if (!id) {
+    showToast(_t("prompt.select_template"));
+    return;
+  }
+  if (!(await showConfirm(_t("confirm.delete_template")))) {
+    return;
+  }
   try {
     await api.deleteTemplate(id);
     templatesState.selectedId = null;
     refreshTemplatesList();
     await loadTemplates();
-    showToast(_t('template.deleted'));
+    showToast(_t("template.deleted"));
   } catch (err) {
-    showToast(_t('error.delete_template', { err: err.message }), true);
+    showToast(_t("error.delete_template", { err: err.message }), true);
   }
 }
 
 function bindTemplateImportFile() {
-  const fileInput = document.getElementById('templateImportFile');
+  const fileInput = document.getElementById("templateImportFile");
   if (!fileInput) return;
   fileInput.onchange = async () => {
     const f = fileInput.files && fileInput.files[0];
@@ -311,104 +326,115 @@ function bindTemplateImportFile() {
     try {
       const text = await f.text();
       const obj = JSON.parse(text);
-      if (typeof obj !== 'object') throw new Error(_t('file.invalid_format'));
+      if (typeof obj !== "object") throw new Error(_t("file.invalid_format"));
       const resp = await api.importTemplates(obj);
-      showToast(_t('file.import_result', { inserted: resp.imported.inserted, updated: resp.imported.updated }));
+      showToast(
+        _t("file.import_result", {
+          inserted: resp.imported.inserted,
+          updated: resp.imported.updated,
+        }),
+      );
       refreshTemplatesList();
       await loadTemplates();
     } catch (err) {
-      showToast(_t('file.import_failed', { err: err.message }), true);
+      showToast(_t("file.import_failed", { err: err.message }), true);
     } finally {
-      fileInput.value = '';
+      fileInput.value = "";
     }
   };
 }
 
 function bindTaskTemplateSelection() {
-  const templateSelect = document.getElementById('templateSelect');
+  const templateSelect = document.getElementById("templateSelect");
   if (!templateSelect) {
     return;
   }
 
-  templateSelect.addEventListener('change', function () {
+  templateSelect.addEventListener("change", function () {
     const templateKey = this.value;
     if (templateKey && taskTemplates[templateKey]) {
       const template = taskTemplates[templateKey];
       elements.taskForm.script_body.value = template.script_body;
-      showToast(_t('msg.template_applied', { name: template.name }));
+      showToast(_t("msg.template_applied", { name: template.name }));
     }
   });
 }
 
 function bindTemplateManagementEventListeners() {
-  const manageButton = document.getElementById('btnManageTemplates');
+  const manageButton = document.getElementById("btnManageTemplates");
   if (manageButton) {
-    manageButton.addEventListener('click', openTemplatesModal);
+    manageButton.addEventListener("click", openTemplatesModal);
   }
 
-  const addTemplateButton = document.getElementById('btnAddTemplate');
+  const addTemplateButton = document.getElementById("btnAddTemplate");
   if (addTemplateButton) {
-    addTemplateButton.addEventListener('click', () => openTemplateEditModal(null));
+    addTemplateButton.addEventListener("click", () =>
+      openTemplateEditModal(null),
+    );
   }
 
-  const editTemplateButton = document.getElementById('btnEditTemplate');
+  const editTemplateButton = document.getElementById("btnEditTemplate");
   if (editTemplateButton) {
-    editTemplateButton.addEventListener('click', () => {
+    editTemplateButton.addEventListener("click", () => {
       const id = templatesState.selectedId;
       if (!id) {
-        showToast(_t('prompt.select_template_to_edit'));
+        showToast(_t("prompt.select_template_to_edit"));
         return;
       }
-      const template = templatesState.templates.find((item) => Number(item.id) === Number(id));
+      const template = templatesState.templates.find(
+        (item) => Number(item.id) === Number(id),
+      );
       if (!template) {
-        showToast(_t('error.template_not_found'));
+        showToast(_t("error.template_not_found"));
         return;
       }
       openTemplateEditModal(template);
     });
   }
 
-  const deleteTemplateButton = document.getElementById('btnDeleteTemplate');
+  const deleteTemplateButton = document.getElementById("btnDeleteTemplate");
   if (deleteTemplateButton) {
-    deleteTemplateButton.addEventListener('click', deleteSelectedTemplate);
+    deleteTemplateButton.addEventListener("click", deleteSelectedTemplate);
   }
 
-  const exportTemplatesButton = document.getElementById('btnExportTemplates');
+  const exportTemplatesButton = document.getElementById("btnExportTemplates");
   if (exportTemplatesButton) {
-    exportTemplatesButton.addEventListener('click', async () => {
+    exportTemplatesButton.addEventListener("click", async () => {
       const mapping = await api.exportTemplates();
       const content = JSON.stringify(mapping, null, 2);
-      openServerFilePicker('/', { mode: 'save', content });
+      openServerFilePicker("/", { mode: "save", content });
     });
   }
 
-  const importTemplatesButton = document.getElementById('btnImportTemplates');
+  const importTemplatesButton = document.getElementById("btnImportTemplates");
   if (importTemplatesButton) {
-    importTemplatesButton.addEventListener('click', () => {
-      openServerFilePicker('/');
+    importTemplatesButton.addEventListener("click", () => {
+      openServerFilePicker("/");
     });
   }
 
-  const previewTemplateButton = document.getElementById('btnPreviewTemplate');
+  const previewTemplateButton = document.getElementById("btnPreviewTemplate");
   if (previewTemplateButton) {
-    previewTemplateButton.addEventListener('click', () => {
+    previewTemplateButton.addEventListener("click", () => {
       const id = templatesState.selectedId;
       if (!id) {
-        showToast(_t('prompt.select_template_to_preview'));
+        showToast(_t("prompt.select_template_to_preview"));
         return;
       }
-      const template = templatesState.templates.find((item) => Number(item.id) === Number(id));
+      const template = templatesState.templates.find(
+        (item) => Number(item.id) === Number(id),
+      );
       if (!template) {
-        showToast(_t('error.template_not_found'));
+        showToast(_t("error.template_not_found"));
         return;
       }
       openTemplatePreview(template);
     });
   }
 
-  const templateForm = document.getElementById('templateForm');
+  const templateForm = document.getElementById("templateForm");
   if (templateForm) {
-    templateForm.addEventListener('submit', saveTemplateFromForm);
+    templateForm.addEventListener("submit", saveTemplateFromForm);
   }
 
   bindTemplateImportFile();
@@ -441,11 +467,17 @@ CRON_FIELDS.forEach((field) => {
 });
 
 const statusMap = {
-  running: { label: 'status.running', className: "status-running" },
-  success: { label: 'status.success', className: "status-success" },
-  failed: { label: 'status.failed', className: "status-failed" },
-  condition_failed: { label: 'status.condition_failed', className: "status-condition-failed" },
-  pretask_failed: { label: 'status.pretask_failed', className: "status-pretask-failed" },
+  running: { label: "status.running", className: "status-running" },
+  success: { label: "status.success", className: "status-success" },
+  failed: { label: "status.failed", className: "status-failed" },
+  condition_failed: {
+    label: "status.condition_failed",
+    className: "status-condition-failed",
+  },
+  pretask_failed: {
+    label: "status.pretask_failed",
+    className: "status-pretask-failed",
+  },
 };
 
 const taskStatusPriority = {
@@ -470,9 +502,11 @@ function getTaskSortPriority(task) {
 }
 
 function getTaskTriggerLabel(task) {
-  let triggerLabel = _t(triggerMap[task.trigger_type] || task.trigger_type || "");
+  let triggerLabel = _t(
+    triggerMap[task.trigger_type] || task.trigger_type || "",
+  );
   if (task.trigger_type === "event") {
-    const subtype = getEventLabel(task.event_type) || _t('trigger.event');
+    const subtype = getEventLabel(task.event_type) || _t("trigger.event");
     triggerLabel = `${triggerLabel} · ${subtype}`;
   }
   return triggerLabel;
@@ -485,7 +519,9 @@ function getTaskSortValue(task, key) {
     case "name":
       return String(task.name || "");
     case "next_run": {
-      const value = task.next_run_at ? Date.parse(task.next_run_at) : Number.NaN;
+      const value = task.next_run_at
+        ? Date.parse(task.next_run_at)
+        : Number.NaN;
       return Number.isFinite(value) ? value : null;
     }
     case "trigger":
@@ -546,7 +582,10 @@ function updateSortHeaders() {
   elements.tableHead.querySelectorAll("th[data-sort-key]").forEach((header) => {
     const key = header.dataset.sortKey;
     if (key === state.sort.key) {
-      header.setAttribute("aria-sort", SORT_DIRECTIONS[state.sort.direction] || "none");
+      header.setAttribute(
+        "aria-sort",
+        SORT_DIRECTIONS[state.sort.direction] || "none",
+      );
       return;
     }
     header.setAttribute("aria-sort", "none");
@@ -569,21 +608,21 @@ function toggleTaskSort(sortKey) {
 }
 
 const triggerMap = {
-  schedule: 'trigger.schedule',
-  event: 'trigger.event',
+  schedule: "trigger.schedule",
+  event: "trigger.event",
 };
 
 const eventTypeMap = {
-  script: 'event.script',
-  system_boot: 'event.system_boot',
-  system_shutdown: 'event.system_shutdown',
+  script: "event.script",
+  system_boot: "event.system_boot",
+  system_shutdown: "event.system_shutdown",
 };
 
 // 响应式短标签（用于窄屏显示），存放为 i18n 键
 const eventTypeShortMap = {
-  script: 'event.short.script',
-  system_boot: 'event.short.system_boot',
-  system_shutdown: 'event.short.system_shutdown',
+  script: "event.short.script",
+  system_boot: "event.short.system_boot",
+  system_shutdown: "event.short.system_shutdown",
 };
 
 function isNarrow() {
@@ -603,7 +642,11 @@ function updateEventTypeOptionLabels() {
   const useShortLabel = isNarrow();
   for (const option of select.options) {
     const value = option.value;
-    if (value === 'script' || value === 'system_boot' || value === 'system_shutdown') {
+    if (
+      value === "script" ||
+      value === "system_boot" ||
+      value === "system_shutdown"
+    ) {
       option.textContent = useShortLabel
         ? _t(eventTypeShortMap[value] || eventTypeMap[value] || value)
         : _t(eventTypeMap[value] || eventTypeShortMap[value] || value);
@@ -617,16 +660,22 @@ function handleViewportChange() {
 }
 
 function escapeHtml(value = "") {
-  const s = String(value == null ? '' : value);
+  const s = String(value == null ? "" : value);
   // single pass replace using map for better performance
   return s.replace(/[&<>"']/g, (ch) => {
     switch (ch) {
-      case '&': return '&amp;';
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '"': return '&quot;';
-      case "'": return '&#39;';
-      default: return ch;
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return ch;
     }
   });
 }
@@ -634,10 +683,10 @@ function escapeHtml(value = "") {
 function applyModalI18n(modal) {
   if (!modal) return;
   // apply data-i18n and data-i18n-attr within modal
-  modal.querySelectorAll('[data-i18n]').forEach((el) => {
-    const key = el.getAttribute('data-i18n');
+  modal.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
     if (!key) return;
-    const attr = el.getAttribute('data-i18n-attr');
+    const attr = el.getAttribute("data-i18n-attr");
     try {
       const v = _t(key);
       if (attr) el.setAttribute(attr, v);
@@ -651,9 +700,15 @@ function applyModalI18n(modal) {
 const api = {
   async request(url, options = {}) {
     // Resolve relative urls like "api/tasks" against API_BASE
-    const resolved = /^(https?:)?\/\//.test(url) || url.startsWith('/') ? url : (API_BASE + url.replace(/^\/+/, ''));
+    const resolved =
+      /^(https?:)?\/\//.test(url) || url.startsWith("/")
+        ? url
+        : API_BASE + url.replace(/^\/+/, "");
     // merge headers, but allow caller to override
-    const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+    const headers = Object.assign(
+      { "Content-Type": "application/json" },
+      options.headers || {},
+    );
     const response = await fetch(resolved, {
       ...options,
       headers,
@@ -669,9 +724,16 @@ const api = {
       }
     }
     if (!response.ok) {
-      const rawMessage = (payload && (payload.error || payload._raw)) || response.statusText || `HTTP ${response.status}`;
+      const rawMessage =
+        (payload && (payload.error || payload._raw)) ||
+        response.statusText ||
+        `HTTP ${response.status}`;
       const friendly = mapApiErrorMessage(rawMessage) || rawMessage;
-      console.error("API error", { url: resolved, status: response.status, payload });
+      console.error("API error", {
+        url: resolved,
+        status: response.status,
+        payload,
+      });
       throw new Error(friendly);
     }
     return payload || {};
@@ -689,22 +751,31 @@ const api = {
     });
   },
   listTemplates() {
-    return this.request('api/templates');
+    return this.request("api/templates");
   },
   createTemplate(data) {
-    return this.request('api/templates', { method: 'POST', body: JSON.stringify(data) });
+    return this.request("api/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
   updateTemplate(id, data) {
-    return this.request(`api/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request(`api/templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
   },
   deleteTemplate(id) {
-    return this.request(`api/templates/${id}`, { method: 'DELETE' });
+    return this.request(`api/templates/${id}`, { method: "DELETE" });
   },
   importTemplates(mapping) {
-    return this.request('api/templates/import', { method: 'POST', body: JSON.stringify(mapping) });
+    return this.request("api/templates/import", {
+      method: "POST",
+      body: JSON.stringify(mapping),
+    });
   },
   exportTemplates() {
-    return this.request('api/templates/export').then((p) => p);
+    return this.request("api/templates/export").then((p) => p);
   },
   updateTask(id, data) {
     return this.request(`api/tasks/${id}`, {
@@ -753,7 +824,9 @@ const api = {
 };
 
 function formatDate(value) {
-  if (!value) { return "—"; }
+  if (!value) {
+    return "—";
+  }
   // 去除 T、去除时区（如 +00:00 或 Z）
   let s = value.replace("T", " ");
   // 去掉结尾的时区部分（+00:00、Z等）
@@ -792,12 +865,12 @@ function renderTasks() {
     let triggerLabel = getTaskTriggerLabel(task);
     if (task.trigger_type === "event") {
       if (isNarrow()) {
-        triggerLabel = getEventLabel(task.event_type) || _t('trigger.event');
+        triggerLabel = getEventLabel(task.event_type) || _t("trigger.event");
       }
     }
 
     tr.innerHTML = `
-            <td><span class="badge ${task.is_active ? "badge-active" : "badge-paused"}">${task.is_active ? _t('status.enabled') : _t('status.disabled')}</span></td>
+            <td><span class="badge ${task.is_active ? "badge-active" : "badge-paused"}">${task.is_active ? _t("status.enabled") : _t("status.disabled")}</span></td>
             <td>
                 <div class="task-name">${safeName}</div>
             </td>
@@ -833,20 +906,23 @@ function showToast(message, isError = false) {
   }, 2600);
 }
 
-function showConfirm(message, { okText = _t('btn.ok'), cancelText = _t('btn.cancel') } = {}) {
+function showConfirm(
+  message,
+  { okText = _t("btn.ok"), cancelText = _t("btn.cancel") } = {},
+) {
   return new Promise((resolve) => {
-    let modal = document.getElementById('__confirmModal');
+    let modal = document.getElementById("__confirmModal");
     if (!modal) {
-      modal = document.createElement('div');
-      modal.id = '__confirmModal';
-      modal.className = 'modal hidden';
-      modal.setAttribute('role', 'dialog');
-      modal.setAttribute('aria-modal', 'true');
+      modal = document.createElement("div");
+      modal.id = "__confirmModal";
+      modal.className = "modal hidden";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
       modal.innerHTML = `
         <div class="modal-content">
           <div class="modal-header">
             <div><h2></h2></div>
-            <div class="modal-header-actions"><button class="icon-btn" data-close type="button" aria-label="${_t('close')}">&times;</button></div>
+            <div class="modal-header-actions"><button class="icon-btn" data-close type="button" aria-label="${_t("close")}">&times;</button></div>
           </div>
           <div class="modal-body confirm-modal-body"></div>
           <div class="modal-actions confirm-modal-actions">
@@ -856,22 +932,38 @@ function showConfirm(message, { okText = _t('btn.ok'), cancelText = _t('btn.canc
         </div>`;
       document.body.appendChild(modal);
       // wire close on overlay
-      modal.addEventListener('click', (ev) => { if (ev.target === modal) { closeModal(modal); resolve(false); } });
-      modal.querySelectorAll('[data-close]').forEach((btn) => btn.addEventListener('click', () => { closeModal(modal); resolve(false); }));
+      modal.addEventListener("click", (ev) => {
+        if (ev.target === modal) {
+          closeModal(modal);
+          resolve(false);
+        }
+      });
+      modal.querySelectorAll("[data-close]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          closeModal(modal);
+          resolve(false);
+        }),
+      );
     }
-    const hdr = modal.querySelector('h2');
-    const body = modal.querySelector('.modal-body');
-    const okBtn = modal.querySelector('#__confirmOk');
-    const cancelBtn = modal.querySelector('#__confirmCancel');
-    if (hdr) hdr.textContent = '';
-    if (body) body.textContent = message || '';
+    const hdr = modal.querySelector("h2");
+    const body = modal.querySelector(".modal-body");
+    const okBtn = modal.querySelector("#__confirmOk");
+    const cancelBtn = modal.querySelector("#__confirmCancel");
+    if (hdr) hdr.textContent = "";
+    if (body) body.textContent = message || "";
     if (okBtn) {
       okBtn.textContent = okText;
-      okBtn.onclick = () => { closeModal(modal); resolve(true); };
+      okBtn.onclick = () => {
+        closeModal(modal);
+        resolve(true);
+      };
     }
     if (cancelBtn) {
       cancelBtn.textContent = cancelText;
-      cancelBtn.onclick = () => { closeModal(modal); resolve(false); };
+      cancelBtn.onclick = () => {
+        closeModal(modal);
+        resolve(false);
+      };
     }
     applyModalI18n(modal);
     openModal(modal);
@@ -910,7 +1002,11 @@ function closeModal(modal) {
   modal.classList.add("hidden");
   const returnFocusEl = modal.__returnFocusEl;
   queueMicrotask(() => {
-    if (returnFocusEl instanceof HTMLElement && returnFocusEl.isConnected && !returnFocusEl.hasAttribute("disabled")) {
+    if (
+      returnFocusEl instanceof HTMLElement &&
+      returnFocusEl.isConnected &&
+      !returnFocusEl.hasAttribute("disabled")
+    ) {
       returnFocusEl.focus();
       return;
     }
@@ -922,14 +1018,14 @@ function closeModal(modal) {
   try {
     applyModalI18n(modal);
     // restore placeholder attributes if present
-    modal.querySelectorAll('[data-i18n-attr]').forEach((el) => {
-      const key = el.getAttribute('data-i18n');
-      const attr = el.getAttribute('data-i18n-attr');
+    modal.querySelectorAll("[data-i18n-attr]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      const attr = el.getAttribute("data-i18n-attr");
       if (key && attr) el.setAttribute(attr, _t(key));
     });
     // ensure use-local button visible by default
-    const btnUseLocalEl = modal.querySelector('#btnUseLocalFile');
-    if (btnUseLocalEl) btnUseLocalEl.classList.remove('hidden');
+    const btnUseLocalEl = modal.querySelector("#btnUseLocalFile");
+    if (btnUseLocalEl) btnUseLocalEl.classList.remove("hidden");
   } catch (e) {
     // ignore i18n restore errors
   }
@@ -961,7 +1057,9 @@ function toggleEventInputs() {
 function renderAccountOptions(selectedAccount = "") {
   const select = elements.accountSelect;
   const reloadBtn = elements.accountReloadBtn;
-  if (!select) { return; }
+  if (!select) {
+    return;
+  }
 
   select.innerHTML = "";
   const isReadOnly = !state.posixSupported;
@@ -973,7 +1071,7 @@ function renderAccountOptions(selectedAccount = "") {
   if (state.accountLoading) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = _t('loading');
+    option.textContent = _t("loading");
     option.disabled = true;
     option.selected = true;
     select.appendChild(option);
@@ -984,7 +1082,9 @@ function renderAccountOptions(selectedAccount = "") {
   if (!state.accounts.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = state.posixSupported ? _t('no_accounts') : _t('not_available');
+    option.textContent = state.posixSupported
+      ? _t("no_accounts")
+      : _t("not_available");
     option.disabled = true;
     option.selected = true;
     select.appendChild(option);
@@ -996,7 +1096,8 @@ function renderAccountOptions(selectedAccount = "") {
     const defaultAccount = state.accounts[0] || state.defaultAccount || "";
     const option = document.createElement("option");
     option.value = defaultAccount;
-    option.textContent = defaultAccount || _t('label.current_logged_in_account');
+    option.textContent =
+      defaultAccount || _t("label.current_logged_in_account");
     option.selected = true;
     select.appendChild(option);
     select.disabled = true;
@@ -1012,7 +1113,7 @@ function renderAccountOptions(selectedAccount = "") {
   if (unavailableSelectedAccount) {
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = `${unavailableSelectedAccount} ${_t('placeholder.needs_reselect')}`;
+    placeholder.textContent = `${unavailableSelectedAccount} ${_t("placeholder.needs_reselect")}`;
     placeholder.disabled = true;
     placeholder.selected = true;
     select.appendChild(placeholder);
@@ -1066,7 +1167,7 @@ async function loadAccounts({ showError = true, preferredAccount = "" } = {}) {
     }
   } catch (error) {
     if (showError) {
-      showToast(_t('error.load_accounts', { err: error.message }), true);
+      showToast(_t("error.load_accounts", { err: error.message }), true);
     }
   } finally {
     state.accountLoading = false;
@@ -1097,17 +1198,17 @@ function renderPreTaskChecklist() {
 
   const options = Array.from(elements.preTaskSelect.options);
   if (!options.length) {
-    elements.preTaskChecklist.innerHTML = `<div class="pretask-empty">${escapeHtml(_t('empty.no_tasks'))}</div>`;
+    elements.preTaskChecklist.innerHTML = `<div class="pretask-empty">${escapeHtml(_t("empty.no_tasks"))}</div>`;
     return;
   }
 
   const html = options
     .map((opt) => {
       const id = String(opt.value);
-      const checked = opt.selected ? ' checked' : '';
-      return `<label class="pretask-item"><input type="checkbox" data-pretask-id="${escapeHtml(id)}"${checked}><span>${escapeHtml(opt.textContent || '')}</span></label>`;
+      const checked = opt.selected ? " checked" : "";
+      return `<label class="pretask-item"><input type="checkbox" data-pretask-id="${escapeHtml(id)}"${checked}><span>${escapeHtml(opt.textContent || "")}</span></label>`;
     })
-    .join('');
+    .join("");
   elements.preTaskChecklist.innerHTML = html;
 }
 
@@ -1116,9 +1217,9 @@ function openTaskModal(task = null) {
   elements.taskForm.reset();
 
   // 重置模板选择
-  const templateSelect = document.getElementById('templateSelect');
+  const templateSelect = document.getElementById("templateSelect");
   if (templateSelect) {
-    templateSelect.value = '';
+    templateSelect.value = "";
   }
 
   const preferredAccount = task?.account || "";
@@ -1128,13 +1229,15 @@ function openTaskModal(task = null) {
   }
   populatePreTaskOptions(state.editingTaskId, task?.pre_task_ids || []);
   if (task) {
-    elements.taskModalTitle.textContent = `${_t('btn.edit')}：${task.name}`;
+    elements.taskModalTitle.textContent = `${_t("btn.edit")}：${task.name}`;
     elements.taskForm.name.value = task.name;
     elements.triggerTypeSelect.value = task.trigger_type;
     elements.eventTypeSelect.value = task.event_type || "system_shutdown";
     elements.taskForm.is_active.checked = Boolean(task.is_active);
-    elements.taskForm.keep_success_log.checked = task.keep_success_log !== false;
-    elements.taskForm.keep_failure_log.checked = task.keep_failure_log !== false;
+    elements.taskForm.keep_success_log.checked =
+      task.keep_success_log !== false;
+    elements.taskForm.keep_failure_log.checked =
+      task.keep_failure_log !== false;
     if (elements.scheduleInput) {
       elements.scheduleInput.value = task.schedule_expression || "";
     }
@@ -1142,7 +1245,7 @@ function openTaskModal(task = null) {
     elements.taskForm.condition_interval.value = task.condition_interval || 60;
     elements.taskForm.script_body.value = task.script_body || "";
   } else {
-    elements.taskModalTitle.textContent = _t('modal.task.new');
+    elements.taskModalTitle.textContent = _t("modal.task.new");
     elements.eventTypeSelect.value = "system_shutdown";
     elements.taskForm.condition_interval.value = 60;
     elements.taskForm.keep_success_log.checked = true;
@@ -1210,7 +1313,7 @@ function updateCronPreview() {
   if (elements.cronNextTimes) {
     const result = getNextCronTimes(expression, 2);
     if (!result.valid) {
-      elements.cronNextTimes.textContent = _t('cron.invalid');
+      elements.cronNextTimes.textContent = _t("cron.invalid");
       elements.cronNextTimes.classList.add("cron-invalid");
       if (elements.cronPreview) {
         elements.cronPreview.classList.add("cron-invalid");
@@ -1228,7 +1331,7 @@ function updateCronPreview() {
       }
       if (result.times.length) {
         elements.cronNextTimes.innerHTML =
-          _t('cron.preview') +
+          _t("cron.preview") +
           result.times.map((t) => `<div>${t}</div>`).join("");
       } else {
         elements.cronNextTimes.textContent = "";
@@ -1237,7 +1340,9 @@ function updateCronPreview() {
         const hint = document.createElement("div");
         hint.className = "muted";
         hint.style.marginTop = "6px";
-        hint.textContent = _t('cron.search_exceeded', { months: result.maxMonths });
+        hint.textContent = _t("cron.search_exceeded", {
+          months: result.maxMonths,
+        });
         elements.cronNextTimes.appendChild(hint);
       }
     }
@@ -1259,22 +1364,30 @@ function getNextCronTimes(expr, count = 2) {
       0,
     );
     const parts = expr.trim().split(/\s+/);
-    if (parts.length !== 5) { return { times: [], valid: false }; }
+    if (parts.length !== 5) {
+      return { times: [], valid: false };
+    }
     // 解析每个字段
     function parseField(str, min, max) {
-      if (str === "*") { return Array.from({ length: max - min + 1 }, (_, i) => i + min); }
+      if (str === "*") {
+        return Array.from({ length: max - min + 1 }, (_, i) => i + min);
+      }
       let out = new Set();
       str.split(",").forEach((token) => {
         if (token.includes("/")) {
           let [range, step] = token.split("/");
           step = parseInt(step);
-          if (!step || step < 1) { return; }
+          if (!step || step < 1) {
+            return;
+          }
           let vals =
             range === "*"
               ? Array.from({ length: max - min + 1 }, (_, i) => i + min)
               : parseRange(range, min, max);
           vals.forEach((v, i) => {
-            if ((v - min) % step === 0) { out.add(v); }
+            if ((v - min) % step === 0) {
+              out.add(v);
+            }
           });
         } else {
           parseRange(token, min, max).forEach((v) => out.add(v));
@@ -1285,10 +1398,14 @@ function getNextCronTimes(expr, count = 2) {
         .sort((a, b) => a - b);
     }
     function parseRange(token, min, max) {
-      if (token === "*") { return Array.from({ length: max - min + 1 }, (_, i) => i + min); }
+      if (token === "*") {
+        return Array.from({ length: max - min + 1 }, (_, i) => i + min);
+      }
       if (token.includes("-")) {
         let [a, b] = token.split("-").map(Number);
-        if (isNaN(a) || isNaN(b) || a > b) { return []; }
+        if (isNaN(a) || isNaN(b) || a > b) {
+          return [];
+        }
         return Array.from({ length: b - a + 1 }, (_, i) => a + i);
       }
       let n = Number(token);
@@ -1323,14 +1440,23 @@ function getNextCronTimes(expr, count = 2) {
       results.push(formatCronDate(dt));
     }
 
-    for (let offset = 0; offset < maxMonths && results.length < count; offset++) {
-      const y = base.getFullYear() + Math.floor((base.getMonth() + offset) / 12);
+    for (
+      let offset = 0;
+      offset < maxMonths && results.length < count;
+      offset++
+    ) {
+      const y =
+        base.getFullYear() + Math.floor((base.getMonth() + offset) / 12);
       const mIndex = (base.getMonth() + offset) % 12; // 0-based month index
       const monthNum = mIndex + 1;
       if (!months.includes(monthNum)) continue;
       const daysInThisMonth = new Date(y, mIndex + 1, 0).getDate();
       // 遍历该月的每一天，检查是否符合日或周条件
-      for (let day = 1; day <= daysInThisMonth && results.length < count; day++) {
+      for (
+        let day = 1;
+        day <= daysInThisMonth && results.length < count;
+        day++
+      ) {
         const dtWeekJs = new Date(y, mIndex, day).getDay(); // 0=周日
         const cronWeekday = (dtWeekJs + 6) % 7; // 转为 0=周一..6=周日
         const dayMatch = days.includes(day);
@@ -1351,7 +1477,11 @@ function getNextCronTimes(expr, count = 2) {
         // 对于匹配的日期，生成时分组合
         for (let hi = 0; hi < hours.length && results.length < count; hi++) {
           const hour = hours[hi];
-          for (let mi = 0; mi < minutes.length && results.length < count; mi++) {
+          for (
+            let mi = 0;
+            mi < minutes.length && results.length < count;
+            mi++
+          ) {
             const minute = minutes[mi];
             const cand = new Date(y, mIndex, day, hour, minute, 0, 0);
             pushIfNew(cand);
@@ -1413,40 +1543,40 @@ async function handleFormSubmit(event) {
   try {
     const payload = collectFormData();
     if (!payload.name || !payload.account || !payload.script_body) {
-      throw new Error(_t('validation.required_fields'));
+      throw new Error(_t("validation.required_fields"));
     }
     if (state.accountLoading) {
-      throw new Error(_t('validation.accounts_loading'));
+      throw new Error(_t("validation.accounts_loading"));
     }
     if (!state.accounts.length) {
       if (state.posixSupported) {
-        throw new Error(_t('validation.no_accounts_posix'));
+        throw new Error(_t("validation.no_accounts_posix"));
       }
-      throw new Error(_t('validation.no_default_account'));
+      throw new Error(_t("validation.no_default_account"));
     }
     if (!state.posixSupported) {
       payload.account =
         state.accounts[0] || state.defaultAccount || payload.account;
     } else if (!state.accounts.includes(payload.account)) {
-      throw new Error(_t('validation.account_not_in_group'));
+      throw new Error(_t("validation.account_not_in_group"));
     }
     if (payload.trigger_type === "schedule" && !payload.schedule_expression) {
-      throw new Error(_t('validation.cron_required'));
+      throw new Error(_t("validation.cron_required"));
     }
     if (payload.trigger_type === "event") {
       if (!payload.event_type) {
         payload.event_type = "script";
       }
       if (payload.event_type === "script" && !payload.condition_script) {
-        throw new Error(_t('validation.script_required'));
+        throw new Error(_t("validation.script_required"));
       }
     }
     if (state.editingTaskId) {
       await api.updateTask(state.editingTaskId, payload);
-      showToast(_t('msg.task_updated'));
+      showToast(_t("msg.task_updated"));
     } else {
       await api.createTask(payload);
-      showToast(_t('msg.task_created'));
+      showToast(_t("msg.task_created"));
     }
     closeModal(elements.taskModal);
     state.selectedIds.clear();
@@ -1473,7 +1603,7 @@ async function loadTasks({ silent = false } = {}) {
       renderTasks();
     } catch (error) {
       if (!silent) {
-        showToast(_t('error.load_tasks', { err: error.message }), true);
+        showToast(_t("error.load_tasks", { err: error.message }), true);
       } else {
         console.error("自动刷新任务失败", error);
       }
@@ -1498,10 +1628,14 @@ function startAutoRefresh() {
 async function deleteSelectedTasks() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t('prompt.select_task'));
+    showToast(_t("prompt.select_task"));
     return;
   }
-  if (!(await showConfirm(_t('confirm.delete_selected_tasks', { n: selected.length })))) {
+  if (
+    !(await showConfirm(
+      _t("confirm.delete_selected_tasks", { n: selected.length }),
+    ))
+  ) {
     return;
   }
   try {
@@ -1513,9 +1647,9 @@ async function deleteSelectedTasks() {
     state.selectedIds.clear();
     await loadTasks();
     let parts = [];
-    if (deletedCount) parts.push(_t('msg.deleted_n', { n: deletedCount }));
-    if (missingCount) parts.push(_t('msg.missing_n', { n: missingCount }));
-    showToast(parts.join(_t('list.sep')) || _t('msg.no_tasks_deleted'));
+    if (deletedCount) parts.push(_t("msg.deleted_n", { n: deletedCount }));
+    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
+    showToast(parts.join(_t("list.sep")) || _t("msg.no_tasks_deleted"));
   } catch (error) {
     showToast(error.message, true);
   }
@@ -1524,7 +1658,7 @@ async function deleteSelectedTasks() {
 async function runSelectedTasks() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t('prompt.select_task_to_run'));
+    showToast(_t("prompt.select_task_to_run"));
     return;
   }
   try {
@@ -1543,12 +1677,14 @@ async function runSelectedTasks() {
     const conditionFailedCount = condition_failed.length;
     const missingCount = missing.length;
     const parts = [];
-    if (queuedCount) parts.push(_t('msg.triggered_n', { n: queuedCount }));
-    if (runningCount) parts.push(_t('msg.running_n', { n: runningCount }));
-    if (pretaskFailedCount) parts.push(_t('msg.pretask_failed_n', { n: pretaskFailedCount }));
-    if (conditionFailedCount) parts.push(_t('msg.condition_failed_n', { n: conditionFailedCount }));
-    if (missingCount) parts.push(_t('msg.missing_n', { n: missingCount }));
-    showToast(parts.join(_t('list.sep')) || _t('msg.no_tasks_triggered'));
+    if (queuedCount) parts.push(_t("msg.triggered_n", { n: queuedCount }));
+    if (runningCount) parts.push(_t("msg.running_n", { n: runningCount }));
+    if (pretaskFailedCount)
+      parts.push(_t("msg.pretask_failed_n", { n: pretaskFailedCount }));
+    if (conditionFailedCount)
+      parts.push(_t("msg.condition_failed_n", { n: conditionFailedCount }));
+    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
+    showToast(parts.join(_t("list.sep")) || _t("msg.no_tasks_triggered"));
   } catch (error) {
     showToast(error.message, true);
   }
@@ -1557,7 +1693,7 @@ async function runSelectedTasks() {
 async function stopSelectedTasks() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t('prompt.select_task_to_stop'));
+    showToast(_t("prompt.select_task_to_stop"));
     return;
   }
   try {
@@ -1568,10 +1704,11 @@ async function stopSelectedTasks() {
     const notRunningCount = not_running.length;
     const missingCount = missing.length;
     const parts = [];
-    if (stoppedCount) parts.push(_t('msg.stopped_n', { n: stoppedCount }));
-    if (notRunningCount) parts.push(_t('msg.not_running_n', { n: notRunningCount }));
-    if (missingCount) parts.push(_t('msg.missing_n', { n: missingCount }));
-    showToast(parts.join(_t('list.sep')) || _t('msg.no_tasks_stopped'));
+    if (stoppedCount) parts.push(_t("msg.stopped_n", { n: stoppedCount }));
+    if (notRunningCount)
+      parts.push(_t("msg.not_running_n", { n: notRunningCount }));
+    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
+    showToast(parts.join(_t("list.sep")) || _t("msg.no_tasks_stopped"));
     await loadTasks({ silent: true });
   } catch (error) {
     showToast(error.message, true);
@@ -1581,7 +1718,7 @@ async function stopSelectedTasks() {
 async function toggleSelectedTask() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t('prompt.select_task'));
+    showToast(_t("prompt.select_task"));
     return;
   }
   try {
@@ -1589,7 +1726,7 @@ async function toggleSelectedTask() {
       selected.includes(task.id),
     );
     if (!selectedTasks.length) {
-      throw new Error(_t('error.task_not_found'));
+      throw new Error(_t("error.task_not_found"));
     }
     const shouldEnable = selectedTasks.some((task) => !task.is_active);
     const action = shouldEnable ? "enable" : "disable";
@@ -1600,12 +1737,16 @@ async function toggleSelectedTask() {
     const unchangedCount = unchanged.length;
     const missingCount = missing.length;
     await loadTasks();
-    const verb = shouldEnable ? _t('verb.enable') : _t('verb.disable');
+    const verb = shouldEnable ? _t("verb.enable") : _t("verb.disable");
     const parts = [];
-    if (updatedCount) parts.push(_t('msg.action_completed', { verb, n: updatedCount }));
-    if (unchangedCount) parts.push(_t('msg.unchanged_count', { n: unchangedCount }));
-    if (missingCount) parts.push(_t('msg.missing_n', { n: missingCount }));
-    showToast(parts.join(_t('list.sep')) || _t('msg.no_tasks_completed', { verb }));
+    if (updatedCount)
+      parts.push(_t("msg.action_completed", { verb, n: updatedCount }));
+    if (unchangedCount)
+      parts.push(_t("msg.unchanged_count", { n: unchangedCount }));
+    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
+    showToast(
+      parts.join(_t("list.sep")) || _t("msg.no_tasks_completed", { verb }),
+    );
   } catch (error) {
     showToast(error.message, true);
   }
@@ -1614,13 +1755,13 @@ async function toggleSelectedTask() {
 async function openResultModal() {
   const selected = Array.from(state.selectedIds);
   if (selected.length !== 1) {
-    showToast(_t('prompt.select_single_task'));
+    showToast(_t("prompt.select_single_task"));
     return;
   }
   const taskId = selected[0];
   const task = state.tasks.find((item) => item.id === taskId);
   if (!task) {
-    showToast(_t('error.task_not_found'), true);
+    showToast(_t("error.task_not_found"), true);
     return;
   }
   state.currentResultTaskId = taskId;
@@ -1656,7 +1797,9 @@ async function saveSettings(event) {
   }
   const formData = new FormData(elements.settingsForm);
   const payload = {
-    result_retention_per_task: Number(formData.get("result_retention_per_task")),
+    result_retention_per_task: Number(
+      formData.get("result_retention_per_task"),
+    ),
     task_timeout: Number(formData.get("task_timeout")),
     condition_timeout: Number(formData.get("condition_timeout")),
     result_log_preview_limit: Number(formData.get("result_log_preview_limit")),
@@ -1676,7 +1819,9 @@ async function saveSettings(event) {
 }
 
 async function refreshResults() {
-  if (!state.currentResultTaskId) { return; }
+  if (!state.currentResultTaskId) {
+    return;
+  }
   try {
     const { data } = await api.fetchResults(state.currentResultTaskId);
     renderResults(data || []);
@@ -1688,7 +1833,7 @@ async function refreshResults() {
 function renderResults(results) {
   elements.resultList.innerHTML = "";
   if (!results.length) {
-    elements.resultList.innerHTML = `<p class="empty">${_t('results.no_records')}</p>`;
+    elements.resultList.innerHTML = `<p class="empty">${_t("results.no_records")}</p>`;
     return;
   }
   const fragment = document.createDocumentFragment();
@@ -1712,7 +1857,7 @@ function renderResults(results) {
     statusEl.textContent = statusText;
     const reasonEl = document.createElement("span");
     reasonEl.className = "muted";
-    reasonEl.textContent = `${_t('label.trigger')}${reasonText}`;
+    reasonEl.textContent = `${_t("label.trigger")}${reasonText}`;
     metaGroup.appendChild(statusEl);
     metaGroup.appendChild(reasonEl);
 
@@ -1724,7 +1869,7 @@ function renderResults(results) {
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "ghost";
     deleteBtn.type = "button";
-    deleteBtn.textContent = _t('btn.delete');
+    deleteBtn.textContent = _t("btn.delete");
     deleteBtn.addEventListener("click", async () => {
       try {
         await api.deleteResult(state.currentResultTaskId, result.id);
@@ -1743,7 +1888,7 @@ function renderResults(results) {
     const previewText =
       typeof result.log_preview === "string"
         ? result.log_preview
-        : (result.log || "");
+        : result.log || "";
     const cachedFullLog = state.resultLogCache.get(result.id);
     const isExpanded = typeof cachedFullLog === "string";
     const logText = isExpanded ? cachedFullLog : previewText;
@@ -1757,7 +1902,9 @@ function renderResults(results) {
       hint.className = "muted";
       if (result.log_truncated) {
         const previewLimit =
-          typeof result.log_preview === "string" ? result.log_preview.length : 0;
+          typeof result.log_preview === "string"
+            ? result.log_preview.length
+            : 0;
         hint.textContent = _t("results.log_truncated", {
           n: result.log_size || 0,
           limit: previewLimit,
@@ -1770,7 +1917,9 @@ function renderResults(results) {
       const toggleBtn = document.createElement("button");
       toggleBtn.className = "ghost small";
       toggleBtn.type = "button";
-      toggleBtn.textContent = isExpanded ? _t("results.collapse_log") : _t("results.expand_log");
+      toggleBtn.textContent = isExpanded
+        ? _t("results.collapse_log")
+        : _t("results.expand_log");
       toggleBtn.addEventListener("click", async () => {
         if (state.resultLogCache.has(result.id)) {
           state.resultLogCache.delete(result.id);
@@ -1780,7 +1929,10 @@ function renderResults(results) {
         toggleBtn.disabled = true;
         toggleBtn.textContent = _t("results.loading_log");
         try {
-          const payload = await api.fetchResult(state.currentResultTaskId, result.id);
+          const payload = await api.fetchResult(
+            state.currentResultTaskId,
+            result.id,
+          );
           const fullLog = payload?.data?.log || "";
           state.resultLogCache.set(result.id, fullLog);
           renderResults(results);
@@ -1807,15 +1959,17 @@ function renderResults(results) {
 }
 
 async function clearResultHistory() {
-  if (!state.currentResultTaskId) { return; }
-  if (!(await showConfirm(_t('confirm.clear_results')))) {
+  if (!state.currentResultTaskId) {
+    return;
+  }
+  if (!(await showConfirm(_t("confirm.clear_results")))) {
     return;
   }
   try {
     await api.clearResults(state.currentResultTaskId);
     state.resultLogCache.clear();
     await refreshResults();
-    showToast(_t('msg.results_cleared'));
+    showToast(_t("msg.results_cleared"));
   } catch (error) {
     showToast(error.message, true);
   }
@@ -1855,7 +2009,9 @@ function bindTaskTableEventListeners() {
 
   elements.tableBody.addEventListener("click", (event) => {
     const row = event.target.closest("tr");
-    if (!row) { return; }
+    if (!row) {
+      return;
+    }
     const id = Number(row.dataset.id);
     if (event.metaKey || event.ctrlKey) {
       if (state.selectedIds.has(id)) {
@@ -1876,7 +2032,7 @@ function bindTaskActionEventListeners() {
   buttons.edit.addEventListener("click", () => {
     const selected = getSelectedTasks();
     if (selected.length !== 1) {
-      showToast(_t('prompt.select_single_task'));
+      showToast(_t("prompt.select_single_task"));
       return;
     }
     openTaskModal(selected[0]);
@@ -2005,15 +2161,15 @@ function attachEventListeners() {
   });
 }
 // 服务器文件选择：浏览并读取服务器端文件（依赖后端 api/fs 列表与读取接口）
-function openServerFilePicker(defaultPath = '/', options = {}) {
-  const mode = options.mode || 'open'; // 'open' or 'save'
+function openServerFilePicker(defaultPath = "/", options = {}) {
+  const mode = options.mode || "open"; // 'open' or 'save'
   const saveContent = options.content || null;
-  const modal = document.getElementById('serverFilePickerModal');
-  const pathInput = document.getElementById('serverPathInput');
-  const listEl = document.getElementById('serverFileList');
+  const modal = document.getElementById("serverFilePickerModal");
+  const pathInput = document.getElementById("serverPathInput");
+  const listEl = document.getElementById("serverFileList");
   if (!modal || !pathInput || !listEl) {
     // fallback to local file input
-    document.getElementById('templateImportFile')?.click();
+    document.getElementById("templateImportFile")?.click();
     return;
   }
 
@@ -2021,126 +2177,164 @@ function openServerFilePicker(defaultPath = '/', options = {}) {
   applyModalI18n(modal);
 
   // prepare UI for mode
-  const headerTitleEl = modal.querySelector('h2');
-  const subtitleEl = modal.querySelector('.subtitle');
-  const btnSelectEl = modal.querySelector('#btnSelectServerFile');
-  const btnUseLocalEl = modal.querySelector('#btnUseLocalFile');
+  const headerTitleEl = modal.querySelector("h2");
+  const subtitleEl = modal.querySelector(".subtitle");
+  const btnSelectEl = modal.querySelector("#btnSelectServerFile");
+  const btnUseLocalEl = modal.querySelector("#btnUseLocalFile");
 
-  if (mode === 'save') {
-    if (headerTitleEl) headerTitleEl.textContent = _t('file.export_to_server_title');
-    if (subtitleEl) subtitleEl.textContent = _t('file.export_to_server_subtitle');
-    if (btnSelectEl) btnSelectEl.textContent = _t('filepicker.export_selected');
-    if (btnUseLocalEl) btnUseLocalEl.textContent = _t('filepicker.export_to_local');
+  if (mode === "save") {
+    if (headerTitleEl)
+      headerTitleEl.textContent = _t("file.export_to_server_title");
+    if (subtitleEl)
+      subtitleEl.textContent = _t("file.export_to_server_subtitle");
+    if (btnSelectEl) btnSelectEl.textContent = _t("filepicker.export_selected");
+    if (btnUseLocalEl)
+      btnUseLocalEl.textContent = _t("filepicker.export_to_local");
   }
 
   // normalize path helper
   const normalizePath = (p) => {
-    let s = String(p || '/').replace(/\\/g, '/').trim();
-    if (!s) s = '/';
-    if (s.length > 1) s = s.replace(/\/\/+$/g, '');
+    let s = String(p || "/")
+      .replace(/\\/g, "/")
+      .trim();
+    if (!s) s = "/";
+    if (s.length > 1) s = s.replace(/\/\/+$/g, "");
     return s;
   };
 
   pathInput.value = normalizePath(defaultPath);
-  listEl.innerHTML = '<div class="muted">' + _t('loading') + '</div>';
+  listEl.innerHTML = '<div class="muted">' + _t("loading") + "</div>";
 
-  const btnRefresh = modal.querySelector('#btnServerRefresh');
-  if (btnRefresh) btnRefresh.onclick = () => fetchServerFiles(normalizePath(pathInput.value));
+  const btnRefresh = modal.querySelector("#btnServerRefresh");
+  if (btnRefresh)
+    btnRefresh.onclick = () => fetchServerFiles(normalizePath(pathInput.value));
 
   if (btnUseLocalEl) {
     btnUseLocalEl.onclick = () => {
-      if (mode === 'save') {
+      if (mode === "save") {
         try {
-          const filename = 'templates-export.json';
-          const blob = new Blob([saveContent || ''], { type: 'application/json' });
+          const filename = "templates-export.json";
+          const blob = new Blob([saveContent || ""], {
+            type: "application/json",
+          });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          const a = document.createElement("a");
           a.href = url;
           a.download = filename;
           document.body.appendChild(a);
           a.click();
           a.remove();
           URL.revokeObjectURL(url);
-          showToast(_t('file.save_local_result'));
+          showToast(_t("file.save_local_result"));
           closeModal(modal);
         } catch (e) {
-          showToast(_t('file.save_failed', { err: e && e.message }), true);
+          showToast(_t("file.save_failed", { err: e && e.message }), true);
         }
       } else {
-        document.getElementById('templateImportFile')?.click();
+        document.getElementById("templateImportFile")?.click();
       }
     };
   }
 
   if (btnSelectEl) {
     btnSelectEl.onclick = async () => {
-      const sel = listEl.querySelector('.selected');
-      let fp = sel?.dataset?.path || '';
-      if (!fp && mode === 'save') {
+      const sel = listEl.querySelector(".selected");
+      let fp = sel?.dataset?.path || "";
+      if (!fp && mode === "save") {
         fp = normalizePath(pathInput.value);
       }
-      if (!fp) { showToast(_t('prompt.select_file')); return; }
+      if (!fp) {
+        showToast(_t("prompt.select_file"));
+        return;
+      }
       try {
-        showToast(_t('loading'));
-        if (mode === 'save') {
-          const isDir = sel ? sel.dataset.isdir === 'true' : true;
+        showToast(_t("loading"));
+        if (mode === "save") {
+          const isDir = sel ? sel.dataset.isdir === "true" : true;
           let targetPath = fp;
           if (isDir) {
-            const defaultName = 'templates-export.json';
-            targetPath = (fp === '/') ? ('/' + defaultName) : (fp.replace(/\/\/+$/g, '') + '/' + defaultName);
+            const defaultName = "templates-export.json";
+            targetPath =
+              fp === "/"
+                ? "/" + defaultName
+                : fp.replace(/\/\/+$/g, "") + "/" + defaultName;
           }
-          const resp = await api.request('api/fs/write/' + encodeURIComponent(targetPath), { method: 'POST', body: JSON.stringify({ content: saveContent }), headers: { 'Content-Type': 'application/json', 'X-FS-Path': targetPath } });
-          showToast(_t('file.save_result', { path: resp.path || targetPath }));
+          const resp = await api.request(
+            "api/fs/write/" + encodeURIComponent(targetPath),
+            {
+              method: "POST",
+              body: JSON.stringify({ content: saveContent }),
+              headers: {
+                "Content-Type": "application/json",
+                "X-FS-Path": targetPath,
+              },
+            },
+          );
+          showToast(_t("file.save_result", { path: resp.path || targetPath }));
           closeModal(modal);
           return;
         }
         // read and import
-        const payload = await api.request('api/fs/read/' + encodeURIComponent(fp), { headers: { 'X-FS-Path': fp } });
+        const payload = await api.request(
+          "api/fs/read/" + encodeURIComponent(fp),
+          { headers: { "X-FS-Path": fp } },
+        );
         let obj = null;
-        if (payload && Object.prototype.hasOwnProperty.call(payload, '_raw')) {
-          try { obj = JSON.parse(payload._raw); } catch (e) { throw new Error(_t('file.invalid_format')); }
-        } else if (payload && typeof payload === 'object') {
+        if (payload && Object.prototype.hasOwnProperty.call(payload, "_raw")) {
+          try {
+            obj = JSON.parse(payload._raw);
+          } catch (e) {
+            throw new Error(_t("file.invalid_format"));
+          }
+        } else if (payload && typeof payload === "object") {
           obj = payload;
         } else {
-          throw new Error(_t('file.invalid_format'));
+          throw new Error(_t("file.invalid_format"));
         }
         const result = await api.importTemplates(obj);
-        showToast(_t('file.import_result', { inserted: result?.imported?.inserted || 0, updated: result?.imported?.updated || 0 }));
+        showToast(
+          _t("file.import_result", {
+            inserted: result?.imported?.inserted || 0,
+            updated: result?.imported?.updated || 0,
+          }),
+        );
         closeModal(modal);
         refreshTemplatesList();
         await loadTemplates();
       } catch (err) {
-        showToast(_t('file.import_failed', { err: err.message }), true);
+        showToast(_t("file.import_failed", { err: err.message }), true);
       }
     };
   }
 
   // file list click handling (delegated)
   listEl.onclick = (ev) => {
-    const row = ev.target.closest('.srv-file');
+    const row = ev.target.closest(".srv-file");
     if (!row) return;
-    const isDir = row.dataset.isdir === 'true';
+    const isDir = row.dataset.isdir === "true";
     const path = row.dataset.path;
     if (isDir) {
       pathInput.value = normalizePath(path);
       fetchServerFiles(pathInput.value);
       return;
     }
-    listEl.querySelectorAll('.srv-file').forEach(r => r.classList.remove('selected'));
-    row.classList.add('selected');
+    listEl
+      .querySelectorAll(".srv-file")
+      .forEach((r) => r.classList.remove("selected"));
+    row.classList.add("selected");
   };
 
   // double click behavior
   listEl.ondblclick = (ev) => {
-    const row = ev.target.closest('.srv-file');
+    const row = ev.target.closest(".srv-file");
     if (!row) return;
-    const isDir = row.dataset.isdir === 'true';
+    const isDir = row.dataset.isdir === "true";
     if (isDir) {
       const newPath = normalizePath(row.dataset.path);
       pathInput.value = newPath;
       fetchServerFiles(newPath);
     } else {
-      modal.querySelector('#btnSelectServerFile')?.click();
+      modal.querySelector("#btnSelectServerFile")?.click();
     }
   };
 
@@ -2149,63 +2343,78 @@ function openServerFilePicker(defaultPath = '/', options = {}) {
 }
 
 async function fetchServerFiles(path) {
-  const listEl = document.getElementById('serverFileList');
+  const listEl = document.getElementById("serverFileList");
   if (!listEl) return;
   const normalizePath = (p) => {
-    let s = String(p || '/').replace(/\\/g, '/').trim();
-    if (!s) s = '/';
-    if (s.length > 1) s = s.replace(/\/\/+$/g, '');
+    let s = String(p || "/")
+      .replace(/\\/g, "/")
+      .trim();
+    if (!s) s = "/";
+    if (s.length > 1) s = s.replace(/\/\/+$/g, "");
     return s;
   };
   const p = normalizePath(path);
-  listEl.innerHTML = '<div class="muted">' + _t('loading') + '</div>';
+  listEl.innerHTML = '<div class="muted">' + _t("loading") + "</div>";
   try {
-    const payload = await api.request('api/fs/list/' + encodeURIComponent(p), { headers: { 'X-FS-Path': p } });
+    const payload = await api.request("api/fs/list/" + encodeURIComponent(p), {
+      headers: { "X-FS-Path": p },
+    });
     const files = payload && Array.isArray(payload.files) ? payload.files : [];
     renderServerFileList(files, p);
   } catch (err) {
-    listEl.innerHTML = '<div class="muted">' + escapeHtml(err && err.message ? err.message : String(err)) + '</div>';
+    listEl.innerHTML =
+      '<div class="muted">' +
+      escapeHtml(err && err.message ? err.message : String(err)) +
+      "</div>";
   }
 }
 
 function renderServerFileList(files, parentPath) {
-  const listEl = document.getElementById('serverFileList');
+  const listEl = document.getElementById("serverFileList");
   if (!listEl) return;
-  listEl.innerHTML = '';
+  listEl.innerHTML = "";
   if (!files || !files.length) {
-    listEl.innerHTML = '<div class="muted">' + _t('empty.no_files') + '</div>';
+    listEl.innerHTML = '<div class="muted">' + _t("empty.no_files") + "</div>";
     return;
   }
   try {
-    const normalize = (p) => String(p || '/').replace(/\\/g, '/').replace(/\/\/+$/g, '') || '/';
+    const normalize = (p) =>
+      String(p || "/")
+        .replace(/\\/g, "/")
+        .replace(/\/\/+$/g, "") || "/";
     const base = normalize(parentPath);
     const frag = document.createDocumentFragment();
-    if (base !== '/') {
-      const up = document.createElement('div');
-      up.className = 'srv-file srv-dir';
+    if (base !== "/") {
+      const up = document.createElement("div");
+      up.className = "srv-file srv-dir";
       up.dataset.path = (function () {
-        const p = base.replace(/\/\/+$/g, '');
-        const idx = p.lastIndexOf('/');
-        if (idx <= 0) return '/';
-        return p.slice(0, idx) || '/';
+        const p = base.replace(/\/\/+$/g, "");
+        const idx = p.lastIndexOf("/");
+        if (idx <= 0) return "/";
+        return p.slice(0, idx) || "/";
       })();
-      up.dataset.isdir = 'true';
+      up.dataset.isdir = "true";
       up.innerHTML = `<span class="srv-icon">⬆️</span><span class="srv-name">..</span>`;
       frag.appendChild(up);
     }
     files.forEach((f) => {
-      const row = document.createElement('div');
-      row.className = 'srv-file' + (f.isdir ? ' srv-dir' : ' srv-file-item');
-      const path = f.path || (base === '/' ? '/' + (f.name || '') : base + '/' + (f.name || ''));
+      const row = document.createElement("div");
+      row.className = "srv-file" + (f.isdir ? " srv-dir" : " srv-file-item");
+      const path =
+        f.path ||
+        (base === "/" ? "/" + (f.name || "") : base + "/" + (f.name || ""));
       row.dataset.path = path;
-      row.dataset.isdir = f.isdir ? 'true' : 'false';
-      const icon = f.isdir ? '📁' : '📄';
-      row.innerHTML = `<span class="srv-icon">${icon}</span><span class="srv-name">${escapeHtml(f.name || '')}</span>`;
+      row.dataset.isdir = f.isdir ? "true" : "false";
+      const icon = f.isdir ? "📁" : "📄";
+      row.innerHTML = `<span class="srv-icon">${icon}</span><span class="srv-name">${escapeHtml(f.name || "")}</span>`;
       frag.appendChild(row);
     });
     listEl.appendChild(frag);
   } catch (e) {
-    listEl.innerHTML = '<div class="muted">' + escapeHtml(e && e.message ? e.message : String(e)) + '</div>';
+    listEl.innerHTML =
+      '<div class="muted">' +
+      escapeHtml(e && e.message ? e.message : String(e)) +
+      "</div>";
   }
 }
 (async function init() {
