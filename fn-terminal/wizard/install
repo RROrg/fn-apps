@@ -8,17 +8,17 @@
       },
       {
         "type": "radio",
-        "field": "wizard_user_login",
+        "field": "wizard_with_tmux",
         "label": "${wizard.install_item1_label}",
-        "initValue": "root",
+        "initValue": "true",
         "options": [
           {
             "label": "${wizard.install_item1_options1}",
-            "value": "root"
+            "value": "true"
           },
           {
             "label": "${wizard.install_item1_options2}",
-            "value": "login"
+            "value": "false"
           }
         ]
       },
@@ -35,6 +35,22 @@
           {
             "label": "${wizard.install_item2_options2}",
             "value": "base"
+          }
+        ]
+      },
+      {
+        "type": "radio",
+        "field": "wizard_user_login",
+        "label": "${wizard.install_item3_label}",
+        "initValue": "root",
+        "options": [
+          {
+            "label": "${wizard.install_item3_options1}",
+            "value": "root"
+          },
+          {
+            "label": "${wizard.install_item3_options2}",
+            "value": "login"
           }
         ]
       }

@@ -11,23 +11,25 @@ ARCH=$(uname -m)
 
 locale -a 2>/dev/null | tr '[:upper:]' '[:lower:]' | grep -Eq "^zh_cn\.[utf-8|utf8]$" || localedef -i zh_CN -f UTF-8 zh_CN.UTF-8 >/dev/null 2>&1 || true
 
-tmux new-session -d -s __init__
-[ "${wizard_user_login:-root}" = "login" ] && tmux set-option -g default-command 'login' # 登录默认命令
-tmux set-option -g utf8 on # 支持utf8
-tmux set-option -g status-utf8 on # 状态栏支持utf8
-tmux set-option -g history-limit 50000 # 历史记录条数
-tmux set-option -g set-clipboard on # 开启剪贴板同步
-tmux set-option -g mouse on # 开启鼠标支持
-[ "${wizard_right_type:-tmux}" = "tmux" ] || tmux unbind -T root MouseDown3Pane # 禁用鼠标滚动
-tmux kill-session -t __init__
+if [ "${wizard_with_tmux:-true}" = "true" ]; then
+  tmux new-session -d -s __init__
+  [ "${wizard_user_login:-root}" = "login" ] && tmux set-option -g default-command 'login' # 登录默认命令
+  tmux set-option -g utf8 on                                                               # 支持utf8
+  tmux set-option -g status-utf8 on                                                        # 状态栏支持utf8
+  tmux set-option -g history-limit 50000                                                   # 历史记录条数
+  tmux set-option -g set-clipboard on                                                      # 开启剪贴板同步
+  tmux set-option -g mouse on                                                              # 开启鼠标支持
+  [ "${wizard_right_type:-tmux}" = "tmux" ] || tmux unbind -T root MouseDown3Pane          # 禁用鼠标滚动
+  tmux kill-session -t __init__
+fi
 
 TTYDARGS=()
 TTYDARGS+=(${TRIM_APPDEST}/server/ttyd.${ARCH:-} -a -W)
 TTYDARGS+=(-i "${TRIM_APPDEST}/fn-terminal.sock" -b "/app/fn-terminal")
-[ "${wizard_right_type:-tmux}" = "tmux" ] && TTYDARGS+=(-I "${TRIM_APPDEST}/server/ttyd-index.html")
+[ "${wizard_with_tmux:-true}" = "true" ] && [ "${wizard_right_type:-tmux}" = "tmux" ] && TTYDARGS+=(-I "${TRIM_APPDEST}/server/ttyd-index.html")
 TTYDARGS+=(-t titleFixed=fnOS -t allow-clipboard-read=true -t allow-clipboard-write=true -t rendererType=canvas)
-TTYDARGS+=(tmux -u new -A -s terminal)
-[ "${wizard_user_login:-root}" = "login" ] && TTYDARGS+=(login)
+[ "${wizard_with_tmux:-true}" = "true" ] && TTYDARGS+=(tmux -u new -A -s terminal)
+[ "${wizard_user_login:-root}" = "login" ] && TTYDARGS+=(login) || { [ "${wizard_with_tmux:-true}" = "true" ] || TTYDARGS+=(bash); }
 
 # write the command to start your program here
 CMD="env LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8 TERM=xterm-256color ${TTYDARGS[*]}"
@@ -61,7 +63,7 @@ stop_process() {
     log_msg "pid=${pid}"
     if ! check_process "${pid}"; then
       # process not exist, delete pidfile
-      tmux kill-session -t terminal 2>/dev/null || true
+      [ "${wizard_with_tmux:-true}" = "true" ] && tmux kill-session -t terminal 2>/dev/null || true
       rm -f "${PID_FILE}"
       rm -f "${TRIM_APPDEST}/fn-terminal.sock"
       log_msg "remove pid file 1"
@@ -87,7 +89,7 @@ stop_process() {
       log_msg "process killed... "
     fi
   fi
-  tmux kill-session -t terminal 2>/dev/null || true
+  [ "${wizard_with_tmux:-true}" = "true" ] && tmux kill-session -t terminal 2>/dev/null || true
   return 0
 }
 
