@@ -72,7 +72,7 @@ EOF
 sed -i "s|__TRIM_APPDEST__|${TRIM_APPDEST}|g; s|__TRIM_PKGVAR__|${TRIM_PKGVAR}|g" "$WRAPPER" || true
 chmod +x "$WRAPPER" || true
 
-# # Optionally install extensions  
+# # Optionally install extensions
 # EXTS_LIST="MS-CEINTL.vscode-language-pack-zh-hans MS-CEINTL.vscode-language-pack-zh-hant"
 # for e in $EXTS_LIST; do
 #   echo "Installing extension: $e"

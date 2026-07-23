@@ -48,8 +48,8 @@ download_iventoy() {
 
   mv -f "${EXTRACTED}" "${DEST}"
   rm -rf "${DEST}/{iso,log}" 2>/dev/null
-	mv -f "${DEST}/data" "${DEST}/data.orig"
-	mv -f "${DEST}/user" "${DEST}/user.orig"
+  mv -f "${DEST}/data" "${DEST}/data.orig"
+  mv -f "${DEST}/user" "${DEST}/user.orig"
   chmod +x "${DEST}/iventoy.sh" "${DEST}/lib/iventoy" 2>/dev/null || true
 
   echo "iVentoy ${ARCH} extracted successfully"

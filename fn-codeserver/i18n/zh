@@ -6,30 +6,9 @@ desc="code-server 是 VS Code 的在线版本，允许您通过浏览器进行�
 title="code-server"
 
 [wizard]
-config_stepTitle="配置向导"
-config_item1_helpText="您即将修改 code-server" 
-config_item2_helpText="1. 如果安装后 终端不可用 请将权限设置为 “run-as: root”。" 
-config_item1_label="密码"
-config_item1_required="请输入密码"
-config_item1_rules="密码长度不能少于4位"
-config_item2_label="端口"
-config_item2_required="请输入端口"
-config_item2_rules="端口号只能包含 0-65535 之间的数字"
-
-install_stepTitle="安装向导"
-install_item1_helpText="您即将安装 code-server" 
-install_item2_helpText="1. 如果安装后 终端不可用 请将权限设置为 “run-as: root”。" 
-install_item1_label="密码"
-install_item1_required="请输入密码"
-install_item1_rules="密码长度不能少于4位"
-install_item2_label="端口"
-install_item2_required="请输入端口"
-install_item2_rules="端口号只能包含 0-65535 之间的数字"
-
 uninstall_stepTitle="卸载向导"
 uninstall_item1_helpText="您即将卸载此应用。请选择如何处理应用数据："
 uninstall_item1_label="数据保留选项"
 uninstall_item1_options1="保留数据 - 重安装时可恢复！（推荐）"
 uninstall_item1_options2="删除数据 - 此操作不可恢复！"
 uninstall_item1_rules="请选择数据保留选项"
-
