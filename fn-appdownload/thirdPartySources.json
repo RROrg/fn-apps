@@ -1,48 +1,182 @@
-DEFAULT_SETTINGS = {
-    "thirdPartySources": [
-        {
-            "name": "RROrg",
-            "url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fnpack.json",
-            "enabled": True,
-        }
-    ],
-    "githubProxyEnabled": True,
-    "githubProxyUrl": "https://gh-proxy.com/",
-}
-
-https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/Brian099/fn_fpk_packages/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/EWEDLCM/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/shuangji66/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/Hxido-RXM/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/moxyis/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/ctllo-bit/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/yaya918/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/hbestm/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/710850609/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/IMGZCQ/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/zyp1690/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/mac1256/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/Wyf841015/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/snltty/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/jianzhichu/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/mynono33/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/htnanako/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/0999we/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/upchr/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/KKKK987/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/wanjianmojun/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/HonghaoLee/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/MuLinForest/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/magiccode1412/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/ryxiang/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/nx5888/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/fyzhu/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/boater-man/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/ifsherlock/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/DPanel-dev/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/yuexps/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/dysfwhq/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/ray5378/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/damadingding/FnDepot/refs/heads/main/fnpack.json
-https://raw.githubusercontent.com/shaoweiluo17-lang/FnDepot/refs/heads/main/fnpack.json
+[
+  {
+    "name": "RROrg",
+    "url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fnpack.json",
+    "enabled": true
+  },
+  {
+    "name": "Brian099",
+    "url": "https://raw.githubusercontent.com/Brian099/fn_fpk_packages/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "EWEDLCM",
+    "url": "https://raw.githubusercontent.com/EWEDLCM/FnDepot/refs/heads/main/fndepot.json",
+    "enabled": false
+  },
+  {
+    "name": "shuangji66",
+    "url": "https://raw.githubusercontent.com/shuangji66/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "Hxido-RXM",
+    "url": "https://raw.githubusercontent.com/Hxido-RXM/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "moxyis",
+    "url": "https://raw.githubusercontent.com/moxyis/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "ctllo-bit",
+    "url": "https://raw.githubusercontent.com/ctllo-bit/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "yaya918",
+    "url": "https://raw.githubusercontent.com/yaya918/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "hbestm",
+    "url": "https://raw.githubusercontent.com/hbestm/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "710850609",
+    "url": "https://raw.githubusercontent.com/710850609/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "IMGZCQ",
+    "url": "https://raw.githubusercontent.com/IMGZCQ/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "zyp1690",
+    "url": "https://raw.githubusercontent.com/zyp1690/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "mac1256",
+    "url": "https://raw.githubusercontent.com/mac1256/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "Wyf841015",
+    "url": "https://raw.githubusercontent.com/Wyf841015/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "snltty",
+    "url": "https://raw.githubusercontent.com/snltty/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "jianzhichu",
+    "url": "https://raw.githubusercontent.com/jianzhichu/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "mynono33",
+    "url": "https://raw.githubusercontent.com/mynono33/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "htnanako",
+    "url": "https://raw.githubusercontent.com/htnanako/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "0999we",
+    "url": "https://raw.githubusercontent.com/0999we/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "upchr",
+    "url": "https://raw.githubusercontent.com/upchr/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "KKKK987",
+    "url": "https://raw.githubusercontent.com/KKKK987/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "wanjianmojun",
+    "url": "https://raw.githubusercontent.com/wanjianmojun/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "HonghaoLee",
+    "url": "https://raw.githubusercontent.com/HonghaoLee/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "MuLinForest",
+    "url": "https://raw.githubusercontent.com/MuLinForest/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "magiccode1412",
+    "url": "https://raw.githubusercontent.com/magiccode1412/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "ryxiang",
+    "url": "https://raw.githubusercontent.com/ryxiang/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "nx5888",
+    "url": "https://raw.githubusercontent.com/nx5888/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "fyzhu",
+    "url": "https://raw.githubusercontent.com/fyzhu/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "boater-man",
+    "url": "https://raw.githubusercontent.com/boater-man/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "ifsherlock",
+    "url": "https://raw.githubusercontent.com/ifsherlock/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "DPanel-dev",
+    "url": "https://raw.githubusercontent.com/DPanel-dev/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "yuexps",
+    "url": "https://raw.githubusercontent.com/yuexps/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "dysfwhq",
+    "url": "https://raw.githubusercontent.com/dysfwhq/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "ray5378",
+    "url": "https://raw.githubusercontent.com/ray5378/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "damadingding",
+    "url": "https://raw.githubusercontent.com/damadingding/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "shaoweiluo17-lang",
+    "url": "https://raw.githubusercontent.com/shaoweiluo17-lang/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  }
+]
