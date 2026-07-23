@@ -1,0 +1,6 @@
+[common]
+display_name="APT 管理"
+desc="轻量级的 APT 软件包管理工具，支持软件包的搜索、安装、卸载、升级以及软件源管理。"
+
+[entry]
+title="APT 管理"

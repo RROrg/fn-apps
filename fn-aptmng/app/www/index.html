@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APT 管理</title>
+  <link rel="stylesheet" href="/app/fn-aptmng/style.css">
+</head>
+
+<body>
+  <div id="progressBar" class="progress-bar hidden"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="side-head">
+        <h1 data-i18n="appTitle">APT 管理</h1>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-tab="installed" type="button">
+          <span class="nav-icon">📦</span>
+          <span data-i18n="installed">已安装</span>
+        </button>
+        <button class="nav-item" data-tab="search" type="button">
+          <span class="nav-icon">🔍</span>
+          <span data-i18n="search">搜索</span>
+        </button>
+        <button class="nav-item" data-tab="sources" type="button">
+          <span class="nav-icon">📋</span>
+          <span data-i18n="sources">源列表</span>
+        </button>
+        <button class="nav-item" data-tab="actions" type="button">
+          <span class="nav-icon">⚙️</span>
+          <span data-i18n="actions">操作</span>
+        </button>
+      </nav>
+      <button id="aboutBtn" class="side-footer" type="button">
+        <span>i</span>
+        <strong data-i18n="about">关于</strong>
+      </button>
+    </aside>
+
+    <main class="content">
+      <div id="tabInstalled" class="tab-panel">
+        <header class="topbar">
+          <h2 data-i18n="installed">已安装</h2>
+          <div class="topbar-actions">
+            <input id="installedSearch" type="search" placeholder="过滤包名" data-i18n-placeholder="filterPackages">
+            <button id="refreshBtn" class="ghost-btn" type="button" data-i18n="refresh">刷新</button>
+            <button id="upgradeAllBtn" class="primary-btn hidden" type="button"><span
+                data-i18n="upgradeAll">全部升级</span><span class="upgrade-count"></span></button>
+          </div>
+        </header>
+        <div id="installedList" class="pkg-list"></div>
+        <div id="installedEmpty" class="empty" data-i18n="loading">正在加载...</div>
+      </div>
+
+      <div id="tabSearch" class="tab-panel hidden">
+        <header class="topbar">
+          <h2 data-i18n="search">搜索</h2>
+          <div class="topbar-actions">
+            <input id="searchInput" type="search" placeholder="搜索包名" data-i18n-placeholder="searchPackages">
+            <button id="searchBtn" class="primary-btn" type="button" data-i18n="search">搜索</button>
+          </div>
+        </header>
+        <div id="searchList" class="pkg-list"></div>
+        <div id="searchEmpty" class="empty" data-i18n="searchHint">输入关键词搜索软件包</div>
+      </div>
+
+      <div id="tabSources" class="tab-panel hidden">
+        <header class="topbar">
+          <h2 data-i18n="sources">源列表</h2>
+          <div class="topbar-actions">
+            <button id="addSourceBtn" class="primary-btn" type="button" data-i18n="addSource">添加源</button>
+          </div>
+        </header>
+        <div id="sourcesList" class="source-table-wrap"></div>
+        <div id="sourcesEmpty" class="empty" data-i18n="loading">正在加载...</div>
+      </div>
+
+      <div id="tabActions" class="tab-panel hidden">
+        <header class="topbar">
+          <h2 data-i18n="actions">操作</h2>
+        </header>
+        <div class="action-grid">
+          <button class="action-card" id="actionFixBroken" type="button">
+            <span class="action-icon">🔧</span>
+            <strong data-i18n="fixBroken">修复依赖</strong>
+            <small data-i18n="fixBrokenDesc">修复损坏的依赖关系</small>
+          </button>
+          <button class="action-card" id="actionUpdate" type="button">
+            <span class="action-icon">🔄</span>
+            <strong data-i18n="updateCache">更新缓存</strong>
+            <small data-i18n="updateCacheDesc">刷新 apt 软件源缓存</small>
+          </button>
+          <button class="action-card" id="actionClean" type="button">
+            <span class="action-icon">🗑️</span>
+            <strong data-i18n="cleanCache">清理缓存</strong>
+            <small data-i18n="cleanCacheDesc">清理下载的软件包缓存</small>
+          </button>
+          <button class="action-card" id="actionAutoremove" type="button">
+            <span class="action-icon">🧹</span>
+            <strong data-i18n="autoremove">自动清理</strong>
+            <small data-i18n="autoremoveDesc">移除不再需要的依赖</small>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="detailModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2 id="detailTitle">包详情</h2>
+        <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div id="detailBody" class="detail-body"></div>
+      <div class="modal-footer">
+        <button id="detailInstallBtn" class="primary-btn hidden" type="button" data-i18n="install">安装</button>
+        <button id="detailUpgradeBtn" class="primary-btn hidden" type="button" data-i18n="upgrade">升级</button>
+        <button id="detailRemoveBtn" class="danger-btn hidden" type="button" data-i18n="remove">卸载</button>
+        <button id="detailPurgeBtn" class="danger-btn hidden" type="button" data-i18n="purge">彻底删除</button>
+        <button class="ghost-btn" data-close type="button" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sourceModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="addSource">添加源</h2>
+        <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span data-i18n="sourceFile">文件名</span>
+          <input id="sourceFile" type="text" placeholder="fn-aptmng.list" value="fn-aptmng.list">
+        </label>
+        <label class="field">
+          <span data-i18n="sourceLine">源地址</span>
+          <input id="sourceLine" type="text" placeholder="deb http://deb.debian.org/debian bookworm main">
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button id="saveSourceBtn" class="primary-btn" type="button" data-i18n="save">保存</button>
+        <button class="ghost-btn" data-close type="button" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="confirm">确认操作</h2>
+        <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="confirmOkBtn" class="danger-btn" type="button" data-i18n="confirm">确认</button>
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="outputModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2 id="outputTitle">输出</h2>
+        <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div class="modal-body">
+        <pre id="outputContent" class="output-pre"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aboutModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 data-i18n="about">关于</h2>
+        </div>
+        <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div class="about-body">
+        <div class="about-section">
+          <p class="about-declaration" data-i18n="aboutDeclaration">本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。</p>
+        </div>
+        <div class="about-section">
+          <h3 data-i18n="communitySupport">社区支持</h3>
+          <ul class="about-list">
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
+            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
+                rel="noopener noreferrer">RROrg/fn-apps</a></li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3 data-i18n="sponsorSupport">赞助支持</h3>
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring">
+        </div>
+        <div class="about-copyright">
+          <a href="https://github.com/RROrg" target="_blank" rel="noopener noreferrer">RROrg</a>
+          <a href="https://github.com/wjz304" target="_blank" rel="noopener noreferrer">wjz304</a>
+          <span>© 2026 RROrg, Ing, Inc.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app/fn-aptmng/app.js"></script>
+</body>
+
+</html>
