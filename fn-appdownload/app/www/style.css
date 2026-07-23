@@ -645,7 +645,7 @@ textarea {
 }
 
 .modal-content {
-  width: min(680px, calc(100vw - 48px));
+  width: min(1000px, calc(100vw - 48px));
   max-height: 88vh;
   overflow: auto;
   border: 1px solid var(--line);
@@ -749,6 +749,12 @@ textarea {
   font-size: var(--ui-caption-size);
   font-weight: var(--ui-caption-weight);
   letter-spacing: var(--ui-caption-letter-spacing);
+}
+
+.settings-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .source-list {
@@ -1148,6 +1154,11 @@ textarea {
   .settings-list-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .settings-list-actions {
+    flex-direction: column;
+    gap: 6px;
   }
 
   .add-source-btn {

@@ -50,6 +50,7 @@ const I18N = {
     savePath: "保存路径",
     sourceUrl: "源地址",
     addSource: "添加源",
+    syncOnlineSource: "同步线上源",
     cancel: "取消",
     save: "保存",
     close: "关闭",
@@ -109,6 +110,7 @@ const I18N = {
     savePath: "Save Path",
     sourceUrl: "Source URL",
     addSource: "Add Source",
+    syncOnlineSource: "Sync Online Sources",
     cancel: "Cancel",
     save: "Save",
     close: "Close",
@@ -996,6 +998,80 @@ function bindEvents() {
       "beforeend",
       sourceRowTemplate({ name: "", url: "", enabled: true }),
     );
+  });
+
+  document.getElementById("syncSourceBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("syncSourceBtn");
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = t("loading");
+
+    async function tryFetch(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) {
+        const err = new Error(`HTTP ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return response.json();
+    }
+
+    async function fetchSources() {
+      const rawUrl = "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appdownload/thirdPartySources.json";
+      const proxyEnabled = document.getElementById("githubProxyToggle").checked;
+      const proxyUrl = document.getElementById("githubProxyUrlInput").value.trim().replace(/\/+$/, "");
+
+      // 如果代理已启用，优先走代理
+      if (proxyEnabled && proxyUrl) {
+        try {
+          return await tryFetch(`${proxyUrl}/${rawUrl}`);
+        } catch (err) {
+          if (err.status !== 429) throw err;
+          // 429 时降级到直连
+        }
+      }
+
+      // 直连
+      return await tryFetch(rawUrl);
+    }
+
+    try {
+      const remoteSources = await fetchSources();
+      if (!Array.isArray(remoteSources)) throw new Error(t("loadFailed"));
+
+      const existingSources = collectSources();
+      let added = 0;
+      let updated = 0;
+
+      remoteSources.forEach((remote) => {
+        const idx = existingSources.findIndex((s) => s.url === remote.url);
+        if (idx === -1) {
+          existingSources.push({
+            name: remote.name || "",
+            url: remote.url || "",
+            enabled: remote.enabled !== false,
+          });
+          added++;
+        } else if (existingSources[idx].name !== remote.name) {
+          existingSources[idx].name = remote.name || "";
+          updated++;
+        }
+      });
+
+      renderSourceList(existingSources);
+      const summary = added
+        ? `添加 ${added} 个，更新 ${updated} 个`
+        : `已是最新`;
+      showToast(t("syncOnlineSource") + "：" + summary);
+    } catch (error) {
+      const msg = error.status === 429
+        ? "请求过于频繁，请稍后重试或启用 GitHub 加速代理"
+        : error.message;
+      showToast(msg, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   });
 
   document.getElementById("sourceList").addEventListener("click", (event) => {
