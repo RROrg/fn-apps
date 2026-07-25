@@ -3,12 +3,12 @@
 ### This script is called after the user uninstalls the application.
 
 # KVER="$(uname -r)"
-# 
+#
 # # Remove ntfs3 module and related files
 # rm -f /etc/modules-load.d/aic8800.conf || true
 # rm -f /usr/lib/modules/${KVER}/updates/drivers/net/wireless/aic8800/{aic_load_fw.ko,aic8800_fdrv.ko} 2>/dev/null || true
 # depmod -a || true
-# 
+#
 # # Restart systemd-modules-load.service to load the module
 # systemctl restart systemd-modules-load.service
 

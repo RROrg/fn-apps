@@ -3,12 +3,12 @@
 ### This script is called after the user uninstalls the application.
 
 # KVER="$(uname -r)"
-# 
+#
 # # Remove ntfs3 module and related files
 # rm -f /etc/modules-load.d/yt6801.conf || true
 # rm -f /usr/lib/modules/${KVER}/updates/drivers/net/ethernet/motorcomm/yt6801/yt6801.ko 2>/dev/null || true
 # depmod -a || true
-# 
+#
 # # Restart systemd-modules-load.service to load the module
 # systemctl restart systemd-modules-load.service
 

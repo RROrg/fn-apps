@@ -29,14 +29,14 @@ fi
 #   echo "Install yt6801 module failed." >$TRIM_TEMP_LOGFILE
 #   exit 1
 # fi
-# 
+#
 # depmod -a || true
 # echo yt6801 >/etc/modules-load.d/yt6801.conf
 # if [ $? -ne 0 ]; then
 #   echo "Update modules load failed." >$TRIM_TEMP_LOGFILE
 #   exit 1
 # fi
-# 
+#
 # # Restart systemd-modules-load.service to load the module
 # systemctl restart systemd-modules-load.service
 # if [ $? -ne 0 ]; then

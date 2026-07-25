@@ -30,14 +30,14 @@ fi
 #   echo "Install aic8800 module failed." >$TRIM_TEMP_LOGFILE
 #   exit 1
 # fi
-# 
+#
 # depmod -a || true
 # echo -e "aic_load_fw\naic8800_fdrv\n" >/etc/modules-load.d/aic8800.conf
 # if [ $? -ne 0 ]; then
 #   echo "Update modules load failed." >$TRIM_TEMP_LOGFILE
 #   exit 1
 # fi
-# 
+#
 # # Restart systemd-modules-load.service to load the module
 # systemctl restart systemd-modules-load.service
 # if [ $? -ne 0 ]; then

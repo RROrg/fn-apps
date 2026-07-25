@@ -3,12 +3,12 @@
 ### This script is called after the user uninstalls the application.
 
 # KVER="$(uname -r)"
-# 
+#
 # # Remove wl module and related files
 # rm -f /etc/modules-load.d/wl.conf || true
 # rm -f /usr/lib/modules/${KVER}/updates/drivers/net/wireless/wl.ko 2>/dev/null || true
 # depmod -a || true
-# 
+#
 # # Restart systemd-modules-load.service to load the module
 # systemctl restart systemd-modules-load.service
 

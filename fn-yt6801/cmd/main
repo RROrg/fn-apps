@@ -68,7 +68,7 @@ start_process() {
   fi
 
   log_msg "Starting process ..."
-	check_with_build || return 1
+  check_with_build || return 1
   insmod_from_file "${TRIM_APPDEST}/server/src/yt6801.ko" >>${LOG_FILE} 2>&1
   return 0
 }

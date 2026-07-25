@@ -68,7 +68,7 @@ start_process() {
   fi
 
   log_msg "Starting process ..."
-	check_with_build || return 1
+  check_with_build || return 1
   [ -L "/usr/lib/udev/rules.d/50-usb-aic-net.rules" ] && rm -f "/usr/lib/udev/rules.d/50-usb-aic-net.rules"
   [ ! -L "/usr/lib/udev/rules.d/50-usb-aic-net.rules" ] && ln -s "${TRIM_APPDEST}/server/udev/50-usb-aic-net.rules" "/usr/lib/udev/rules.d/50-usb-aic-net.rules"
   udevadm control --reload-rules
