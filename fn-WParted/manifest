@@ -1,0 +1,14 @@
+appname               = fn-WParted
+version               = 1.0.0
+display_name          = "${common.display_name}"
+desc                  = "${common.desc}"
+platform              = all
+source                = thirdparty
+maintainer            = Ing
+maintainer_url        = https://github.com/RROrg
+distributor           = RROrg
+distributor_url       = https://github.com/RROrg/fn-apps
+desktop_uidir         = ui
+desktop_applaunchname = fn-WParted.Application
+install_type          = root
+reloadui              = yes

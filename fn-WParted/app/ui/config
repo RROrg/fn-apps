@@ -1,0 +1,17 @@
+{
+  ".url": {
+    "fn-WParted.Application": {
+      "title": "${entry.title}",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "url": "/app/fn-WParted",
+      "gatewaySocket": "fn-WParted.sock",
+      "gatewayPrefix": "/app/fn-WParted",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly",
+        "fullUrlPerm": "readonly"
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+### This script is called after the user uninstalls the application.
+
+[ "${wizard_data_action:-}" == "delete" ] && {
+  rm -rf /var/lib/fn-WParted
+
+  REMOVE_PKGS=""
+  for pkg in xfsprogs f2fs-tools; do
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+      REMOVE_PKGS="$REMOVE_PKGS $pkg"
+    fi
+  done
+
+  [ -n "$REMOVE_PKGS" ] && apt-get remove -y -qq $REMOVE_PKGS 2>/dev/null || true
+  apt-get autoremove -y -qq 2>/dev/null || true
+}
+
+exit 0

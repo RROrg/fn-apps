@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WParted</title>
+  <link rel="stylesheet" href="style.css?v=20260625h">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <svg class="topbar-icon" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+        </svg>
+        <h1>WParted</h1>
+      </div>
+      <div class="topbar-actions">
+        <select id="deviceSelect" class="device-select" title="选择设备"></select>
+        <button id="refreshBtn" class="ghost-btn" type="button" data-i18n="refresh">刷新</button>
+        <button id="aboutBtn" class="ghost-btn about-btn" type="button" title="关于">i</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button id="newPartBtn" class="tool-btn" disabled type="button" title="新建分区">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span data-i18n="newPartition">新建分区</span>
+          </button>
+          <button id="deletePartBtn" class="tool-btn danger" disabled type="button" title="删除分区">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 12h14" />
+            </svg>
+            <span data-i18n="deletePartition">删除分区</span>
+          </button>
+          <button id="resizePartBtn" class="tool-btn" disabled type="button" title="调整大小/移动">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 3l-6 6M21 3v5M21 3h-5M3 21l6-6M3 21v-5M3 21h5" />
+            </svg>
+            <span data-i18n="resizeMove">调整大小/移动</span>
+          </button>
+          <div class="toolbar-sep"></div>
+          <button id="formatBtn" class="tool-btn" disabled type="button" title="格式化">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 6h18M3 12h12M3 18h8" />
+            </svg>
+            <span data-i18n="format">格式化</span>
+          </button>
+          <button id="checkBtn" class="tool-btn" disabled type="button" title="检查">
+            <svg viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-5" />
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+            <span data-i18n="check">检查</span>
+          </button>
+          <div class="toolbar-sep"></div>
+          <button id="mountBtn" class="tool-btn" disabled type="button" title="挂载">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            <span data-i18n="mount">挂载</span>
+          </button>
+          <button id="umountBtn" class="tool-btn" disabled type="button" title="卸载">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+            <span data-i18n="umount">卸载</span>
+          </button>
+        </div>
+        <div class="toolbar-right">
+          <button id="wipeBtn" class="tool-btn danger" disabled type="button" title="擦除磁盘">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 6h18M8 6V4h8v2M5 6v14a2 2 0 002 2h10a2 2 0 002-2V6" />
+            </svg>
+            <span data-i18n="wipeDisk">擦除磁盘</span>
+          </button>
+          <button id="newTableBtn" class="tool-btn danger" disabled type="button" title="新建分区表">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+            </svg>
+            <span data-i18n="newPartitionTable">新建分区表</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="loadingState" class="loading" data-i18n="loading">正在加载...</div>
+      <div id="errorState" class="error hidden"></div>
+
+      <div id="diskView" class="disk-view hidden">
+        <div class="disk-info" id="diskInfo"></div>
+        <div class="partition-canvas" id="partitionCanvas"></div>
+        <div class="partition-legend" id="partitionLegend"></div>
+      </div>
+
+      <div class="table-section hidden" id="tableSection">
+        <div class="table-header">
+          <h3 data-i18n="partitionList">分区列表</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="partitionTable">
+            <thead>
+              <tr>
+                <th data-i18n="colPartition">分区</th>
+                <th data-i18n="colFilesystem">文件系统</th>
+                <th data-i18n="colMountPoint">挂载点</th>
+                <th data-i18n="colLabel">标签</th>
+                <th data-i18n="colSize">大小</th>
+                <th data-i18n="colUsed">已用</th>
+                <th data-i18n="colFlags">标志</th>
+              </tr>
+            </thead>
+            <tbody id="partitionBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-section hidden" id="detailSection">
+        <div class="detail-header">
+          <h3 data-i18n="partitionDetail">分区详情</h3>
+          <button id="closeDetailBtn" class="ghost-btn" type="button">×</button>
+        </div>
+        <div class="detail-grid" id="detailGrid"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="createModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="createPartition">创建新分区</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="createForm">
+          <label class="field"><span data-i18n="startMiB">起始位置 (MiB)</span><input id="createStart" type="number" min="1"
+              required></label>
+          <label class="field"><span data-i18n="endMiB">结束位置 (MiB)</span><input id="createEnd" type="number" min="1"
+              required></label>
+          <label class="field"><span data-i18n="partitionType">分区类型</span>
+            <select id="createPartType">
+              <option value="primary" data-i18n="primary">主分区</option>
+              <option value="logical" data-i18n="logical">逻辑分区</option>
+              <option value="extended" data-i18n="extended">扩展分区</option>
+            </select>
+          </label>
+          <label class="field"><span data-i18n="filesystem">文件系统</span>
+            <select id="createFstype">
+              <option value="ext2">ext2</option>
+              <option value="ext3">ext3</option>
+              <option value="ext4">ext4</option>
+              <option value="xfs">XFS</option>
+              <option value="zfs">ZFS</option>
+              <option value="btrfs">Btrfs</option>
+              <option value="f2fs">F2FS</option>
+              <option value="ntfs">NTFS</option>
+              <option value="fat16">FAT16</option>
+              <option value="fat32">FAT32</option>
+              <option value="exfat">exFAT</option>
+              <option value="linux-swap">linux-swap</option>
+            </select>
+          </label>
+          <label class="field"><span data-i18n="label">标签</span><input id="createLabel" type="text"
+              maxlength="128"></label>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+        <button id="createConfirmBtn" class="primary-btn" type="button" data-i18n="create">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="formatModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="formatPartition">格式化分区</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="formatForm">
+          <div class="warn-text" data-i18n="formatWarning">警告：格式化将清除分区上的所有数据！此操作不可恢复！</div>
+          <label class="field"><span data-i18n="partition">分区</span><input id="formatPartition" type="text"
+              readonly></label>
+          <label class="field"><span data-i18n="filesystem">文件系统</span>
+            <select id="formatFstype">
+              <option value="ext2">ext2</option>
+              <option value="ext3">ext3</option>
+              <option value="ext4">ext4</option>
+              <option value="xfs">XFS</option>
+              <option value="zfs">ZFS</option>
+              <option value="btrfs">Btrfs</option>
+              <option value="f2fs">F2FS</option>
+              <option value="ntfs">NTFS</option>
+              <option value="fat16">FAT16</option>
+              <option value="fat32">FAT32</option>
+              <option value="exfat">exFAT</option>
+              <option value="linux-swap">linux-swap</option>
+            </select>
+          </label>
+          <label class="field"><span data-i18n="label">标签</span><input id="formatLabel" type="text"
+              maxlength="128"></label>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+        <button id="formatConfirmBtn" class="danger-btn" type="button" data-i18n="format">格式化</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resizeModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="resizePartition">调整分区大小</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="resizeForm">
+          <label class="field"><span data-i18n="partition">分区</span><input id="resizePartition" type="text"
+              readonly></label>
+          <label class="field"><span data-i18n="endMiB">结束位置 (MiB)</span><input id="resizeEnd" type="number" min="1"
+              required></label>
+          <div class="info-text" id="resizeInfo"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+        <button id="resizeConfirmBtn" class="primary-btn" type="button" data-i18n="resize">调整</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mountModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="mountPartition">挂载分区</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="mountForm">
+          <label class="field"><span data-i18n="partition">分区</span><input id="mountPartition" type="text"
+              readonly></label>
+          <label class="field"><span data-i18n="mountPoint">挂载点</span><input id="mountPoint" type="text"
+              placeholder="/mnt/data" required></label>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+        <button id="mountConfirmBtn" class="primary-btn" type="button" data-i18n="mount">挂载</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wipeModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="wipeDiskTitle">擦除磁盘</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="warn-text" data-i18n="wipeWarning">警告：擦除磁盘将删除所有分区和数据！此操作不可恢复！</div>
+        <label class="field"><span data-i18n="device">设备</span><input id="wipeDevice" type="text" readonly></label>
+        <label class="field"><span data-i18n="wipeMethod">擦除方式</span>
+          <select id="wipeMethod">
+            <option value="quick" data-i18n="quickWipe">快速擦除（仅清除签名）</option>
+            <option value="zero" data-i18n="zeroWipe">零填充擦除（更彻底）</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+        <button id="wipeConfirmBtn" class="danger-btn" type="button" data-i18n="wipe">擦除</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="newTableModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="newPartitionTableTitle">新建分区表</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="warn-text" data-i18n="newTableWarning">警告：新建分区表将删除磁盘上所有现有分区！此操作不可恢复！</div>
+        <label class="field"><span data-i18n="device">设备</span><input id="newTableDevice" type="text" readonly></label>
+        <label class="field"><span data-i18n="tableType">分区表类型</span>
+          <select id="newTableType">
+            <option value="gpt">GPT (GUID Partition Table)</option>
+            <option value="msdos">MBR (MS-DOS)</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn" data-close type="button" data-i18n="cancel">取消</button>
+        <button id="newTableConfirmBtn" class="danger-btn" type="button" data-i18n="create">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="confirm-content">
+      <p id="confirmMessage"></p>
+      <div class="confirm-actions">
+        <button id="confirmCancel" class="ghost-btn" type="button" data-i18n="cancel">取消</button>
+        <button id="confirmOk" class="danger-btn" type="button" data-i18n="confirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aboutModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content about-content">
+      <div class="modal-header">
+        <h2 data-i18n="about">关于</h2>
+        <button class="icon-btn" data-close type="button">×</button>
+      </div>
+      <div class="about-body">
+        <div class="about-section">
+          <p class="about-declaration" data-i18n="aboutDeclaration">本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。</p>
+        </div>
+        <div class="about-section">
+          <h3 data-i18n="communitySupport">社区支持</h3>
+          <ul class="about-list">
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
+            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
+                rel="noopener noreferrer">RROrg/fn-apps</a></li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3 data-i18n="sponsorSupport">赞助支持</h3>
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring">
+        </div>
+        <div class="about-copyright">
+          <a href="https://github.com/RROrg" target="_blank" rel="noopener noreferrer">RROrg</a>
+          <a href="https://github.com/wjz304" target="_blank" rel="noopener noreferrer">wjz304</a>
+          <span>© 2026 RROrg, Ing, Inc.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <div id="busyOverlay" class="busy-overlay hidden">
+    <div class="busy-spinner"></div>
+  </div>
+  <script src="app.js?v=20260726a"></script>
+</body>
+
+</html>

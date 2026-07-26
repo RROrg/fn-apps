@@ -1,0 +1,6 @@
+[common]
+display_name="WParted"
+desc="Disk partition editor - create, resize, delete, move, copy, check and format partitions."
+
+[entry]
+title="WParted"

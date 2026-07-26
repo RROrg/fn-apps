@@ -1,0 +1,16 @@
+#!/bin/bash
+
+### This script is called after the user installs the application.
+
+apt-get update -qq
+
+PKGS=""
+for pkg in xfsprogs f2fs-tools; do
+  if apt-cache show "$pkg" >/dev/null 2>&1 && ! apt list --installed "$pkg" 2>/dev/null | grep -qw 'installed'; then
+    PKGS="$PKGS $pkg"
+  fi
+done
+
+[ -n "$PKGS" ] && apt-get install -y -qq $PKGS 2>/dev/null || true
+
+exit 0

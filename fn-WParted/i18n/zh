@@ -1,0 +1,6 @@
+[common]
+display_name="WParted"
+desc="磁盘分区编辑器 - 创建、调整大小、删除、移动、复制、检查和格式化分区。"
+
+[entry]
+title="WParted"
