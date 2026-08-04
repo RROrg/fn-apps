@@ -1,5 +1,5 @@
 appname               = fn-installer
-version               = 1.0.2
+version               = 1.0.3
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all

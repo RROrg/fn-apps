@@ -25,7 +25,8 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 APP_NAME = "fn-installer"
-APP_CENTER_SOCKET = "/var/run/com.trim.app.center.sock"
+APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
+APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"      # fnOS < 1.2.0401
 VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
 SETTINGS_FILE = VAR_DIR / "settings.json"
 SKIP_DIR_PREFIXES = (".", "@")
@@ -340,9 +341,16 @@ def decode_chunked(data):
     return bytes(output)
 
 
+def app_center_socket():
+    if os.path.exists(APP_CENTER_WEB_SOCKET):
+        return APP_CENTER_WEB_SOCKET
+    return APP_CENTER_OLD_SOCKET
+
+
 def unix_http(method, path, payload=None, timeout=30):
-    if not os.path.exists(APP_CENTER_SOCKET):
-        raise RuntimeError(f"app-center socket not found: {APP_CENTER_SOCKET}")
+    socket_path = app_center_socket()
+    if not os.path.exists(socket_path):
+        raise RuntimeError(f"app-center socket not found: {socket_path}")
     token = incoming_token()
     if not token:
         raise RuntimeError("authorization token not found")
@@ -365,7 +373,7 @@ def unix_http(method, path, payload=None, timeout=30):
         socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
     ) as client:
         client.settimeout(timeout)
-        client.connect(APP_CENTER_SOCKET)
+        client.connect(socket_path)
         client.sendall(request_data)
         chunks = []
         while True:

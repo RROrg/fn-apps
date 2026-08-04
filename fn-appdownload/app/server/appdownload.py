@@ -27,7 +27,8 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 APP_NAME = "fn-appdownload"
-APP_CENTER_SOCKET = "/var/run/com.trim.app.center.sock"
+APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
+APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"      # fnOS < 1.2.0401
 VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
 SHARE_DIR = Path(f"/var/apps/{APP_NAME}/shares/{APP_NAME}")
 DEFAULT_DOWNLOAD_DIR = SHARE_DIR / "downloads"
@@ -415,9 +416,16 @@ def decode_chunked(data):
     return bytes(output)
 
 
+def app_center_socket():
+    if os.path.exists(APP_CENTER_WEB_SOCKET):
+        return APP_CENTER_WEB_SOCKET
+    return APP_CENTER_OLD_SOCKET
+
+
 def unix_http(method, path, payload=None, timeout=15, token_override=None):
-    if not os.path.exists(APP_CENTER_SOCKET):
-        raise RuntimeError(f"socket not found: {APP_CENTER_SOCKET}")
+    socket_path = app_center_socket()
+    if not os.path.exists(socket_path):
+        raise RuntimeError(f"socket not found: {socket_path}")
     token = token_override or incoming_token()
     if not token:
         raise RuntimeError(
@@ -442,7 +450,7 @@ def unix_http(method, path, payload=None, timeout=15, token_override=None):
         socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
     ) as client:
         client.settimeout(timeout)
-        client.connect(APP_CENTER_SOCKET)
+        client.connect(socket_path)
         client.sendall(request)
         chunks = []
         while True:

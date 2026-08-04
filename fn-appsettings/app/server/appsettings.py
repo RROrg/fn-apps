@@ -27,7 +27,8 @@ from urllib.parse import unquote, urlsplit
 APP_NAME = "fn-appsettings"
 DB_NAME = "appcenter"
 DB_USER = "postgres"
-APP_CENTER_SOCKET = "/var/run/com.trim.app.center.sock"
+APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
+APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"      # fnOS < 1.2.0401
 
 REQUEST_CONTEXT = threading.local()
 
@@ -529,9 +530,15 @@ def decode_chunked(data):
     return bytes(output)
 
 
+def app_center_socket():
+    if os.path.exists(APP_CENTER_WEB_SOCKET):
+        return APP_CENTER_WEB_SOCKET
+    return APP_CENTER_OLD_SOCKET
+
 def app_center_socket_request(method, path, payload=None, timeout=20):
-    if not os.path.exists(APP_CENTER_SOCKET):
-        raise RuntimeError(f"socket not found: {APP_CENTER_SOCKET}")
+    socket_path = app_center_socket()
+    if not os.path.exists(socket_path):
+        raise RuntimeError(f"socket not found: {socket_path}")
     token = current_auth_token()
     if not token:
         raise RuntimeError("app-center token not found")
@@ -556,7 +563,7 @@ def app_center_socket_request(method, path, payload=None, timeout=20):
         socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
     ) as client:
         client.settimeout(timeout)
-        client.connect(APP_CENTER_SOCKET)
+        client.connect(socket_path)
         client.sendall(request)
         chunks = []
         while True:
