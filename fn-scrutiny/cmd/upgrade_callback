@@ -21,7 +21,4 @@ if [ -f "${SETTINGS_FILE}" ]; then
   fi
 fi
 
-rm -f "${TRIM_APPDEST}/web/.translated"
-rm -f "${TRIM_APPDEST}/web/.untranslated"
-
 exit 0

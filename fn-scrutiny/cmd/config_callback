@@ -5,13 +5,10 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/_functions"
 
-OLD_TRANSLATE=$(get_translate)
-
 WEB_PORT="${wizard_port:-$(get_web_port)}"
 HOST_ID="${wizard_host_id:-$(get_host_id)}"
 CRON_INTERVAL="${wizard_cron_interval:-$(get_cron_interval)}"
 CRON_SCHEDULE=$(get_cron_schedule "${CRON_INTERVAL}")
-TRANSLATE="${wizard_translate:-$(get_translate)}"
 INFLUXDB_MODE="${wizard_influxdb_mode:-$(get_influxdb_mode)}"
 INFLUXDB_HOST="${wizard_influxdb_host:-$(get_influxdb_host)}"
 INFLUXDB_PORT="${wizard_influxdb_port:-$(get_influxdb_port)}"
@@ -19,15 +16,11 @@ INFLUXDB_TOKEN="${wizard_influxdb_token:-$(get_influxdb_token)}"
 INFLUXDB_ORG="${wizard_influxdb_org:-$(get_influxdb_org)}"
 INFLUXDB_BUCKET="${wizard_influxdb_bucket:-$(get_influxdb_bucket)}"
 
-write_settings "${SETTINGS_FILE}" "${WEB_PORT}" "${CRON_SCHEDULE}" "${CRON_INTERVAL}" "${HOST_ID}" "${TRANSLATE}" "${INFLUXDB_MODE}" "${INFLUXDB_HOST}" "${INFLUXDB_PORT}" "${INFLUXDB_TOKEN}" "${INFLUXDB_ORG}" "${INFLUXDB_BUCKET}"
+write_settings "${SETTINGS_FILE}" "${WEB_PORT}" "${CRON_SCHEDULE}" "${CRON_INTERVAL}" "${HOST_ID}" "${INFLUXDB_MODE}" "${INFLUXDB_HOST}" "${INFLUXDB_PORT}" "${INFLUXDB_TOKEN}" "${INFLUXDB_ORG}" "${INFLUXDB_BUCKET}"
 
 if check_influxdb_running; then
   ensure_influxdb_bucket || true
   generate_scrutiny_config "${WEB_PORT}" "$(get_influxdb_host)" "$(get_influxdb_port)" "$(get_influxdb_token)" "$(get_influxdb_org)" "$(get_influxdb_bucket)"
-fi
-
-if [ "${TRANSLATE}" != "${OLD_TRANSLATE}" ]; then
-  rm -f "${TRIM_APPDEST}/web/.translated"
 fi
 
 exit 0

@@ -78,28 +78,6 @@
       },
       {
         "type": "select",
-        "field": "wizard_translate",
-        "label": "${wizard.install_item6_label}",
-        "initValue": "true",
-        "options": [
-          {
-            "label": "${wizard.install_item6_options1}",
-            "value": "true"
-          },
-          {
-            "label": "${wizard.install_item6_options2}",
-            "value": "false"
-          }
-        ],
-        "rules": [
-          {
-            "required": true,
-            "message": "Required"
-          }
-        ]
-      },
-      {
-        "type": "select",
         "field": "wizard_influxdb_mode",
         "label": "${wizard.install_item7_label}",
         "initValue": "auto",

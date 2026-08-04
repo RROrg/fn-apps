@@ -71,27 +71,6 @@
       },
       {
         "type": "select",
-        "field": "wizard_translate",
-        "label": "${wizard.config_item5_label}",
-        "options": [
-          {
-            "label": "${wizard.config_item5_options1}",
-            "value": "true"
-          },
-          {
-            "label": "${wizard.config_item5_options2}",
-            "value": "false"
-          }
-        ],
-        "rules": [
-          {
-            "required": true,
-            "message": "Required"
-          }
-        ]
-      },
-      {
-        "type": "select",
         "field": "wizard_influxdb_mode",
         "label": "${wizard.config_item6_label}",
         "initValue": "auto",

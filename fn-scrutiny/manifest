@@ -1,5 +1,5 @@
 appname               = fn-scrutiny
-version               = 1.64.0
+version               = 1.68.0
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all

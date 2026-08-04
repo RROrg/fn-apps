@@ -72,12 +72,6 @@ get_cron_interval() {
   echo "${interval:-15}"
 }
 
-get_translate() {
-  local translate
-  translate=$(read_settings "translate")
-  echo "${translate:-true}"
-}
-
 get_cron_schedule() {
   local interval="$1"
   if [ -n "${interval}" ]; then
@@ -161,13 +155,12 @@ write_settings() {
   local cron_schedule="$3"
   local cron_interval="$4"
   local host_id="$5"
-  local translate="$6"
-  local influxdb_mode="$7"
-  local influxdb_host="$8"
-  local influxdb_port="$9"
-  local influxdb_token="${10}"
-  local influxdb_org="${11}"
-  local influxdb_bucket="${12}"
+  local influxdb_mode="$6"
+  local influxdb_host="$7"
+  local influxdb_port="$8"
+  local influxdb_token="$9"
+  local influxdb_org="${10}"
+  local influxdb_bucket="${11}"
 
   cat >"${settings_file}" <<EOF
 {
@@ -175,7 +168,6 @@ write_settings() {
     "cron_schedule": "${cron_schedule}",
     "cron_interval": "${cron_interval}",
     "host_id": "${host_id}",
-    "translate": "${translate}",
     "influxdb_mode": "${influxdb_mode}",
     "influxdb_host": "${influxdb_host}",
     "influxdb_port": "${influxdb_port}",
@@ -257,43 +249,6 @@ run_collector_once() {
   log_msg "Running collector once..."
   ${COLLECTOR_BIN} run --host-id "${host_id}" --api-endpoint "http://localhost:$(get_web_port)" >>${LOG_FILE} 2>&1 &
   log_msg "Collector started in background"
-}
-
-apply_translation() {
-  local web_dir="${TRIM_APPDEST}/web"
-  local marker="${web_dir}/.translated"
-  local unmarker="${web_dir}/.untranslated"
-
-  local translate
-  translate=$(get_translate)
-
-  if [ "${translate}" != "true" ]; then
-    if [ -f "${marker}" ] && [ ! -f "${unmarker}" ]; then
-      log_msg "Chinese translation is disabled, restoring original frontend..."
-      local frontend_url
-      frontend_url="https://github.com/Starosdev/scrutiny/releases/download/v1.49.2/scrutiny-web-frontend.tar.gz"
-      curl -fsSL "${frontend_url}" -o /tmp/scrutiny-web-frontend.tar.gz 2>/dev/null
-      rm -rf "${web_dir}"
-      mkdir -p "${web_dir}"
-      tar -xzf /tmp/scrutiny-web-frontend.tar.gz -C "${web_dir}"
-      rm -f /tmp/scrutiny-web-frontend.tar.gz
-      touch "${unmarker}"
-      log_msg "Original frontend restored"
-    fi
-    return 0
-  fi
-
-  rm -f "${unmarker}"
-
-  if [ -f "${marker}" ]; then
-    return 0
-  fi
-
-  if [ -f "${TRIM_APPDEST}/translate.sh" ]; then
-    log_msg "Applying Chinese translation to frontend..."
-    bash "${TRIM_APPDEST}/translate.sh" "${web_dir}" >>${LOG_FILE} 2>&1
-    log_msg "Chinese translation applied"
-  fi
 }
 
 start_process() {

@@ -5,7 +5,6 @@
 echo "wizard_port=8080"
 echo "wizard_host_id=fnOS"
 echo "wizard_cron_interval=15"
-echo "wizard_translate=true"
 echo "wizard_influxdb_mode=auto"
 echo "wizard_influxdb_host=localhost"
 echo "wizard_influxdb_port=8086"

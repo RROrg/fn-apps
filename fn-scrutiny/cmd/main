@@ -11,7 +11,7 @@ start_app() {
   if [ ! -f "${SETTINGS_FILE}" ]; then
     local default_schedule
     default_schedule=$(get_cron_schedule 15)
-    write_settings "${SETTINGS_FILE}" "8080" "${default_schedule}" "15" "fnOS" "true" "auto" "localhost" "8086" "" "scrutiny" "scrutiny"
+    write_settings "${SETTINGS_FILE}" "8080" "${default_schedule}" "15" "fnOS" "auto" "localhost" "8086" "" "scrutiny" "scrutiny"
   fi
 
   if ! check_influxdb_running; then
@@ -35,8 +35,6 @@ start_app() {
   influxdb_bucket=$(get_influxdb_bucket)
 
   generate_scrutiny_config "${web_port}" "${influxdb_host}" "${influxdb_port}" "${influxdb_token}" "${influxdb_org}" "${influxdb_bucket}"
-
-  apply_translation
 
   start_process || return 1
 

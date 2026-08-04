@@ -9,14 +9,13 @@ WEB_PORT="${wizard_port:-8080}"
 HOST_ID="${wizard_host_id:-fnOS}"
 CRON_INTERVAL="${wizard_cron_interval:-15}"
 CRON_SCHEDULE=$(get_cron_schedule "${CRON_INTERVAL}")
-TRANSLATE="${wizard_translate:-true}"
 INFLUXDB_MODE="${wizard_influxdb_mode:-auto}"
 INFLUXDB_HOST="${wizard_influxdb_host:-localhost}"
 INFLUXDB_PORT="${wizard_influxdb_port:-8086}"
 INFLUXDB_ORG="${wizard_influxdb_org:-scrutiny}"
 INFLUXDB_BUCKET="${wizard_influxdb_bucket:-scrutiny}"
 
-write_settings "${SETTINGS_FILE}" "${WEB_PORT}" "${CRON_SCHEDULE}" "${CRON_INTERVAL}" "${HOST_ID}" "${TRANSLATE}" "${INFLUXDB_MODE}" "${INFLUXDB_HOST}" "${INFLUXDB_PORT}" "" "${INFLUXDB_ORG}" "${INFLUXDB_BUCKET}"
+write_settings "${SETTINGS_FILE}" "${WEB_PORT}" "${CRON_SCHEDULE}" "${CRON_INTERVAL}" "${HOST_ID}" "${INFLUXDB_MODE}" "${INFLUXDB_HOST}" "${INFLUXDB_PORT}" "" "${INFLUXDB_ORG}" "${INFLUXDB_BUCKET}"
 
 chmod +x "${COLLECTOR_BIN}" 2>/dev/null
 chmod +x "${WEB_BIN}" 2>/dev/null

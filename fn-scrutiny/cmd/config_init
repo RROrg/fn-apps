@@ -9,7 +9,6 @@ if [ -f "${SETTINGS_FILE}" ]; then
   echo "wizard_port=$(get_web_port)"
   echo "wizard_host_id=$(get_host_id)"
   echo "wizard_cron_interval=$(get_cron_interval)"
-  echo "wizard_translate=$(get_translate)"
   echo "wizard_influxdb_mode=$(get_influxdb_mode)"
   echo "wizard_influxdb_host=$(get_influxdb_host)"
   echo "wizard_influxdb_port=$(get_influxdb_port)"
