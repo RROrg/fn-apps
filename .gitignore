@@ -1,6 +1,7 @@
 !.gitkeep
 .vscode
 /fnpack*
+/fygopack*
 *.fpk
 *.bak
 *.db
