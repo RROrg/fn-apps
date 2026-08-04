@@ -1202,6 +1202,13 @@ class Database:
             (count,) = cur.fetchone()
         return count > 0
 
+    def fetch_running_instances(self) -> List[Dict[str, Any]]:
+        with self._lock:
+            cur = self._conn.execute(
+                "SELECT task_id, started_at FROM task_results WHERE status='running'"
+            )
+            return [dict(row) for row in cur.fetchall()]
+
     def finalize_stale_running_instances(
         self, task_id: int, reason: str = "stopped by user"
     ) -> int:
@@ -1500,8 +1507,13 @@ class TaskRunner(threading.Thread):
             stdout, stderr = process.communicate(timeout=timeout)
         except TimeoutExpired as exc:
             try:
-                process.kill()  # type: ignore[name-defined]
-                process.communicate()  # type: ignore[name-defined]
+                # Kill the whole process tree so children holding the pipes
+                # (e.g. `sleep` or daemonized processes) cannot keep
+                # communicate() blocked until they exit on their own.
+                TaskRunner.terminate_task_processes(task_id, grace_seconds=1.0)
+                proc = locals().get("process")
+                if proc is not None:
+                    proc.wait(timeout=5)
             except Exception:
                 pass
             return f"task execution timeout (> {timeout}s): {exc}", "failed"
@@ -1537,60 +1549,27 @@ class TaskRunner(threading.Thread):
         with cls._running_lock:
             processes = list(cls._running_processes.get(task_id, set()))
 
-        fallback_pids: List[int] = []
-        if not processes:
-            fallback_pids = cls._find_task_pids(task_id)
-            if not fallback_pids:
-                return {
-                    "targeted": 0,
-                    "terminated": 0,
-                    "killed": 0,
-                    "already_exited": 0,
-                }
-            return cls._terminate_pids(fallback_pids, grace_seconds)
-
-        terminated = 0
-        killed = 0
-        already_exited = 0
-
-        alive_after_terminate: List[Popen[str]] = []
+        # Kill the whole process tree: the tracked Popen handles plus any
+        # descendant processes carrying the SCHEDULER_TASK_ID marker.
+        # Descendants that keep the stdout/stderr pipes open (e.g. `sleep` or
+        # daemonized children) would otherwise outlive the shell and keep
+        # communicate() blocked until they exit on their own.
+        pids: Set[int] = set()
         for process in processes:
             if process.poll() is not None:
-                already_exited += 1
                 continue
-            try:
-                process.terminate()
-                terminated += 1
-                alive_after_terminate.append(process)
-            except Exception:
-                if process.poll() is not None:
-                    already_exited += 1
+            if process.pid is not None:
+                pids.add(process.pid)
+        pids.update(cls._find_task_pids(task_id))
 
-        deadline = time.monotonic() + max(0.0, grace_seconds)
-        survivors: List[Popen[str]] = []
-        for process in alive_after_terminate:
-            remaining = deadline - time.monotonic()
-            if remaining > 0:
-                try:
-                    process.wait(timeout=remaining)
-                except TimeoutExpired:
-                    pass
-            if process.poll() is None:
-                survivors.append(process)
-
-        for process in survivors:
-            try:
-                process.kill()
-                killed += 1
-            except Exception:
-                pass
-
-        return {
-            "targeted": len(processes),
-            "terminated": terminated,
-            "killed": killed,
-            "already_exited": already_exited,
-        }
+        if not pids:
+            return {
+                "targeted": 0,
+                "terminated": 0,
+                "killed": 0,
+                "already_exited": 0,
+            }
+        return cls._terminate_pids(sorted(pids), grace_seconds)
 
     @staticmethod
     def _find_task_pids(task_id: int) -> List[int]:
@@ -1717,6 +1696,7 @@ class SchedulerEngine:
             try:
                 self._process_due_tasks(now)
                 self._process_event_tasks(now)
+                self._enforce_task_timeouts(now)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception("Scheduler loop error: %s", exc)
             self.stop_event.wait(1)
@@ -1778,6 +1758,27 @@ class SchedulerEngine:
                 self._record_dependency_block(task, "condition")
                 continue
             TaskRunner(self.db, task, "condition", self.settings).start()
+
+    def _enforce_task_timeouts(self, moment: datetime) -> None:
+        timeout = self.settings.task_timeout
+        if not timeout or timeout <= 0:
+            return
+        for running in self.db.fetch_running_instances():
+            task_id = int(running["task_id"])
+            started_at = parse_iso(running["started_at"])
+            if not started_at:
+                continue
+            elapsed = (moment - started_at).total_seconds()
+            if elapsed <= timeout:
+                continue
+            logger.warning(
+                "Task %s exceeded %ss timeout (elapsed %.0fs), terminating processes",
+                task_id,
+                timeout,
+                elapsed,
+            )
+            summary = TaskRunner.terminate_task_processes(task_id)
+            logger.info("Timeout termination for task %s: %s", task_id, summary)
 
     def _run_condition(self, task: Dict[str, Any], trigger_reason: str) -> bool:
         command = TaskRunner._build_command(task["condition_script"])
