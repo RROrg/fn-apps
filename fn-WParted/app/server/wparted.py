@@ -244,9 +244,7 @@ def run(cmd, timeout=30, stdin_data=None):
             "cmd": " ".join(cmd),
             "rc": 124,
             "stdout": (exc.stdout or "").strip(),
-            "stderr": (
-                (exc.stderr or "").strip() or f"Command timed out after {timeout}s"
-            ),
+            "stderr": ((exc.stderr or "").strip() or f"Command timed out after {timeout}s"),
         }
     return {
         "cmd": " ".join(cmd),
@@ -704,7 +702,7 @@ def api_disk_detail():
     )
 
 
-def _find_new_partition(device, start_mib):
+def _find_new_partition(device, start_mib, before_count=None):
     result = run(["lsblk", "-J", "-b", "-o", "NAME,SIZE,TYPE,START"], timeout=15)
     if result["rc"] != 0:
         return None
@@ -722,6 +720,10 @@ def _find_new_partition(device, start_mib):
             if start and abs(int(start) / (1024 * 1024) - float(start_mib)) < 2:
                 return f"/dev/{name}" if not name.startswith("/dev/") else name
         break
+    # Fallback: only trust the last child if the partition count actually grew,
+    # so we never mistake a pre-existing partition for the newly created one.
+    if before_count is None:
+        return None
     result2 = run(["lsblk", "-J", "-b", "-o", "NAME,SIZE,TYPE"], timeout=15)
     if result2["rc"] != 0:
         return None
@@ -733,7 +735,7 @@ def _find_new_partition(device, start_mib):
         if bd.get("name") != dev_name:
             continue
         children = bd.get("children", []) or []
-        if children:
+        if len(children) > before_count and children:
             last = children[-1]
             name = last.get("name", "")
             return f"/dev/{name}" if not name.startswith("/dev/") else name
@@ -794,7 +796,7 @@ def _do_format(partition: str, fs_type: str, label: str = ""):
         time.sleep(1)
         result = run(cmd, timeout=300)
     if result["rc"] == 0:
-        os.sync()  # pyright: ignore[reportAttributeAccessIssue]
+        os.sync() # pyright: ignore[reportAttributeAccessIssue]
         run(["udevadm", "settle", "--timeout=10"], timeout=15)
     return result
 
@@ -815,11 +817,24 @@ def _wait_for_partition(partition, retries=5):
 
 
 def _unmount_partition(partition):
-    swap_result = run(["swapoff", partition], timeout=30)
-    if swap_result["rc"] != 0 and "not found" not in swap_result["stderr"].lower():
-        return (
-            swap_result["stderr"] or swap_result["stdout"] or "Failed to disable swap"
-        )
+    # Only disable swap if the partition is actually an active swap device.
+    # swapoff on a non-swap partition fails with EINVAL ("Invalid argument"),
+    # which is expected and must not block formatting.
+    swaps = run(["swapon", "--show=NAME", "--noheadings"], timeout=15)
+    if swaps["rc"] == 0:
+        active_swaps = {
+            line.strip()
+            for line in swaps["stdout"].splitlines()
+            if line.strip()
+        }
+        if partition in active_swaps:
+            swap_result = run(["swapoff", partition], timeout=30)
+            if swap_result["rc"] != 0:
+                return (
+                    swap_result["stderr"]
+                    or swap_result["stdout"]
+                    or "Failed to disable swap"
+                )
 
     mounts = run(["findmnt", "-rn", "-S", partition, "-o", "TARGET"], timeout=15)
     if mounts["rc"] not in (0, 1):
@@ -839,6 +854,45 @@ def _unmount_partition(partition):
     return ""
 
 
+def _partition_path(device, part_number):
+    if device.startswith(("/dev/nvme", "/dev/mmcblk", "/dev/loop")):
+        return f"{device}p{part_number}"
+    return f"{device}{part_number}"
+
+
+def _unmount_device(device):
+    """Unmount/swapoff every partition under a whole disk before destructive ops."""
+    result = run(["lsblk", "-rno", "NAME,TYPE", device], timeout=15)
+    if result["rc"] != 0:
+        return result["stderr"] or "Failed to list device partitions"
+    errors = []
+    for line in result["stdout"].splitlines():
+        fields = line.split()
+        if len(fields) < 2 or fields[1] != "part":
+            continue
+        name = fields[0]
+        part = f"/dev/{name}" if not name.startswith("/dev/") else name
+        err = _unmount_partition(part)
+        if err:
+            errors.append(f"{part}: {err}")
+    return "; ".join(errors) if errors else ""
+
+
+def _count_partitions(device):
+    result = run(["lsblk", "-J", "-b", "-o", "NAME,TYPE"], timeout=15)
+    if result["rc"] != 0:
+        return None
+    try:
+        data = json.loads(result["stdout"] or "{}")
+    except json.JSONDecodeError:
+        return None
+    dev_name = device.split("/")[-1]
+    for bd in data.get("blockdevices", []):
+        if bd.get("name") == dev_name:
+            return len(bd.get("children", []) or [])
+    return None
+
+
 def api_partition_create():
     body = request_body()
     device = body.get("device", "")
@@ -851,7 +905,9 @@ def api_partition_create():
         json_response({"ok": False, "message": "Invalid device name"}, 400)
         return
     if start_mib is None or end_mib is None:
-        json_response({"ok": False, "message": "startMiB and endMiB are required"}, 400)
+        json_response(
+            {"ok": False, "message": "startMiB and endMiB are required"}, 400
+        )
         return
     if float(start_mib) < 1:
         start_mib = 1
@@ -863,80 +919,93 @@ def api_partition_create():
     if not safe_fs_type(fs_type):
         json_response({"ok": False, "message": "Invalid filesystem type"}, 400)
         return
-    disk_info = run(["parted", "-m", device, "unit", "MiB", "print"], timeout=15)
-    if disk_info["rc"] == 0:
-        for line in disk_info["stdout"].splitlines():
-            parts = line.split(":")
-            if len(parts) >= 4 and parts[0] == device:
-                try:
-                    disk_end = float(parts[1].rstrip("MiB"))
-                    if float(end_mib) >= disk_end:
-                        end_mib = disk_end - 1
-                except (ValueError, IndexError):
-                    pass
-                break
-    cmd = [
-        "parted",
-        device,
-        "mkpart",
-        part_type,
-        fs_type,
-        f"{start_mib}MiB",
-        f"{end_mib}MiB",
-    ]
-    result = run_interactive(cmd, timeout=60)
-    if result["rc"] != 0:
+    # The server is threaded.  Serialize destructive block operations so a
+    # refresh or a second browser tab cannot interleave parted/mkfs calls.
+    if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": f"Failed to create partition: {result['stderr']}"},
-            500,
+            {"ok": False, "message": "Another disk operation is in progress"}, 409
         )
         return
-    run(["partprobe", device], timeout=10)
-    run(["udevadm", "settle", "--timeout=5"], timeout=10)
-    new_part = _find_new_partition(device, start_mib)
-    if new_part and fs_type and fs_type != "unformatted":
-        with _lock:
-            format_result = _do_format(new_part, fs_type, label)
-        if format_result is None or format_result["rc"] != 0:
-            detail = (
-                format_result["stderr"] or format_result["stdout"]
-                if format_result
-                else "Unknown error"
-            )
+    try:
+        before_count = _count_partitions(device)
+        disk_info = run(["parted", "-m", device, "unit", "MiB", "print"], timeout=15)
+        if disk_info["rc"] == 0:
+            for line in disk_info["stdout"].splitlines():
+                parts = line.split(":")
+                if len(parts) >= 4 and parts[0] == device:
+                    try:
+                        disk_end = float(parts[1].rstrip("MiB"))
+                        if float(end_mib) >= disk_end:
+                            end_mib = disk_end - 1
+                    except (ValueError, IndexError):
+                        pass
+                    break
+        cmd = [
+            "parted",
+            device,
+            "mkpart",
+            part_type,
+            fs_type,
+            f"{start_mib}MiB",
+            f"{end_mib}MiB",
+        ]
+        result = run_interactive(cmd, timeout=60)
+        if result["rc"] != 0:
             json_response(
                 {
                     "ok": False,
-                    "message": f"Partition was created but formatting failed: {detail}",
+                    "message": f"Failed to create partition: {result['stderr']}",
                 },
                 500,
             )
             return
-    elif fs_type and fs_type != "unformatted":
-        json_response(
+        run(["partprobe", device], timeout=10)
+        run(["udevadm", "settle", "--timeout=5"], timeout=10)
+        new_part = _find_new_partition(device, start_mib, before_count)
+        if new_part and fs_type and fs_type != "unformatted":
+            format_result = _do_format(new_part, fs_type, label)
+            if format_result is None or format_result["rc"] != 0:
+                detail = (
+                    format_result["stderr"] or format_result["stdout"]
+                    if format_result
+                    else "Unknown error"
+                )
+                json_response(
+                    {
+                        "ok": False,
+                        "message": f"Partition was created but formatting failed: {detail}",
+                    },
+                    500,
+                )
+                return
+        elif fs_type and fs_type != "unformatted":
+            json_response(
+                {
+                    "ok": False,
+                    "message": "Partition was created but its device is not ready",
+                },
+                500,
+            )
+            return
+        if label:
+            part_num = body.get("partNumber")
+            if part_num:
+                run(["parted", "-s", device, "name", str(part_num), label], timeout=30)
+        ops = load_operations()
+        ops["pending"].append(
             {
-                "ok": False,
-                "message": "Partition was created but its device is not ready",
-            },
-            500,
+                "action": "create",
+                "device": device,
+                "startMiB": start_mib,
+                "endMiB": end_mib,
+                "fstype": fs_type,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
         )
-        return
-    if label:
-        part_num = body.get("partNumber")
-        if part_num:
-            run(["parted", "-s", device, "name", str(part_num), label], timeout=30)
-    ops = load_operations()
-    ops["pending"].append(
-        {
-            "action": "create",
-            "device": device,
-            "startMiB": start_mib,
-            "endMiB": end_mib,
-            "fstype": fs_type,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-    )
-    save_operations(ops)
-    json_response({"ok": True, "message": "Partition created successfully"})
+        save_operations(ops)
+        json_response({"ok": True, "message": "Partition created successfully"})
+    finally:
+        _lock.release()
 
 
 def api_partition_delete():
@@ -949,27 +1018,48 @@ def api_partition_delete():
     if part_number is None:
         json_response({"ok": False, "message": "partNumber is required"}, 400)
         return
-    cmd = ["parted", device, "rm", str(part_number)]
-    result = run_interactive(cmd, timeout=60)
-    if result["rc"] != 0:
+    if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": f"Failed to delete partition: {result['stderr']}"},
-            500,
+            {"ok": False, "message": "Another disk operation is in progress"}, 409
         )
         return
-    run(["partprobe", device], timeout=10)
-    run(["udevadm", "settle", "--timeout=5"], timeout=10)
-    ops = load_operations()
-    ops["pending"].append(
-        {
-            "action": "delete",
-            "device": device,
-            "partNumber": part_number,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-    )
-    save_operations(ops)
-    json_response({"ok": True, "message": "Partition deleted successfully"})
+    try:
+        unmount_error = _unmount_partition(_partition_path(device, part_number))
+        if unmount_error:
+            json_response(
+                {
+                    "ok": False,
+                    "message": f"Failed to unmount partition: {unmount_error}",
+                },
+                500,
+            )
+            return
+        cmd = ["parted", device, "rm", str(part_number)]
+        result = run_interactive(cmd, timeout=60)
+        if result["rc"] != 0:
+            json_response(
+                {
+                    "ok": False,
+                    "message": f"Failed to delete partition: {result['stderr']}",
+                },
+                500,
+            )
+            return
+        run(["partprobe", device], timeout=10)
+        run(["udevadm", "settle", "--timeout=5"], timeout=10)
+        ops = load_operations()
+        ops["pending"].append(
+            {
+                "action": "delete",
+                "device": device,
+                "partNumber": part_number,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
+        save_operations(ops)
+        json_response({"ok": True, "message": "Partition deleted successfully"})
+    finally:
+        _lock.release()
 
 
 def api_partition_resize():
@@ -986,17 +1076,16 @@ def api_partition_resize():
             {"ok": False, "message": "partNumber and endMiB are required"}, 400
         )
         return
+    # parted resizepart only accepts an END position; it cannot move the
+    # partition start.  Reject start changes instead of building a malformed
+    # command (moving the start requires delete + recreate).
     if start_mib is not None:
-        cmd = [
-            "parted",
-            device,
-            "resizepart",
-            str(part_number),
-            f"{start_mib}MiB",
-            f"{end_mib}MiB",
-        ]
-    else:
-        cmd = ["parted", device, "resizepart", str(part_number), f"{end_mib}MiB"]
+        json_response(
+            {"ok": False, "message": "Moving the partition start is not supported"},
+            400,
+        )
+        return
+    cmd = ["parted", device, "resizepart", str(part_number), f"{end_mib}MiB"]
     result = run_interactive(cmd, timeout=120)
     if result["rc"] != 0:
         json_response(
@@ -1120,7 +1209,9 @@ def api_partition_set_flag():
         json_response({"ok": False, "message": "Invalid device name"}, 400)
         return
     if part_number is None or not flag:
-        json_response({"ok": False, "message": "partNumber and flag are required"}, 400)
+        json_response(
+            {"ok": False, "message": "partNumber and flag are required"}, 400
+        )
         return
     if not re.match(r"^[a-z][a-z0-9-]*$", flag):
         json_response({"ok": False, "message": "Invalid flag name"}, 400)
@@ -1148,6 +1239,16 @@ def api_partition_mount():
         return
     if not mount_point:
         json_response({"ok": False, "message": "mountPoint is required"}, 400)
+        return
+    mounted = run(["findmnt", "-rn", "-S", partition, "-o", "TARGET"], timeout=15)
+    if mounted["rc"] == 0 and mounted["stdout"].strip():
+        json_response(
+            {
+                "ok": False,
+                "message": f"Partition is already mounted at {mounted['stdout'].strip().splitlines()[0]}",
+            },
+            400,
+        )
         return
     Path(mount_point).mkdir(parents=True, exist_ok=True)
     cmd = ["mount", partition, mount_point]
@@ -1189,23 +1290,41 @@ def api_disk_wipe():
     if not safe_dev_name(device):
         json_response({"ok": False, "message": "Invalid device name"}, 400)
         return
-    if method == "zero":
-        cmd = ["dd", "if=/dev/zero", f"of={device}", "bs=1M", "count=1"]
-        result = run(cmd, timeout=60)
-        if result["rc"] != 0:
-            json_response(
-                {"ok": False, "message": f"Failed to wipe: {result['stderr']}"}, 500
-            )
-            return
-    cmd = ["wipefs", "-a", device]
-    result = run(cmd, timeout=30)
-    if result["rc"] != 0:
+    if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": f"Failed to wipe signatures: {result['stderr']}"},
-            500,
+            {"ok": False, "message": "Another disk operation is in progress"}, 409
         )
         return
-    json_response({"ok": True, "message": f"Device {device} wiped successfully"})
+    try:
+        unmount_error = _unmount_device(device)
+        if unmount_error:
+            json_response(
+                {"ok": False, "message": f"Failed to unmount device: {unmount_error}"},
+                500,
+            )
+            return
+        if method == "zero":
+            cmd = ["dd", "if=/dev/zero", f"of={device}", "bs=1M", "count=1"]
+            result = run(cmd, timeout=60)
+            if result["rc"] != 0:
+                json_response(
+                    {"ok": False, "message": f"Failed to wipe: {result['stderr']}"}, 500
+                )
+                return
+        cmd = ["wipefs", "-a", device]
+        result = run(cmd, timeout=30)
+        if result["rc"] != 0:
+            json_response(
+                {
+                    "ok": False,
+                    "message": f"Failed to wipe signatures: {result['stderr']}",
+                },
+                500,
+            )
+            return
+        json_response({"ok": True, "message": f"Device {device} wiped successfully"})
+    finally:
+        _lock.release()
 
 
 def api_disk_label():
@@ -1217,6 +1336,13 @@ def api_disk_label():
         return
     if label_type not in ("gpt", "msdos", "mbr"):
         json_response({"ok": False, "message": "Invalid label type"}, 400)
+        return
+    unmount_error = _unmount_device(device)
+    if unmount_error:
+        json_response(
+            {"ok": False, "message": f"Failed to unmount device: {unmount_error}"},
+            500,
+        )
         return
     cmd = ["parted", device, "mklabel", label_type]
     result = run_interactive(cmd, timeout=30)
@@ -1254,7 +1380,7 @@ def api_partition_check():
     elif fstype == "btrfs":
         cmd = ["btrfs", "check", "--readonly", partition]
     elif fstype == "ntfs":
-        cmd = ["ntfsfix", "-n", partition]
+        cmd = ["ntfsfix", partition]
     elif fstype == "f2fs":
         cmd = ["fsck.f2fs", partition]
     elif fstype == "fat16" or fstype == "fat32":

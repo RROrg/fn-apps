@@ -180,7 +180,7 @@ const FS_COLORS = {
   "linux-swap": "var(--part-linux-swap)",
   lvm2_member: "var(--part-lvm)",
   raid: "var(--part-raid)",
-  crypto_LUKS: "#607d8b",
+  crypto_LUKS: "var(--part-luks)",
   extended: "var(--part-extended)",
 };
 

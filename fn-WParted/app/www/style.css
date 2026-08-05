@@ -33,24 +33,26 @@
   --toast-error-bg: rgba(255, 235, 237, 0.96);
   --table-head: #386fb8;
   --row-hover: rgba(22, 30, 45, 0.04);
-  --part-ext2: #81c784;
-  --part-ext3: #66bb6a;
-  --part-ext4: #4caf50;
-  --part-xfs: #2196f3;
-  --part-zfs: #0065A9;
-  --part-btrfs: #ff9800;
+  --part-ext2: #8bc34a;
+  --part-ext3: #43a047;
+  --part-ext4: #1b5e20;
+  --part-xfs: #1e88e5;
+  --part-zfs: #1565c0;
+  --part-btrfs: #fb8c00;
   --part-f2fs: #9c27b0;
-  --part-ntfs: #3f51b5;
-  --part-fat16: #00acc1;
-  --part-fat32: #00bcd4;
-  --part-exfat: #0097a7;
-  --part-swap: #e91e63;
-  --part-linux-swap: #e91e63;
-  --part-free: #e8eaed;
-  --part-unknown: #78909c;
-  --part-extended: #f5f5f5;
-  --part-lvm: #ff5722;
-  --part-raid: #795548;
+  --part-ntfs: #5e35b1;
+  --part-fat16: #26c6da;
+  --part-fat32: #00acc1;
+  --part-exfat: #00838f;
+  --part-swap: #d81b60;
+  --part-linux-swap: #d81b60;
+  --part-luks: #607d8b;
+  --part-free: #cfd4da;
+  --part-free-stripe: #b6bcc4;
+  --part-unknown: #9e9e9e;
+  --part-extended: #90a4ae;
+  --part-lvm: #f4511e;
+  --part-raid: #6d4c41;
 }
 
 html[data-theme="dark"] {
@@ -88,9 +90,25 @@ html[data-theme="dark"] {
   --toast-error-bg: rgba(176, 42, 34, 0.96);
   --table-head: #a9c8ff;
   --row-hover: rgba(255, 255, 255, 0.025);
-  --part-free: #2b2c2e;
-  --part-unknown: #90a4ae;
-  --part-extended: #2b2c2e;
+  --part-ext2: #9ccc65;
+  --part-ext3: #66bb6a;
+  --part-ext4: #43a047;
+  --part-xfs: #64b5f6;
+  --part-zfs: #42a5f5;
+  --part-btrfs: #ffb300;
+  --part-f2fs: #ab47bc;
+  --part-ntfs: #7e57c2;
+  --part-fat16: #4dd0e1;
+  --part-fat32: #26c6da;
+  --part-exfat: #00acc1;
+  --part-swap: #ec407a;
+  --part-linux-swap: #ec407a;
+  --part-luks: #78909c;
+  --part-free: #3a3f45;
+  --part-free-stripe: #4a5058;
+  --part-unknown: #b0bec5;
+  --part-extended: #90a4ae;
+  --part-lvm: #ff7043;
   --part-raid: #a1887f;
 }
 
@@ -429,7 +447,13 @@ body {
 }
 
 .partition-bar.free-space {
-  background: var(--part-free) !important;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--part-free) 0px,
+    var(--part-free) 6px,
+    var(--part-free-stripe) 6px,
+    var(--part-free-stripe) 12px
+  ) !important;
   color: var(--muted);
   text-shadow: none;
   font-style: italic;
@@ -457,7 +481,13 @@ body {
 }
 
 .legend-dot.free {
-  background: var(--part-free);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--part-free) 0px,
+    var(--part-free) 3px,
+    var(--part-free-stripe) 3px,
+    var(--part-free-stripe) 6px
+  );
 }
 
 .table-section {
