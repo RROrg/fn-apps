@@ -10,6 +10,7 @@ const state = {
   view: "all",
   sourceFilter: "all",
   statusFilter: "all",
+  downloadFilter: "all",
   page: 1,
   pageSize: 50,
   language: "zh-CN",
@@ -33,6 +34,10 @@ const I18N = {
     undownloaded: "未下载",
     downloading: "下载中",
     failed: "失败",
+    installed: "已安装",
+    upgradable: "可升级",
+    downgradable: "可降级",
+    notInstalled: "未安装",
     refresh: "刷新",
     openDir: "打开目录",
     openDirFailed: "无法打开文件管理器",
@@ -93,6 +98,10 @@ const I18N = {
     undownloaded: "Not Downloaded",
     downloading: "Downloading",
     failed: "Failed",
+    installed: "Installed",
+    upgradable: "Upgradable",
+    downgradable: "Downgradable",
+    notInstalled: "Not Installed",
     refresh: "Refresh",
     openDir: "Open Folder",
     openDirFailed: "Unable to open file manager",
@@ -258,12 +267,41 @@ function statusKind(app) {
   return "undownloaded";
 }
 
-function statusText(app) {
-  const kind = statusKind(app);
-  if (kind === "downloaded") return t("downloaded");
-  if (kind === "downloading") return t("downloading");
-  if (kind === "failed") return t("failed");
-  return t("undownloaded");
+function installKind(app) {
+  return app.installStatus || "not_installed";
+}
+
+function installStatusClass(app) {
+  const kind = installKind(app);
+  if (kind === "installed") return "installed";
+  if (kind === "upgradable") return "upgradable";
+  if (kind === "downgradable") return "downgradable";
+  return "not-installed";
+}
+
+function installStatusText(app) {
+  const kind = installKind(app);
+  if (kind === "installed") return t("installed");
+  if (kind === "upgradable") return t("upgradable");
+  if (kind === "downgradable") return t("downgradable");
+  return t("notInstalled");
+}
+
+function isBusyAction(app) {
+  const task = taskFor(app);
+  if (!task || !task.status || task.deleted) return false;
+  if (isDownloaded(app)) return false;
+  return normalizeStatus(task.status) !== "failed";
+}
+
+function actionButtonContent(app, busy = false) {
+  const downloading = busy || isBusyAction(app);
+  if (!downloading) {
+    const kind = statusKind(app);
+    const downloaded = kind === "downloaded";
+    return downloaded ? t("delete") : t("download");
+  }
+  return t("downloadingAction");
 }
 
 function cookieValue(name) {
@@ -660,7 +698,11 @@ function filteredApps() {
     if (state.view === "undownloaded" && kind === "downloaded") return false;
     if (state.sourceFilter !== "all" && app.source !== state.sourceFilter)
       return false;
-    if (state.statusFilter !== "all" && kind !== state.statusFilter)
+    if (state.statusFilter !== "all" && installKind(app) !== state.statusFilter)
+      return false;
+    if (state.downloadFilter === "downloaded" && kind !== "downloaded")
+      return false;
+    if (state.downloadFilter === "undownloaded" && kind === "downloaded")
       return false;
     if (!query) return true;
     return [app.name, app.id, app.version, app.source].some((value) =>
@@ -731,6 +773,7 @@ function renderRows() {
     .map((app) => {
       const kind = statusKind(app);
       const downloaded = kind === "downloaded";
+      const busy = isBusyAction(app);
       const canDownload =
         app.store === "official"
           ? app.id && app.version && app.sourceID
@@ -749,10 +792,10 @@ function renderRows() {
         <td>${escapeHtml(app.version || "-")}</td>
         <td>${app.store === "official" ? t("officialStore") : t("thirdPartyStore")}</td>
         <td>${sourceLabel}</td>
-        <td><span class="status-pill ${kind}">${escapeHtml(statusText(app))}</span></td>
+        <td><span class="status-pill ${installStatusClass(app)}">${escapeHtml(installStatusText(app))}</span></td>
         <td>
-          <button class="download-btn ${downloaded ? "delete-btn" : ""}" data-action="${downloaded ? "delete" : "download"}" data-app-key="${escapeHtml(taskKey(app))}" ${!downloaded && !canDownload ? "disabled" : ""} type="button">
-            ${downloaded ? t("delete") : t("download")}
+          <button class="download-btn ${downloaded ? "delete-btn" : ""} ${busy ? "is-progress" : ""}" data-action="${downloaded ? "delete" : "download"}" data-app-key="${escapeHtml(taskKey(app))}" ${!downloaded && !canDownload ? "disabled" : ""} ${busy ? "disabled" : ""} type="button">
+            ${escapeHtml(actionButtonContent(app))}
           </button>
         </td>
       </tr>
@@ -933,6 +976,14 @@ function bindEvents() {
     .getElementById("statusSelect")
     .addEventListener("change", (event) => {
       state.statusFilter = event.target.value;
+      resetPaging();
+      renderRows();
+    });
+
+  document
+    .getElementById("downloadFilterSelect")
+    .addEventListener("change", (event) => {
+      state.downloadFilter = event.target.value;
       resetPaging();
       renderRows();
     });
@@ -1124,8 +1175,8 @@ function bindEvents() {
       if (!app) return;
       const action = button.dataset.action;
       button.disabled = true;
-      button.textContent =
-        action === "delete" ? t("deleting") : t("downloadingAction");
+      button.classList.add("is-progress");
+      button.textContent = action === "delete" ? t("deleting") : t("downloadingAction");
       try {
         const result = await api(action, { app });
         if (action === "delete") {
@@ -1141,8 +1192,10 @@ function bindEvents() {
         renderRows();
       } catch (error) {
         showToast(error.message, true);
+        button.classList.remove("is-progress");
         button.disabled = false;
         button.textContent = action === "delete" ? t("delete") : t("download");
+        renderRows();
       }
     });
 }

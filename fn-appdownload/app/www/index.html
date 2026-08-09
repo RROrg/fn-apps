@@ -51,10 +51,18 @@
             <span data-i18n="status">状态</span>
             <select id="statusSelect">
               <option value="all" data-i18n="all">全部</option>
+              <option value="installed" data-i18n="installed">已安装</option>
+              <option value="upgradable" data-i18n="upgradable">可升级</option>
+              <option value="downgradable" data-i18n="downgradable">可降级</option>
+              <option value="not_installed" data-i18n="notInstalled">未安装</option>
+            </select>
+          </label>
+          <label class="filter-field">
+            <span data-i18n="action">操作</span>
+            <select id="downloadFilterSelect">
+              <option value="all" data-i18n="all">全部</option>
               <option value="downloaded" data-i18n="downloaded">已下载</option>
               <option value="undownloaded" data-i18n="undownloaded">未下载</option>
-              <option value="downloading" data-i18n="downloading">下载中</option>
-              <option value="failed" data-i18n="failed">失败</option>
             </select>
           </label>
           <div class="filter-actions">

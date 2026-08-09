@@ -10,6 +10,7 @@ import argparse
 import json
 import mimetypes
 import os
+import re
 import signal
 import shutil
 import socket
@@ -29,6 +30,8 @@ from urllib.parse import unquote, urlsplit
 APP_NAME = "fn-appdownload"
 APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
 APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"      # fnOS < 1.2.0401
+DB_NAME = "appcenter"
+DB_USER = "postgres"
 VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
 SHARE_DIR = Path(f"/var/apps/{APP_NAME}/shares/{APP_NAME}")
 DEFAULT_DOWNLOAD_DIR = SHARE_DIR / "downloads"
@@ -550,6 +553,86 @@ def is_done_status(status):
         "completed",
         "downloaded",
     } or status in {"已下载", "下载完成"}
+
+
+def run_sql(sql):
+    proc = subprocess.run(
+        ["psql", "-U", DB_USER, "-d", DB_NAME, "-X", "-v", "ON_ERROR_STOP=1", "-q", "-t", "-A", "-c", sql],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "psql failed").strip()
+        raise RuntimeError(detail)
+    return proc.stdout.strip()
+
+
+def installed_apps_map():
+    sql = (
+        "SELECT COALESCE(json_object_agg(app_name, version), '{}'::json) "
+        "FROM (SELECT app_name, version FROM app) t"
+    )
+    try:
+        text = run_sql(sql)
+        data = json.loads(text) if text else {}
+        if not isinstance(data, dict):
+            return {}
+        result = {}
+        for key, value in data.items():
+            app_key = str(key or "").strip()
+            if not app_key:
+                continue
+            result[app_key] = str(value or "")
+            result[app_key.lower()] = str(value or "")
+        return result
+    except Exception:
+        return {}
+
+
+def version_sort_key(version):
+    parts = re.split(r"[.\-_+]", str(version or ""))
+    key = []
+    for part in parts:
+        key.append((1, int(part)) if part.isdigit() else (0, part))
+    return key
+
+
+def compare_versions(a, b):
+    key_a, key_b = version_sort_key(a), version_sort_key(b)
+    if key_a == key_b:
+        return 0
+    return 1 if key_a > key_b else -1
+
+
+def install_status_for(app_id, version, installed):
+    app_key = str(app_id or "").strip()
+    installed_version = None
+    if app_key:
+        installed_version = installed.get(app_key)
+        if installed_version is None:
+            installed_version = installed.get(app_key.lower())
+    if installed_version is None:
+        return "not_installed"
+    if not version:
+        return "installed"
+    cmp = compare_versions(version, installed_version)
+    if cmp > 0:
+        return "upgradable"
+    if cmp < 0:
+        return "downgradable"
+    return "installed"
+
+
+def annotate_install_status(apps):
+    installed = installed_apps_map()
+    for app in apps:
+        if isinstance(app, dict):
+            app["installStatus"] = install_status_for(
+                app.get("id", ""), app.get("version", ""), installed
+            )
+    return apps
 
 
 def first_path_value(value):
@@ -1330,6 +1413,7 @@ def dispatch():
             )
 
         all_apps = official_result.get("apps", []) + thirdparty_result.get("apps", [])
+        annotate_install_status(all_apps)
         tasks_data = status_payload(skip_remote=True)
         json_response(
             {
@@ -1344,6 +1428,7 @@ def dispatch():
         settings = read_settings()
         token = incoming_token()
         result = official_apps(settings=settings, token=token)
+        annotate_install_status(result.get("apps", []))
         tasks_data = status_payload()
         json_response(
             {
@@ -1357,6 +1442,7 @@ def dispatch():
         settings = read_settings()
         token = incoming_token()
         result = third_party_apps(settings=settings, token=token)
+        annotate_install_status(result.get("apps", []))
         tasks_data = status_payload()
         json_response(
             {
