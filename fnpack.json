@@ -10,7 +10,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.322",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-advancedsettings_all_v1.0.9.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-advancedsettings_all_v1.0.9.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-advancedsettings package."
@@ -18,15 +18,15 @@
   "fn-appdownload": {
     "display_name": "应用坏心",
     "platform": "all",
-    "version": "1.0.9",
+    "version": "1.1.0",
     "desc": "官方商店和第三方源应用下载",
     "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appdownload/ICON_256.PNG",
     "distributor": "RROrg",
     "distributor_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
-    "size": "0.306",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-appdownload_all_v1.0.9.fpk",
+    "size": "0.308",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-appdownload_all_v1.1.0.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-appdownload package."
@@ -42,7 +42,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.126",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-appsettings_all_v1.0.6.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-appsettings_all_v1.0.6.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-appsettings package."
@@ -58,7 +58,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.270",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-audioplayer_all_v1.0.4.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-audioplayer_all_v1.0.4.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-audioplayer package."
@@ -74,7 +74,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.085",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-bluetooth_all_v1.0.2.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-bluetooth_all_v1.0.2.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-bluetooth package."
@@ -90,7 +90,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.046",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-chromium_all_v1.0.4.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-chromium_all_v1.0.4.fpk",
     "install_type": "存储空间",
     "isdocker": "true",
     "changelog": "Initial release of fn-chromium package."
@@ -106,7 +106,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.047",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-chromium-desktop_all_v1.0.2.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-chromium-desktop_all_v1.0.2.fpk",
     "install_type": "存储空间",
     "isdocker": "true",
     "changelog": "Initial release of fn-chromium-desktop package."
@@ -122,7 +122,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.016",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-codeserver_all_v1.0.9.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-codeserver_all_v1.0.9.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-codeserver package."
@@ -138,7 +138,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.017",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-execute_all_v1.0.2.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-execute_all_v1.0.2.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-execute package."
@@ -154,7 +154,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.190",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-fail2ban_all_v1.0.5.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-fail2ban_all_v1.0.5.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-fail2ban package."
@@ -162,15 +162,15 @@
   "fn-grafana-alloy": {
     "display_name": "Grafana Alloy",
     "platform": "all",
-    "version": "1.18.0",
+    "version": "1.18.1",
     "desc": "可观测性数据采集器，收集系统和应用日志并发送到 Loki。",
     "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-grafana-alloy/ICON_256.PNG",
     "distributor": "RROrg",
     "distributor_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
-    "size": "214.668",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-grafana-alloy_all_v1.18.0.fpk",
+    "size": "214.718",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-grafana-alloy_all_v1.18.1.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-grafana-alloy package."
@@ -186,7 +186,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.016",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-influxdb_all_v2.7.11.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-influxdb_all_v2.7.11.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-influxdb package."
@@ -202,7 +202,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.036",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-installer_all_v1.0.3.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-installer_all_v1.0.3.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-installer package."
@@ -218,7 +218,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "37.358",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-iVentoy_all_v1.0.36-2.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-iVentoy_all_v1.0.36-2.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-iVentoy package."
@@ -234,7 +234,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.049",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-kodi_all_v1.0.8.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-kodi_all_v1.0.8.fpk",
     "install_type": "存储空间",
     "isdocker": "true",
     "changelog": "Initial release of fn-kodi package."
@@ -250,7 +250,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.206",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-linux-station_all_v1.0.2.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-linux-station_all_v1.0.2.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-linux-station package."
@@ -266,7 +266,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.057",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-open-vm-tools_all_v1.1.0.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-open-vm-tools_all_v1.1.0.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-open-vm-tools package."
@@ -282,7 +282,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.070",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-p2s_all_v1.0.3.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-p2s_all_v1.0.3.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-p2s package."
@@ -298,7 +298,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.055",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-qemu-ga_all_v1.1.0.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-qemu-ga_all_v1.1.0.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-qemu-ga package."
@@ -314,7 +314,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.208",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-scheduler_all_v1.3.1.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-scheduler_all_v1.3.1.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-scheduler package."
@@ -330,7 +330,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "74.991",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-scrutiny_all_v1.68.0.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-scrutiny_all_v1.68.0.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-scrutiny package."
@@ -346,7 +346,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "6.970",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-terminal_all_v1.1.1.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-terminal_all_v1.1.1.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-terminal package."
@@ -362,7 +362,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.040",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-vfnOS_all_v1.0.3.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-vfnOS_all_v1.0.3.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-vfnOS package."
@@ -378,7 +378,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.277",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-vgmng_all_v1.0.4.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-vgmng_all_v1.0.4.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-vgmng package."
@@ -394,7 +394,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "3.083",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-VirtualHereServer_all_v4.8.6.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-VirtualHereServer_all_v4.8.6.fpk",
     "install_type": "存储空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-VirtualHereServer package."
@@ -410,10 +410,26 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.104",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-wifi-hotspot_all_v1.1.8.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-wifi-hotspot_all_v1.1.8.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-wifi-hotspot package."
+  },
+  "fn-WParted": {
+    "display_name": "WParted",
+    "platform": "all",
+    "version": "1.0.1",
+    "desc": "磁盘分区编辑器 - 创建、调整大小、删除、移动、复制、检查和格式化分区。",
+    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-WParted/ICON_256.PNG",
+    "distributor": "RROrg",
+    "distributor_url": "https://github.com/RROrg/fn-apps",
+    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+    "labels": "工具",
+    "size": "0.069",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-WParted_all_v1.0.1.fpk",
+    "install_type": "系统空间",
+    "isdocker": "false",
+    "changelog": "Initial release of fn-WParted package."
   },
   "fn-zerotier": {
     "display_name": "ZeroTier",
@@ -426,7 +442,7 @@
     "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
     "labels": "工具",
     "size": "0.076",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.05-0227/fn-zerotier_all_v1.0.8.fpk",
+    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.10-2309/fn-zerotier_all_v1.0.8.fpk",
     "install_type": "系统空间",
     "isdocker": "false",
     "changelog": "Initial release of fn-zerotier package."
