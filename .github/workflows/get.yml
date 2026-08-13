@@ -90,6 +90,9 @@ jobs:
               if [ "${ARCH}" == "aarch64" ]; then
                 NAME="$(echo "${data}" | jq -r '.name')"
                 VER="$(echo "${BASE}" | awk -F'/' '{print $6}')"
+                if [ "armsr" = "${VER}" ]; then
+                  VER="$(echo "${NAME}" | sed -n 's/.*_\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')"
+                fi
               fi
               if [ -z "${NAME}" ] || [ -z "${VER}" ]; then
                 continue

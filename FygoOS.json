@@ -4,14 +4,14 @@
     "hash": "8c9553d65d98e265d27a00af54c1cc35",
     "name": "ARM UEFI ISO",
     "url": "https://download.liveupdate.fygonas.com/arm/iso/armsr/fygoos_PE_arm_1.2.0007_armsr_1837.iso",
-    "version": "armsr"
+    "version": "1.2.0007"
   },
   {
     "arch": "aarch64",
     "hash": "e39e6f0003c70bb3954bcfd63ef7327a",
     "name": "ARM UEFI ISO",
     "url": "https://download.liveupdate.fygonas.com/arm/iso/armsr/fygoos_PE_arm_1.2.0203_armsr_2296.iso",
-    "version": "armsr"
+    "version": "1.2.0203"
   },
   {
     "arch": "aarch64",
