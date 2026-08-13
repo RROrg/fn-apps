@@ -342,7 +342,7 @@ textarea {
 
 .app-table {
   width: 100%;
-  min-width: 0;
+  min-width: 880px;
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -354,24 +354,24 @@ textarea {
 
 .app-table th:nth-child(4),
 .app-table td:nth-child(4) {
-  width: 96px;
+  width: 140px;
 }
 
 .app-table th:nth-child(5),
 .app-table td:nth-child(5) {
-  width: 128px;
+  width: 150px;
 }
 
 .app-table th:nth-child(6),
 .app-table td:nth-child(6) {
-  width: 92px;
+  width: 140px;
 }
 
 .app-table th:nth-child(7),
 .app-table td:nth-child(7) {
   position: sticky;
   right: 0;
-  width: 96px;
+  width: 150px;
   background: var(--panel);
   white-space: nowrap;
 }
@@ -389,7 +389,7 @@ textarea {
   top: 0;
   z-index: 2;
   height: 42px;
-  padding: 0 16px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
   color: var(--table-head);
@@ -400,7 +400,7 @@ textarea {
 
 .app-table td {
   height: 56px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--line-soft);
   color: var(--text);
   font-size: 14px;
@@ -410,7 +410,7 @@ textarea {
 }
 
 .app-table td:nth-child(7) {
-  overflow: visible;
+  overflow: hidden;
 }
 
 .app-table th:nth-child(3),
@@ -700,6 +700,10 @@ textarea {
   background: var(--panel);
   box-shadow: var(--shadow);
   padding: 20px;
+}
+
+#aboutModal .modal-content {
+  width: min(680px, calc(100vw - 48px));
 }
 
 .modal-header {
@@ -1109,7 +1113,7 @@ textarea {
   }
 
   .app-table {
-    min-width: 0;
+    min-width: 760px;
   }
 
   .app-table th,
@@ -1171,7 +1175,7 @@ textarea {
   }
 
   .app-table {
-    min-width: 0;
+    min-width: 760px;
   }
 
   .filter-field {
