@@ -391,6 +391,7 @@ const I18N = {
     diagTarget: "目标地址",
     diagCount: "次数",
     diagDnsServer: "DNS 服务器",
+    diagDnsServerPlaceholder: "8.8.8.8 (可选)",
     diagOutput: "输出",
     diagRun: "执行",
     diagRunning: "执行中...",
@@ -684,6 +685,7 @@ const I18N = {
     diagTarget: "Target",
     diagCount: "Count",
     diagDnsServer: "DNS Server",
+    diagDnsServerPlaceholder: "8.8.8.8 (optional)",
     diagOutput: "Output",
     diagRun: "Run",
     diagRunning: "Running...",
@@ -833,6 +835,9 @@ function applyPreferences({ rerender = false } = {}) {
   });
   document.querySelectorAll("[data-i18n-title]").forEach((node) => {
     node.title = t(node.dataset.i18nTitle);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
   });
   document.title = t("appTitle");
   if (rerender) render();

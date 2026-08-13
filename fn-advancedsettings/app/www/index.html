@@ -154,8 +154,8 @@
                   type="text" placeholder="br0" spellcheck="false"></label>
               <label class="field bridge-type-field"><span data-i18n="bridgeType">桥接类型</span><select
                   id="bridgeTypeSelect">
-                  <option value="linux">Linux 桥接</option>
-                  <option value="ovs">OVS 桥接</option>
+                  <option value="linux" data-i18n="bridgeTypeLinux">Linux 桥接</option>
+                  <option value="ovs" data-i18n="bridgeTypeOvs">OVS 桥接</option>
                 </select></label>
               <button id="createBridgeBtn" class="ghost-btn" type="button" data-i18n="createBridge">创建桥接</button>
             </div>
@@ -294,7 +294,8 @@
               <label class="field"><span data-i18n="diagTarget">目标域名</span><input id="diagNslookupTarget" type="text"
                   placeholder="download.liveupdate.fnnas.com" spellcheck="false"></label>
               <label class="field"><span data-i18n="diagDnsServer">DNS 服务器</span><input id="diagNslookupServer"
-                  type="text" placeholder="8.8.8.8 (可选)" spellcheck="false"></label>
+                  type="text" placeholder="8.8.8.8 (可选)" data-i18n-placeholder="diagDnsServerPlaceholder"
+                  spellcheck="false"></label>
             </div>
           </div>
           <div id="diagArpForm" class="diag-form hidden"></div>
