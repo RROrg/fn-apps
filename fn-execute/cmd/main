@@ -5,7 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 SOCKET_PATH="${TRIM_APPDEST}/fn-execute.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-CMD="mkdir -p \"${TRIM_PKGVAR}\" && rm -f \"${SOCKET_PATH}\" && \"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/execute.py\" --socket \"${SOCKET_PATH}\" --base-path \"/app/fn-execute\" --www-root \"${TRIM_APPDEST}/www\""
+CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/execute.py\" --socket \"${SOCKET_PATH}\" --base-path \"/app/fn-execute\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
