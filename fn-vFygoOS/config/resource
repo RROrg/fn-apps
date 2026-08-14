@@ -1,0 +1,14 @@
+{
+  "data-share": {
+    "shares": [
+      {
+        "name": "fn-vFygoOS",
+        "permission": {
+          "rw": [
+            "fn-vFygoOS"
+          ]
+        }
+      }
+    ]
+  }
+}

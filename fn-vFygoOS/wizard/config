@@ -1,0 +1,33 @@
+[
+  {
+    "stepTitle": "${wizard.config_stepTitle}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item1_helpText}"
+      },
+      {
+        "type": "radio",
+        "field": "wizard_autostart",
+        "label": "${wizard.config_item1_label}",
+        "initValue": "false",
+        "options": [
+          {
+            "label": "${wizard.config_item1_options1}",
+            "value": "true"
+          },
+          {
+            "label": "${wizard.config_item1_options2}",
+            "value": "false"
+          }
+        ],
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.config_item1_rules}"
+          }
+        ]
+      }
+    ]
+  }
+]

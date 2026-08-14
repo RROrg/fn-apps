@@ -1,0 +1,33 @@
+#!/bin/bash
+
+### This script is called before the user installs the application.
+
+OVS_BRIDGE="$(ovs-vsctl list-br 2>/dev/null | head -n 1)"
+if [ -z "${OVS_BRIDGE}" ]; then
+  echo "Please ensure that OVS bridges are present." >$TRIM_TEMP_LOGFILE
+  exit 1
+fi
+
+ARCH="$(uname -m)"
+case "${ARCH}" in
+  "aarch64")
+    if ! virsh -c qemu:///system capabilities | grep -q "qemu-system-x86_64"; then
+      apt update
+      apt install -y --no-install-recommends qemu-system-x86 ovmf
+      [ $? -ne 0 ] && echo "Failed to install qemu packages." >$TRIM_TEMP_LOGFILE && exit 1
+    fi
+    ;;
+  "x86_64")
+    if ! virsh -c qemu:///system capabilities | grep -q "qemu-system-aarch64"; then
+      apt update
+      apt install -y --no-install-recommends qemu-system-arm qemu-efi-aarch64
+      [ $? -ne 0 ] && echo "Failed to install qemu packages." >$TRIM_TEMP_LOGFILE && exit 1
+    fi
+    ;;
+  *)
+    echo "Unsupported architecture: ${ARCH}" >$TRIM_TEMP_LOGFILE
+    exit 1
+    ;;
+esac
+
+exit 0

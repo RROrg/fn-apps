@@ -1,21 +1,21 @@
 [common]
-display_name="vfnOS"
-desc="Create cross-architecture fnOS virtual machines on fnOS/FygoOS (x86_64 fnOS creates aarch64 fnOS VMs, aarch64 fnOS creates x86_64 fnOS VMs)."
+display_name="vFygoOS"
+desc="Create cross-architecture FygoOS virtual machines on fnOS/FygoOS (x86_64 fnOS creates aarch64 FygoOS VMs, aarch64 fnOS creates x86_64 FygoOS VMs)."
 
 [entry]
-title="vfnOS"
+title="vFygoOS"
 
 [wizard]
 config_stepTitle="Configuration Wizard"
-config_item1_helpText="You are about to modify vfnOS" 
+config_item1_helpText="You are about to modify vFygoOS" 
 config_item1_label="Start on boot"
 config_item1_options1="Yes"
 config_item1_options2="No"
 config_item1_rules="Please select whether to start on boot"
 
 install_stepTitle="Install Wizard"
-install_item1_helpText="You are about to install vfnOS" 
-install_item2_helpText="1. After installation, please start/stop the vfnOS virtual machine in 'Virtual Machine'."
+install_item1_helpText="You are about to install vFygoOS" 
+install_item2_helpText="1. After installation, please start/stop the vFygoOS virtual machine in 'Virtual Machine'."
 install_item1_label="CPU cores"
 install_item1_required="Please enter the number of CPU cores"
 install_item1_rules="The number of CPU cores must be between 1 and 16"

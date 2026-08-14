@@ -1,0 +1,19 @@
+#!/bin/bash
+
+### This script is called after the user change environment variables in application setting page.
+
+if [ "${wizard_autostart:-}" == "true" ]; then
+  virsh -c qemu:///system autostart fn-vFygoOS >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "Failed to autostart libvirt domain fn-vFygoOS." >$TRIM_TEMP_LOGFILE
+    exit 1
+  fi
+else
+  virsh -c qemu:///system autostart --disable fn-vFygoOS >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "Failed to disable autostart for libvirt domain fn-vFygoOS." >$TRIM_TEMP_LOGFILE
+    exit 1
+  fi
+fi
+
+exit 0

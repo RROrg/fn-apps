@@ -1,0 +1,16 @@
+#!/bin/bash
+
+### This script is called after the user uninstalls the application.
+
+# 停止虚拟机
+virsh -c qemu:///system destroy fn-vFygoOS 2>/dev/null || true
+
+# 删除虚拟机定义
+virsh -c qemu:///system undefine fn-vFygoOS 2>/dev/null || true
+
+[ "${wizard_data_action:-}" == "delete" ] && {
+  rm -rf "${TRIM_PKGVAR}"
+  while read -r path; do rm -rf "${path}"; done <<<"$(echo "${TRIM_DATA_SHARE_PATHS}" | tr ':' '\n')"
+}
+
+exit 0

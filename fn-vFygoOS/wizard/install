@@ -1,0 +1,85 @@
+[
+  {
+    "stepTitle": "${wizard.install_stepTitle}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.install_item1_helpText}"
+      },
+      {
+        "type": "tips",
+        "helpText": "${wizard.install_item2_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_vcpu",
+        "label": "${wizard.install_item1_label}",
+        "initValue": "2",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item1_required}"
+          },
+          {
+            "pattern": "^([1-9]|1[0-6])$",
+            "message": "${wizard.install_item1_rules}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_memory",
+        "label": "${wizard.install_item2_label}",
+        "initValue": "4096",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item2_required}"
+          },
+          {
+            "pattern": "^(204[8-9]|20[5-9][0-9]|2[1-9][0-9]{2}|[3-9][0-9]{3}|[12][0-9]{4}|3[01][0-9]{3}|32[0-6][0-9]{2}|327[0-5][0-9]|3276[0-8])$",
+            "message": "${wizard.install_item2_rules}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_size",
+        "label": "${wizard.install_item3_label}",
+        "initValue": "128",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item3_required}"
+          },
+          {
+            "pattern": "^([8-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-6])$",
+            "message": "${wizard.install_item3_rules}"
+          }
+        ]
+      },
+      {
+        "type": "radio",
+        "field": "wizard_autostart",
+        "label": "${wizard.install_item4_label}",
+        "initValue": "false",
+        "options": [
+          {
+            "label": "${wizard.install_item4_options1}",
+            "value": "true"
+          },
+          {
+            "label": "${wizard.install_item4_options2}",
+            "value": "false"
+          }
+        ],
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.install_item4_rules}"
+          }
+        ]
+      }
+    ]
+  }
+]

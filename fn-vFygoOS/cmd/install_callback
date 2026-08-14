@@ -14,12 +14,12 @@ fi
 ARCH="$(uname -m)"
 case "${ARCH}" in
   "aarch64")
-    FNNAS="https://www.fnnas.com/download?key=fnos" # aarch64 下则创建 x86_64 的 fnOS 虚拟机
+    KEY="thunder" # aarch64 下则创建 x86_64 的 FygoOS 虚拟机
     CODE_BASE="/usr/share/OVMF/OVMF_CODE.fd"
     VARS_BASE="/usr/share/OVMF/OVMF_VARS.fd"
     ;;
   "x86_64")
-    FNNAS="https://www.fnnas.com/download-arm" # x86_64 下则创建 aarch64 的 fnOS 虚拟机
+    KEY="originalName" # x86_64 下则创建 aarch64 的 FygoOS 虚拟机
     CODE_BASE="/usr/share/AAVMF/AAVMF_CODE.fd"
     VARS_BASE="/usr/share/AAVMF/AAVMF_VARS.fd"
     ;;
@@ -28,21 +28,21 @@ case "${ARCH}" in
     exit 1
     ;;
 esac
-DISK_PATH="${SHARE_PATH}/fn-vfnOS.qcow2"
-CODE_PATH="${SHARE_PATH}/fn-vfnOS_CODE.fd"
-VARS_PATH="${SHARE_PATH}/fn-vfnOS_VARS.fd"
+DISK_PATH="${SHARE_PATH}/fn-vFygoOS.qcow2"
+CODE_PATH="${SHARE_PATH}/fn-vFygoOS_CODE.fd"
+VARS_PATH="${SHARE_PATH}/fn-vFygoOS_VARS.fd"
 
-if [ ! -f "${SHARE_PATH}/fn-vfnOS.iso" ]; then
-  ISO_URL="$(curl -sL "${FNNAS}" | grep -oP '{[^{}]*fnos[^,]*\.iso[^}]*thunder[^}]*"}' | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].thunder // empty' 2>/dev/null | sed 's/^thunder:\/\///' | base64 -d 2>/dev/null | sed 's/^AA//; s/ZZ$//')"
+if [ ! -f "${SHARE_PATH}/fn-vFygoOS.iso" ]; then
+  ISO_URL="$(curl -sL "https://fygonas.com/download" | grep -oP "{[^{}]*fygoos[^,]*\.iso[^}]*${KEY}[^}]*\"}" | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].url // empty' 2>/dev/null)"
   if [ -z "${ISO_URL}" ]; then
-    echo "Failed to retrieve fn-vfnOS ISO URL." >$TRIM_TEMP_LOGFILE
+    echo "Failed to retrieve fn-vFygoOS ISO URL." >$TRIM_TEMP_LOGFILE
     exit 1
   fi
-  ISO_PATH="${SHARE_PATH}/fn-vfnOS.iso"
+  ISO_PATH="${SHARE_PATH}/fn-vFygoOS.iso"
   curl -skL "${ISO_URL}" -o "${ISO_PATH}"
   [ $? -ne 0 ] && {
     rm -f "${ISO_PATH}" 2>/dev/null || true
-    echo "Failed to download fn-vfnOS ISO." >$TRIM_TEMP_LOGFILE
+    echo "Failed to download fn-vFygoOS ISO." >$TRIM_TEMP_LOGFILE
     exit 1
   }
 fi
@@ -50,35 +50,35 @@ fi
 if [ ! -f "${DISK_PATH}" ]; then
   qemu-img create -f qcow2 "${DISK_PATH}" ${wizard_size:-128}G
   [ $? -ne 0 ] && {
-    echo "Failed to create fn-vfnOS.qcow2 disk image." >$TRIM_TEMP_LOGFILE
+    echo "Failed to create fn-vFygoOS.qcow2 disk image." >$TRIM_TEMP_LOGFILE
     exit 1
   }
 fi
 if [ ! -f "${CODE_PATH}" ]; then
   cp -f "${CODE_BASE}" "${CODE_PATH}"
   [ $? -ne 0 ] && {
-    echo "Failed to prepare CODE file for fn-vfnOS." >$TRIM_TEMP_LOGFILE
+    echo "Failed to prepare CODE file for fn-vFygoOS." >$TRIM_TEMP_LOGFILE
     exit 1
   }
 fi
 if [ ! -f "${VARS_PATH}" ]; then
   cp -f "${VARS_BASE}" "${VARS_PATH}"
   [ $? -ne 0 ] && {
-    echo "Failed to prepare VARS file for fn-vfnOS." >$TRIM_TEMP_LOGFILE
+    echo "Failed to prepare VARS file for fn-vFygoOS." >$TRIM_TEMP_LOGFILE
     exit 1
   }
 fi
 
-EXISTING_UUID="$(virsh -c qemu:///system domuuid fn-vfnOS 2>/dev/null || true)"
-[ -z "${EXISTING_UUID}" ] && EXISTING_UUID="$(sed -n 's/.*<uuid>\(.*\)<\/uuid>.*/\1/p' "${SHARE_PATH}/fn-vfnOS.xml" 2>/dev/null | head -n 1)"
+EXISTING_UUID="$(virsh -c qemu:///system domuuid fn-vFygoOS 2>/dev/null || true)"
+[ -z "${EXISTING_UUID}" ] && EXISTING_UUID="$(sed -n 's/.*<uuid>\(.*\)<\/uuid>.*/\1/p' "${SHARE_PATH}/fn-vFygoOS.xml" 2>/dev/null | head -n 1)"
 [ -n "${EXISTING_UUID}" ] && UUID_XML="<uuid>${EXISTING_UUID}</uuid>" || UUID_XML=""
 
 case "${ARCH}" in
   "aarch64")
-    cat >"${SHARE_PATH}/fn-vfnOS.xml" <<EOF
+    cat >"${SHARE_PATH}/fn-vFygoOS.xml" <<EOF
 <domain type='qemu' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
-  <name>fn-vfnOS</name>
-  <title>fn-vfnOS</title>
+  <name>fn-vFygoOS</name>
+  <title>fn-vFygoOS</title>
   ${UUID_XML}
   <memory unit='MiB'>${wizard_memory:-4096}</memory>
   <currentMemory unit='MiB'>${wizard_memory:-4096}</currentMemory>
@@ -137,8 +137,8 @@ case "${ARCH}" in
     <sound model='ich9'>
       <audio id='1'/>
     </sound>
-    <graphics type='vnc' socket='/var/run/vms/fn-vfnOS.vnc.sock' powerControl='yes'>
-      <listen type='socket' socket='/var/run/vms/fn-vfnOS.vnc.sock'/>
+    <graphics type='vnc' socket='/var/run/vms/fn-vFygoOS.vnc.sock' powerControl='yes'>
+      <listen type='socket' socket='/var/run/vms/fn-vFygoOS.vnc.sock'/>
     </graphics>
     <channel type='unix'>
       <target type='virtio' name='org.qemu.guest_agent.0'/>
@@ -155,10 +155,10 @@ case "${ARCH}" in
 EOF
     ;;
   "x86_64")
-    cat >"${SHARE_PATH}/fn-vfnOS.xml" <<EOF
+    cat >"${SHARE_PATH}/fn-vFygoOS.xml" <<EOF
 <domain type='qemu' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
-  <name>fn-vfnOS</name>
-  <title>fn-vfnOS</title>
+  <name>fn-vFygoOS</name>
+  <title>fn-vFygoOS</title>
   ${UUID_XML}
   <memory unit='MiB'>${wizard_memory:-4096}</memory>
   <currentMemory unit='MiB'>${wizard_memory:-4096}</currentMemory>
@@ -218,8 +218,8 @@ EOF
     <sound model='ich9'>
       <audio id='1'/>
     </sound>
-    <graphics type='vnc' socket='/var/run/vms/fn-vfnOS.vnc.sock' powerControl='yes'>
-      <listen type='socket' socket='/var/run/vms/fn-vfnOS.vnc.sock'/>
+    <graphics type='vnc' socket='/var/run/vms/fn-vFygoOS.vnc.sock' powerControl='yes'>
+      <listen type='socket' socket='/var/run/vms/fn-vFygoOS.vnc.sock'/>
     </graphics>
     <channel type='unix'>
       <target type='virtio' name='org.qemu.guest_agent.0'/>
@@ -241,23 +241,23 @@ EOF
     ;;
 esac
 
-virsh -c qemu:///system undefine fn-vfnOS 2>&1 || true
-virsh -c qemu:///system define "${SHARE_PATH}/fn-vfnOS.xml" >/dev/null 2>&1
+virsh -c qemu:///system undefine fn-vFygoOS 2>&1 || true
+virsh -c qemu:///system define "${SHARE_PATH}/fn-vFygoOS.xml" >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-  echo "Failed to define libvirt domain fn-vfnOS." >$TRIM_TEMP_LOGFILE
+  echo "Failed to define libvirt domain fn-vFygoOS." >$TRIM_TEMP_LOGFILE
   #exit 1
 fi
 
 if [ "${wizard_autostart:-}" == "true" ]; then
-  virsh -c qemu:///system autostart fn-vfnOS >/dev/null 2>&1
+  virsh -c qemu:///system autostart fn-vFygoOS >/dev/null 2>&1
   if [ $? -ne 0 ]; then
-    echo "Failed to autostart libvirt domain fn-vfnOS." >$TRIM_TEMP_LOGFILE
+    echo "Failed to autostart libvirt domain fn-vFygoOS." >$TRIM_TEMP_LOGFILE
     exit 1
   fi
 else
-  virsh -c qemu:///system autostart --disable fn-vfnOS >/dev/null 2>&1
+  virsh -c qemu:///system autostart --disable fn-vFygoOS >/dev/null 2>&1
   if [ $? -ne 0 ]; then
-    echo "Failed to disable autostart for libvirt domain fn-vfnOS." >$TRIM_TEMP_LOGFILE
+    echo "Failed to disable autostart for libvirt domain fn-vFygoOS." >$TRIM_TEMP_LOGFILE
     exit 1
   fi
 fi

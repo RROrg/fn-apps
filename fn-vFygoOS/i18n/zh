@@ -1,21 +1,21 @@
 [common]
-display_name="vfnOS"
-desc="在 fnOS/FygoOS 系统中创建异架构的 fnOS 虚拟机（x86_64 fnOS 下则创建 aarch64 的 fnOS 虚拟机, aarch64 fnOS 下则创建 x86_64 的 fnOS 虚拟机）。"
+display_name="vFygoOS"
+desc="在 fnOS/FygoOS 系统中创建异架构的 FygoOS 虚拟机（x86_64 fnOS 下则创建 aarch64 的 FygoOS 虚拟机, aarch64 fnOS 下则创建 x86_64 的 FygoOS 虚拟机）。"
 
 [entry]
-title="vfnOS"
+title="vFygoOS"
 
 [wizard]
 config_stepTitle="配置向导"
-config_item1_helpText="您即将修改 vfnOS" 
+config_item1_helpText="您即将修改 vFygoOS" 
 config_item1_label="是否开机自启"
 config_item1_options1="是"
 config_item1_options2="否"
 config_item1_rules="请选择是否开机自启"
 
 install_stepTitle="安装向导"
-install_item1_helpText="您即将安装 vfnOS" 
-install_item2_helpText="1. 安装后请在 “虚拟机” 中启动/停止 vfnOS 虚拟机。"
+install_item1_helpText="您即将安装 vFygoOS" 
+install_item2_helpText="1. 安装后请在 “虚拟机” 中启动/停止 vFygoOS 虚拟机。"
 install_item1_label="CPU 核心数"
 install_item1_required="请输入 CPU 核心数"
 install_item1_rules="CPU 核心数必须在 1 到 16 之间"

@@ -1,4 +1,4 @@
-appname               = fn-vfnOS
+appname               = fn-vFygoOS
 version               = 1.0.4
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
