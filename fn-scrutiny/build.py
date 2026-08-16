@@ -28,19 +28,46 @@ WEB_ASSET = {
 FRONTEND_ASSET = "scrutiny-web-frontend.tar.gz"
 
 
-def get_latest_version():
-    url = f"{RELEASES_URL}/latest"
+def _http_head(url, timeout=20):
     req = urllib.request.Request(url, method="HEAD")
+    req.add_header("User-Agent", "fn-apps-builder")
+    return urllib.request.urlopen(req, timeout=timeout)
+
+
+def _asset_exists(version, asset):
+    """Check an asset exists for a version via the download redirect (no API quota)."""
     try:
-        with urllib.request.urlopen(req) as resp:
-            final_url = resp.url
+        _http_head(f"{RELEASES_URL}/download/v{version}/{asset}")
+        return True
     except Exception:
-        raise RuntimeError("Failed to get latest version from GitHub")
-    tag = final_url.rstrip("/").split("/")[-1]
-    version = re.sub(r"^[vV]", "", tag)
-    if not version:
-        raise RuntimeError("Failed to parse latest version")
-    return version
+        return False
+
+
+def get_latest_version():
+    required_assets = (
+        list(COLLECTOR_ASSET.values()) + list(WEB_ASSET.values()) + [FRONTEND_ASSET]
+    )
+
+    # 1) Resolve the latest tag via the /releases/latest redirect (no api.github.com)
+    try:
+        resp = _http_head(f"{RELEASES_URL}/latest")
+        tag = resp.geturl().rstrip("/").split("/")[-1]
+        version = re.sub(r"^[vV]", "", tag)
+        if version:
+            missing = [a for a in required_assets if not _asset_exists(version, a)]
+            if not missing:
+                return version
+            print(f"  Note: latest {version} is missing assets: {missing}")
+    except Exception as e:
+        print(f"  Note: failed to resolve latest tag: {e}")
+
+    # 2) Fall back to the local manifest version
+    local = parse_manifest(Path(__file__).resolve().parent / "manifest").get("version", "")
+    if local:
+        print(f"  Warning: falling back to local manifest version {local}")
+        return local
+
+    raise RuntimeError("Could not determine a version with all required assets")
 
 
 def cache_dir():
@@ -56,7 +83,11 @@ def download_with_cache(url, dest):
         print(f"  Using cached: {dest}")
         return
     print(f"  Downloading {url}")
-    urllib.request.urlretrieve(url, str(dest))
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "fn-apps-builder")
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        with open(str(dest), "wb") as f:
+            shutil.copyfileobj(resp, f)
 
 
 def parse_manifest(path):
@@ -130,13 +161,13 @@ def main():
     frontend_cache = cachedir / f"{FRONTEND_ASSET}-{version}"
     download_with_cache(frontend_url, frontend_cache)
 
-    web_dir = app_dir / "web"
+    web_dir = app_dir / "www"
     if web_dir.is_dir():
         shutil.rmtree(str(web_dir))
     web_dir.mkdir(parents=True, exist_ok=True)
     with tarfile.open(str(frontend_cache), "r:gz") as tar:
         tar.extractall(str(web_dir))
-    print("  Done: app/web/")
+    print("  Done: app/www/")
 
     update_manifest_version(workdir / "manifest", version)
 

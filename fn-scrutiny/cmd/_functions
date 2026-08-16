@@ -197,16 +197,18 @@ web:
     location: ${TRIM_PKGVAR}/scrutiny.db
   src:
     frontend:
-      path: ${TRIM_APPDEST}/web
+      path: ${TRIM_APPDEST}/www
   influxdb:
     host: ${influxdb_host}
     port: ${influxdb_port}
     token: ${influxdb_token}
-    organization: ${influxdb_org}
+    org: ${influxdb_org}
     bucket: ${influxdb_bucket}
+    retention_policy: true
 
 log:
-  level: INFO
+  file: ${TRIM_PKGVAR}/scrutiny.log
+  level: DEBUG
 EOF
 }
 
