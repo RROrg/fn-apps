@@ -270,6 +270,16 @@ textarea {
   font-size: 11px;
 }
 
+.monospace {
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--muted);
+}
+
 .subtle-center {
   text-align: center;
   padding: 20px;
@@ -798,6 +808,89 @@ textarea {
   text-align: center;
   color: var(--subtle);
   padding: 20px 10px;
+}
+
+.info-table .btn-kill {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.info-table .btn-kill:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 2000;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 4px 0;
+  min-width: 140px;
+}
+
+.context-menu.hidden {
+  display: none;
+}
+
+.context-menu-item {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.context-menu-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+#processTable {
+  table-layout: auto;
+}
+
+#processTable th:nth-child(1),
+#processTable td:nth-child(1) {
+  width: 10%;
+}
+
+#processTable th:nth-child(2),
+#processTable td:nth-child(2) {
+  width: 7%;
+}
+
+#processTable th:nth-child(3),
+#processTable th:nth-child(4),
+#processTable td:nth-child(3),
+#processTable td:nth-child(4) {
+  width: 7%;
+}
+
+#processTable th:nth-child(5),
+#processTable td:nth-child(5) {
+  width: 8%;
+}
+
+#processTable th:nth-child(6),
+#processTable td:nth-child(6) {
+  width: 10%;
+}
+
+#processTable th:nth-child(7),
+#processTable td:nth-child(7) {
+  width: 45%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #tcpTable,

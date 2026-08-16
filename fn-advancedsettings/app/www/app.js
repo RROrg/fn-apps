@@ -14,6 +14,7 @@ const sections = [
   ["identity", "identitySettings"],
   ["device", "deviceSettings"],
   ["port", "portSettings"],
+  ["process", "processSettings"],
   ["diag", "diagSettings"],
 ];
 
@@ -35,6 +36,7 @@ const icons = {
   device:
     '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h4M9 17h2"/></svg>',
   port: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>',
+  process: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2M7 12h4"/></svg>',
   diag: '<svg viewBox="0 0 24 24"><path d="M3 21l4-4M7 17l3-3M10 14l3-6M13 8l4-2M17 6l4-1"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="6" r="1.5"/></svg>',
 };
 
@@ -375,6 +377,25 @@ const I18N = {
     confirmRemoveMember: "确定要从桥接中移除接口",
     searchPort: "搜索端口/地址/进程",
     noMatch: "无匹配结果",
+    processSettings: "进程管理",
+    searchProcess: "搜索进程...",
+    processUser: "用户",
+    processCpu: "CPU%",
+    processMem: "内存%",
+    processStat: "状态",
+    processTime: "运行时间",
+    processCmd: "命令",
+    killProcess: "结束进程",
+    processTerm: "结束进程 (-TERM)",
+    processKill: "强制杀死 (-KILL)",
+    processStop: "停止进程 (-STOP)",
+    processCont: "恢复进程 (-CONT)",
+    processConfirmTERM: "确定要向进程 {pid} 发送 SIGTERM 信号？",
+    processConfirmKILL: "确定要向进程 {pid} 发送 SIGKILL 信号？",
+    processConfirmSTOP: "确定要向进程 {pid} 发送 SIGSTOP 信号？",
+    processConfirmCONT: "确定要向进程 {pid} 发送 SIGCONT 信号？",
+    processSignalSent: "信号已发送",
+    killed: "进程已终止",
     tcpSettings: "拥塞控制",
     congestionControl: "拥塞控制算法",
     fastopen: "TCP Fast Open",
@@ -669,6 +690,25 @@ const I18N = {
       "Are you sure you want to remove interface from bridge",
     searchPort: "Search port/address/process",
     noMatch: "No match",
+    processSettings: "Process Management",
+    searchPTerm: "Terminate (-TERM)",
+    processKill: "Force Kill (-KILL)",
+    processStop: "Stop (-STOP)",
+    processCont: "Continue (-CONT)",
+    processConfirmTERM: "Send SIGTERM to process {pid}?",
+    processConfirmKILL: "Send SIGKILL to process {pid}?",
+    processConfirmSTOP: "Send SIGSTOP to process {pid}?",
+    processConfirmCONT: "Send SIGCONT to process {pid}?",
+    processSignalSent: "Signal sent",
+    processUser: "User",
+    processCpu: "CPU%",
+    processStat: "STAT",
+    processMem: "Memory%",
+    processTime: "Runtime",
+    processCmd: "Command",
+    killProcess: "Kill Process",
+    killed: "Process killed",
+    killed: "Process killed",
     tcpSettings: "Congestion Control",
     congestionControl: "Congestion Control Algorithm",
     fastopen: "TCP Fast Open",
@@ -851,6 +891,11 @@ function escapeHtml(value) {
         char
       ],
   );
+}
+
+function trunc(str, len) {
+  str = String(str || "");
+  return str.length > len ? str.slice(0, len) + "…" : str;
 }
 
 async function api(action, data = {}) {
@@ -1582,6 +1627,114 @@ function renderPort() {
   renderPortTable(udp, document.querySelector("#udpTable tbody"), keyword);
 }
 
+function renderProcess() {
+  const processes = state.data.processes || [];
+  const keyword = (
+    document.getElementById("processSearchInput")?.value || ""
+  ).trim().toLowerCase();
+  const tbody = document.querySelector("#processTable tbody");
+  if (!tbody) return;
+
+  let filtered = processes;
+  if (keyword) {
+    try {
+      const regex = new RegExp(keyword, "i");
+      filtered = processes.filter((p) => {
+        return (
+          regex.test(p.user) ||
+          regex.test(p.cmd) ||
+          regex.test(String(p.pid))
+        );
+      });
+    } catch (e) {
+      filtered = processes.filter((p) => {
+        const s = `${p.user} ${p.cmd} ${p.pid}`.toLowerCase();
+        return s.includes(keyword);
+      });
+    }
+  }
+
+  tbody.innerHTML = filtered.length
+    ? filtered
+        .map(
+          (p) => `<tr data-pid="${p.pid}">
+            <td>${escapeHtml(p.user)}</td>
+            <td>${escapeHtml(p.pid)}</td>
+            <td>${escapeHtml(p.cpu)}</td>
+            <td>${escapeHtml(p.mem)}</td>
+            <td class="monospace">${escapeHtml(p.stat || '-')}</td>
+            <td>${escapeHtml(p.time || '-')}</td>
+            <td class="muted" title="${escapeHtml(p.cmd)}">${escapeHtml(trunc(p.cmd, 60))}</td>
+          </tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="7" class="empty-cell">${escapeHtml(keyword ? t("noMatch") : t("noData"))}</td></tr>`;
+}
+
+let _contextPid = null;
+let _contextAction = null;
+
+function showContextMenu(e, pid) {
+  e.preventDefault();
+  _contextPid = pid;
+  _contextAction = null;
+  const menu = document.getElementById("contextMenu");
+  const x = Math.min(e.clientX, window.innerWidth - 160);
+  const y = Math.min(e.clientY, window.innerHeight - 140);
+  menu.style.left = x + "px";
+  menu.style.top = y + "px";
+  menu.classList.remove("hidden");
+}
+
+function hideContextMenu() {
+  document.getElementById("contextMenu").classList.add("hidden");
+  _contextPid = null;
+  _contextAction = null;
+}
+
+document.getElementById("contextMenu").addEventListener("click", (e) => {
+  const item = e.target.closest(".context-menu-item");
+  if (!item) return;
+  const action = item.dataset.action;
+  if (action) {
+    handleMenuAction(action);
+  }
+});
+
+document.addEventListener("contextmenu", (e) => {
+  const row = e.target.closest("#processTable tbody tr");
+  if (row) {
+    const pid = row.dataset.pid;
+    showContextMenu(e, pid);
+  } else {
+    hideContextMenu();
+  }
+});
+
+document.addEventListener("click", hideContextMenu);
+document.addEventListener("scroll", hideContextMenu, true);
+
+function handleMenuAction(action) {
+  const pid = _contextPid;
+  if (pid === null) return;
+  hideContextMenu();
+  const msg = t(`processConfirm${action.toUpperCase()}`).replace("{pid}", pid);
+  showConfirm(msg).then((ok) => {
+    if (!ok) return;
+    api("signalProcess", { pid, signal: action }).then(() => {
+      showToast(t("processSignalSent"));
+      loadProcesses();
+    }).catch((err) => showToast(err.message || t("processSignalSent"), true));
+  });
+}
+
+async function loadProcesses() {
+  return api("readProcesses").then((data) => {
+    state.data.processes = data.processes || [];
+    renderProcess();
+  });
+}
+
 let diagActive = "ping";
 let diagRunning = false;
 let diagAbortController = null;
@@ -1758,6 +1911,7 @@ function renderPanels() {
       state.active === "identity" ||
         state.active === "device" ||
         state.active === "port" ||
+        state.active === "process" ||
         state.active === "display" ||
         state.active === "diag",
     );
@@ -1776,6 +1930,7 @@ function render() {
   renderProxy();
   renderIdentity();
   renderDevice();
+  renderProcess();
   renderPort();
   renderDiag();
 }
@@ -1961,6 +2116,9 @@ document.getElementById("networkList").addEventListener("input", (event) => {
 
 document.getElementById("portSearchInput").addEventListener("input", () => {
   renderPort();
+});
+document.getElementById("processSearchInput").addEventListener("input", () => {
+  renderProcess();
 });
 
 document.getElementById("diagTabs").addEventListener("click", (event) => {

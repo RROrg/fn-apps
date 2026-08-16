@@ -3075,6 +3075,48 @@ def read_port():
     return {"tcp": tcp, "udp": udp}
 
 
+def read_processes():
+    processes = []
+    result = run(["ps", "aux"], timeout=10)
+    if result["rc"] == 0:
+        for line in result["stdout"].splitlines()[1:]:  # Skip header
+            parts = line.split(None, 10)
+            if len(parts) < 11:
+                continue
+            user, pid, cpu, mem, vsz, rss, tty, stat, start, time_str, cmd = parts
+            processes.append({
+                "user": user,
+                "pid": int(pid),
+                "cpu": cpu,
+                "mem": mem,
+                "stat": stat,
+                "time": time_str,
+                "cmd": cmd,
+            })
+    return sorted(processes, key=lambda p: p["pid"])
+
+
+def signal_process(pid, sig):
+    signals = {
+        "term": signal.SIGTERM,
+        "kill": signal.SIGKILL,
+        "stop": signal.SIGSTOP,
+        "cont": signal.SIGCONT,
+    }
+    sig_int = signals.get(sig.lower())
+    if sig_int is None:
+        return {"ok": False, "message": f"Invalid signal: {sig}"}
+    try:
+        os.kill(int(pid), sig_int)
+        return {"ok": True}
+    except ProcessLookupError:
+        return {"ok": False, "message": "Process not found"}
+    except PermissionError:
+        return {"ok": False, "message": "Permission denied"}
+    except Exception as e:
+        return {"ok": False, "message": str(e)}
+
+
 def diag_stream_start(
     target, tool, count=4, server=None, ipv6=False
 ) -> tuple[subprocess.Popen | None, str]:
@@ -3162,6 +3204,7 @@ def read_all():
         "identity": read_identity(),
         "device": read_device(),
         "port": read_port(),
+        "processes": read_processes(),
         "display": read_display(),
     }
 
@@ -3202,6 +3245,15 @@ def dispatch():
         json_response({"ok": True, "device": read_device()})
     elif action == "readPort":
         json_response({"ok": True, "port": read_port()})
+    elif action == "readProcesses":
+        json_response({"ok": True, "processes": read_processes()})
+    elif action == "signalProcess":
+        pid = body.get("pid")
+        sig = body.get("signal", "term")
+        if not pid:
+            json_response({"ok": False, "message": "pid required"}, 400)
+            return
+        json_response(signal_process(pid, sig))
     elif action == "saveDisplay":
         safe_dispatch(save_display, body)
     elif action == "readDisplay":

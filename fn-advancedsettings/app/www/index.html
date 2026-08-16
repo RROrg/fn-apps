@@ -263,6 +263,34 @@
               </table>
         </section>
 
+        <section id="processPanel" class="panel hidden" data-panel="process">
+          <div class="section-head">
+            <h3 data-i18n="processSettings">进程管理</h3>
+            <div class="port-search">
+              <input id="processSearchInput" type="text" data-i18n-placeholder="searchProcess" placeholder="搜索进程..."
+                spellcheck="false">
+            </div>
+          </div>
+          <div class="info-subsection">
+            <div class="table-wrap">
+              <table class="info-table" id="processTable">
+                <thead>
+                  <tr>
+                    <th data-i18n="processUser">用户</th>
+                    <th data-i18n="processPid">PID</th>
+                    <th data-i18n="processCpu">CPU%</th>
+                    <th data-i18n="processMem">内存%</th>
+                    <th data-i18n="processStat">状态</th>
+                    <th data-i18n="processTime">运行时间</th>
+                    <th data-i18n="processCmd">命令</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section id="diagPanel" class="panel hidden" data-panel="diag">
           <h3 data-i18n="diagSettings">网络诊断</h3>
           <div class="diag-toolbar">
@@ -351,6 +379,21 @@
         <button id="confirmCancel" class="ghost-btn" type="button" data-i18n="cancel">取消</button>
         <button id="confirmOk" class="primary-btn" type="button" data-i18n="confirm">确定</button>
       </div>
+    </div>
+  </div>
+
+  <div id="contextMenu" class="context-menu hidden">
+    <div class="context-menu-item" data-action="term">
+      <span data-i18n="processTerm">结束进程 (-TERM)</span>
+    </div>
+    <div class="context-menu-item" data-action="kill">
+      <span data-i18n="processKill">强制杀死 (-KILL)</span>
+    </div>
+    <div class="context-menu-item" data-action="stop">
+      <span data-i18n="processStop">停止进程 (-STOP)</span>
+    </div>
+    <div class="context-menu-item" data-action="cont">
+      <span data-i18n="processCont">恢复进程 (-CONT)</span>
     </div>
   </div>
 
