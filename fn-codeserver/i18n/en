@@ -7,7 +7,7 @@ title="code-server"
 
 [wizard]
 config_stepTitle="Configuration Wizard"
-config_item1_helpText="You are about to modify codeserver" 
+config_item1_helpText="You are about to modify codeserver"
 config_item2_helpText="1. If the terminal is unavailable after installation, please set the permission to “run-as: root”."
 config_item1_label="Password"
 config_item1_required="Please enter a password"
@@ -17,7 +17,7 @@ config_item2_required="Please enter a port number"
 config_item2_rules="Port number must be between 0-65535"
 
 install_stepTitle="Install Wizard"
-install_item1_helpText="You are about to install codeserver" 
+install_item1_helpText="You are about to install codeserver"
 install_item2_helpText="1. If the terminal is unavailable after installation, please set the permission to “run-as: root”." 
 install_item1_label="Password"
 install_item1_required="Please enter a password"
