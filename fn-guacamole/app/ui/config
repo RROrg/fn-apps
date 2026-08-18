@@ -1,0 +1,17 @@
+{
+  ".url": {
+    "fn-guacamole.Application": {
+      "title": "${entry.title}",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "port": "${wizard_port}",
+      "url": "/guacamole/",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly",
+        "fullUrlPerm": "readonly"
+      }
+    }
+  }
+}

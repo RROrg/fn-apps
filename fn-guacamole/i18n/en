@@ -1,0 +1,33 @@
+[common]
+display_name="guacamole"
+desc="Apache Guacamole is a clientless remote desktop gateway that supports standard protocols like RDP, VNC, SSH and telnet."
+
+[entry]
+title="Guacamole"
+
+[wizard]
+config_stepTitle="Configuration Wizard"
+config_item1_helpText="You are about to modify guacamole"
+config_item2_helpText="1. The default username and password for the Guacamole web interface is <strong>guacadmin:guacadmin</strong>. Please change it after the first login."
+config_item3_helpText="2. Guacamole supports RDP, VNC, SSH, telnet and other protocols. You can create connections in the web interface."
+config_item4_label="Web interface port"
+config_item4_description="The host port for the Guacamole web interface. Default is 18080."
+config_item4_required="Please enter the web interface port"
+config_item4_rules="Please enter a valid port number (1-65535)"
+
+install_stepTitle="Install Wizard"
+install_item1_helpText="You are about to install guacamole"
+install_item2_helpText="1. The default username and password for the Guacamole web interface is <strong>guacadmin:guacadmin</strong>. Please change it after the first login."
+install_item3_helpText="2. Guacamole supports RDP, VNC, SSH, telnet and other protocols. You can create connections in the web interface."
+install_item4_helpText="3. Application data (database) is stored in the data directory and can be retained or deleted during uninstallation."
+install_item5_label="Web interface port"
+install_item5_description="The host port for the Guacamole web interface. Default is 18080."
+install_item5_required="Please enter the web interface port"
+install_item5_rules="Please enter a valid port number (1-65535)"
+
+uninstall_stepTitle="Uninstall Wizard"
+uninstall_item1_helpText="You are about to uninstall this application. Please select how to handle application data:"
+uninstall_item1_label="Data retention options"
+uninstall_item1_options1="Retain data - can be restored during reinstallation! (Recommended)"
+uninstall_item1_options2="Delete data - this operation is irreversible!"
+uninstall_item1_rules="Please select data retention options"

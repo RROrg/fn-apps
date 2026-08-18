@@ -1,0 +1,22 @@
+{
+  "docker-project": {
+    "projects": [
+      {
+        "name": "fn-guacamole",
+        "path": "docker"
+      }
+    ]
+  },
+  "data-share": {
+    "shares": [
+      {
+        "name": "guacamole",
+        "permission": {
+          "rw": [
+            "docker-fn-guacamole"
+          ]
+        }
+      }
+    ]
+  }
+}

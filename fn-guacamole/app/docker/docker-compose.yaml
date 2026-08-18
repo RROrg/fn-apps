@@ -1,0 +1,54 @@
+services:
+  guacd:
+    image: guacamole/guacd:1.6.0
+    container_name: guacd
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    # volumes:
+    #   - /var/apps/fn-guacamole/shares/guacamole/recordings:/var/lib/guacamole/recordings  # 会话录制目录（可选，需在连接中配置录制路径）
+
+  guacdb:
+    image: postgres:16-alpine
+    container_name: guacdb
+    restart: unless-stopped
+    user: "0:0"                    # 以 root 启动，入口脚本会自动降权为 postgres 用户，确保数据目录可写
+    environment:
+      - POSTGRES_DB=guacamole_db
+      - POSTGRES_USER=guacamole_user
+      - POSTGRES_PASSWORD=guacamole
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - /var/apps/fn-guacamole/shares/guacamole/db:/var/lib/postgresql/data
+      - ${TRIM_APPDEST}/docker/schema:/docker-entrypoint-initdb.d:ro   # 首次启动自动初始化数据库
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guacamole_user -d guacamole_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  guacamole:
+    image: guacamole/guacamole:1.6.0
+    container_name: guacamole
+    restart: unless-stopped
+    depends_on:
+      guacd:
+        condition: service_started
+      guacdb:
+        condition: service_healthy
+    ports:
+      - ${wizard_port:-18080}:8080  # Guacamole Web 界面（宿主机端口，安装/配置时可修改）
+    environment:
+      - TZ=Asia/Shanghai
+      - GUACD_HOSTNAME=guacd
+      - GUACD_PORT=4822
+      # Guacamole < 1.6.0 使用 POSTGRES_* 前缀
+      #- POSTGRES_HOSTNAME=guacdb
+      #- POSTGRES_DATABASE=guacamole_db
+      #- POSTGRES_USER=guacamole_user
+      #- POSTGRES_PASSWORD=guacamole
+      # Guacamole ≥ 1.6.0 使用 POSTGRESQL_* 前缀
+      - POSTGRESQL_HOSTNAME=guacdb
+      - POSTGRESQL_DATABASE=guacamole_db
+      - POSTGRESQL_USERNAME=guacamole_user
+      - POSTGRESQL_PASSWORD=guacamole

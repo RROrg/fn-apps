@@ -1,0 +1,35 @@
+[
+  {
+    "stepTitle": "${wizard.config_stepTitle}",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item1_helpText}"
+      },
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item2_helpText}"
+      },
+      {
+        "type": "tips",
+        "helpText": "${wizard.config_item3_helpText}"
+      },
+      {
+        "type": "text",
+        "field": "wizard_port",
+        "label": "${wizard.config_item4_label}",
+        "description": "${wizard.config_item4_description}",
+        "rules": [
+          {
+            "required": true,
+            "message": "${wizard.config_item4_required}"
+          },
+          {
+            "pattern": "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[0-9]{1,4})$",
+            "message": "${wizard.config_item4_rules}"
+          }
+        ]
+      }
+    ]
+  }
+]

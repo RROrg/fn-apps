@@ -1,0 +1,12 @@
+appname               = fn-guacamole
+version               = 1.6.0-1
+display_name          = "${common.display_name}"
+desc                  = "${common.desc}"
+platform              = all
+source                = thirdparty
+desktop_uidir         = ui
+desktop_applaunchname = fn-guacamole.Application
+maintainer            = Ing
+maintainer_url        = https://github.com/RROrg
+distributor           = RROrg
+distributor_url       = https://github.com/RROrg/fn-apps
