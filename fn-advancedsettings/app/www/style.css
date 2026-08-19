@@ -656,6 +656,223 @@ textarea {
   min-width: 80px;
 }
 
+.service-modal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.service-modal-pre,
+.service-modal-editor {
+  flex: 1;
+  min-height: 240px;
+  max-height: 55vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  padding: 12px;
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+  margin: 0;
+}
+
+.service-modal-editor {
+  resize: vertical;
+  color: var(--text);
+  outline: none;
+}
+
+.service-modal-editor:focus {
+  border-color: var(--accent);
+}
+
+.service-modal-hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.service-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.service-modal-svg {
+  flex: 1;
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  padding: 8px;
+}
+
+.service-modal-svg svg {
+  display: block;
+  min-width: 900px;
+}
+
+/* 启动分析：大弹窗填满父窗口 */
+.analyze-modal .modal-content {
+  width: min(96vw, 1600px);
+  max-width: none;
+  max-height: 94vh;
+}
+
+.analyze-modal .service-modal-svg {
+  max-height: 52vh;
+}
+
+/* 缩放控制条 */
+.analyze-zoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.analyze-zoom button {
+  min-width: 30px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.analyze-zoom button:hover {
+  background: var(--button-hover);
+}
+
+#zoomLevel {
+  min-width: 48px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 启动分析数据区 */
+.service-modal-data {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.analyze-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.analyze-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.analyze-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.analyze-panel {
+  max-height: 40vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  padding: 12px;
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* 文本面板（总时间/关键链）保留换行；blame 表格面板用 normal */
+#analyzeTime,
+#analyzeCritical {
+  white-space: pre-wrap;
+}
+
+/* blame 耗时排行表格 */
+.analyze-blame-summary {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.analyze-blame-scroll {
+  overflow: auto;
+}
+
+.analyze-blame-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analyze-blame-table th,
+.analyze-blame-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: 12px;
+}
+
+.analyze-blame-table th {
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--field);
+}
+
+.analyze-blame-table td.mono {
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.share-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.bar-wrap {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.bar-label {
+  min-width: 44px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .about-body {
   display: grid;
   gap: 12px;
@@ -891,6 +1108,74 @@ textarea {
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+#serviceTable {
+  table-layout: fixed;
+}
+
+#serviceTable th:nth-child(1),
+#serviceTable td:nth-child(1) {
+  width: 26%;
+}
+
+#serviceTable th:nth-child(2),
+#serviceTable td:nth-child(2) {
+  width: 38%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#serviceTable th:nth-child(3),
+#serviceTable td:nth-child(3) {
+  width: 13%;
+}
+
+#serviceTable th:nth-child(4),
+#serviceTable td:nth-child(4) {
+  width: 9%;
+}
+
+#serviceTable th:nth-child(5),
+#serviceTable td:nth-child(5) {
+  width: 14%;
+}
+
+.badge-service {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  border-radius: 10px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.badge-service.active {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+
+.badge-service.inactive,
+.badge-service.dead {
+  background: var(--icon-bg);
+  color: var(--subtle);
+}
+
+.badge-service.failed {
+  background: rgba(255, 92, 108, 0.15);
+  color: var(--danger);
+}
+
+.badge-service.activating,
+.badge-service.deactivating,
+.badge-service.reloading {
+  background: rgba(230, 160, 48, 0.15);
+  color: var(--warn);
 }
 
 #tcpTable,

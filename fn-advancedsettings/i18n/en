@@ -1,6 +1,6 @@
 [common]
 display_name="Advanced Settings"
-desc="Manage boot settings, power settings, screen settings, SSH settings, CPU settings, DNS settings, network settings, proxy settings, device information, port information, process management, network diagnostics."
+desc="Manage boot settings, power settings, screen settings, SSH settings, CPU settings, DNS settings, network settings, proxy settings, device information, port information, process management, service management, network diagnostics."
 
 [entry]
 title="Advanced Settings"

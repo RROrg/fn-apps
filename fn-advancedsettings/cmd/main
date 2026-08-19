@@ -5,6 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 SOCKET_PATH="${TRIM_APPDEST}/fn-advancedsettings.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+# write the command to start your program here
 CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/advancedsettings.py\" --unix-socket \"${SOCKET_PATH}\" --base-path \"/app/fn-advancedsettings\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {

@@ -3084,24 +3084,26 @@ def read_processes():
             if len(parts) < 11:
                 continue
             user, pid, cpu, mem, vsz, rss, tty, stat, start, time_str, cmd = parts
-            processes.append({
-                "user": user,
-                "pid": int(pid),
-                "cpu": cpu,
-                "mem": mem,
-                "stat": stat,
-                "time": time_str,
-                "cmd": cmd,
-            })
+            processes.append(
+                {
+                    "user": user,
+                    "pid": int(pid),
+                    "cpu": cpu,
+                    "mem": mem,
+                    "stat": stat,
+                    "time": time_str,
+                    "cmd": cmd,
+                }
+            )
     return sorted(processes, key=lambda p: p["pid"])
 
 
 def signal_process(pid, sig):
     signals = {
-        "term": signal.SIGTERM,
-        "kill": signal.SIGKILL,
-        "stop": signal.SIGSTOP,
-        "cont": signal.SIGCONT,
+        "term": signal.SIGTERM, # pyright: ignore[reportAttributeAccessIssue]
+        "kill": signal.SIGKILL, # pyright: ignore[reportAttributeAccessIssue]
+        "stop": signal.SIGSTOP, # pyright: ignore[reportAttributeAccessIssue]
+        "cont": signal.SIGCONT, # pyright: ignore[reportAttributeAccessIssue]
     }
     sig_int = signals.get(sig.lower())
     if sig_int is None:
@@ -3115,6 +3117,196 @@ def signal_process(pid, sig):
         return {"ok": False, "message": "Permission denied"}
     except Exception as e:
         return {"ok": False, "message": str(e)}
+
+
+SERVICE_ACTIONS = ("start", "stop", "restart", "reload", "enable", "disable")
+
+
+def list_services():
+    """列出所有 systemd 服务单元及其状态。"""
+    services = []
+    if not shutil_which("systemctl"):
+        return services
+    # 先读 unit-files 拿到 enabled/disabled 状态（一次性，避免逐服务 is-enabled）
+    enabled_map = {}
+    result = run(
+        [
+            "systemctl",
+            "list-unit-files",
+            "--type=service",
+            "--no-pager",
+            "--no-legend",
+            "--plain",
+        ],
+        timeout=15,
+    )
+    if result["rc"] == 0:
+        for line in result["stdout"].splitlines():
+            parts = line.split(None, 2)
+            if len(parts) >= 2:
+                enabled_map[parts[0]] = parts[1]
+    result = run(
+        [
+            "systemctl",
+            "list-units",
+            "--type=service",
+            "--all",
+            "--no-pager",
+            "--no-legend",
+            "--plain",
+        ],
+        timeout=15,
+    )
+    if result["rc"] == 0:
+        for line in result["stdout"].splitlines():
+            parts = line.split(None, 4)
+            if len(parts) < 5:
+                continue
+            unit, load, active, sub, desc = parts
+            if unit.endswith(".service"):
+                services.append(
+                    {
+                        "name": unit[: -len(".service")],
+                        "unit": unit,
+                        "load": load,
+                        "active": active,
+                        "sub": sub,
+                        "enabled": enabled_map.get(unit, "unknown"),
+                        "description": desc,
+                    }
+                )
+    return sorted(services, key=lambda s: s["name"])
+
+
+def service_action(name, action):
+    """对 systemd 服务执行 start/stop/restart/reload/enable/disable。"""
+    if action not in SERVICE_ACTIONS:
+        return {"ok": False, "message": f"Invalid action: {action}"}
+    if not shutil_which("systemctl"):
+        return {"ok": False, "message": "systemctl not found"}
+    if not name or "." not in name:
+        # 允许不带 .service 后缀，自动补全
+        name = f"{name}.service" if name else ""
+    result = run(["systemctl", action, name], timeout=60)
+    if result["rc"] == 0:
+        return {
+            "ok": True,
+            "message": (result["stdout"] or result["stderr"] or "").strip(),
+        }
+    return {
+        "ok": False,
+        "message": (result["stderr"] or result["stdout"] or "failed").strip(),
+    }
+
+
+def _normalize_service_name(name):
+    """规范化服务名：补 .service 后缀，并拒绝路径穿越。"""
+    if not name:
+        return ""
+    if ".." in name or "/" in name or "\x00" in name:
+        return ""
+    return f"{name}.service" if "." not in name else name
+
+
+def service_cat(name):
+    """返回服务单元文件内容（systemctl cat）。"""
+    if not shutil_which("systemctl"):
+        return {"ok": False, "message": "systemctl not found"}
+    unit = _normalize_service_name(name)
+    if not unit:
+        return {"ok": False, "message": "Invalid service name"}
+    result = run(["systemctl", "cat", unit], timeout=15)
+    if result["rc"] == 0:
+        return {"ok": True, "content": result["stdout"]}
+    return {
+        "ok": False,
+        "message": (result["stderr"] or result["stdout"] or "failed").strip(),
+    }
+
+
+def service_status(name):
+    """返回服务运行状态（systemctl status -l --no-pager）。"""
+    if not shutil_which("systemctl"):
+        return {"ok": False, "message": "systemctl not found"}
+    unit = _normalize_service_name(name)
+    if not unit:
+        return {"ok": False, "message": "Invalid service name"}
+    result = run(["systemctl", "status", "-l", "--no-pager", unit], timeout=15)
+    content = (result["stdout"] or result["stderr"] or "").strip()
+    return {"ok": True, "content": content or "no output"}
+
+
+def service_edit_read(name):
+    """读取服务 drop-in override 文件内容（/etc/systemd/system/<name>.d/override.conf）。"""
+    unit = _normalize_service_name(name)
+    if not unit:
+        return {"ok": False, "message": "Invalid service name"}
+    dropin = Path("/etc/systemd/system") / f"{unit}.d" / "override.conf"
+    content = ""
+    if dropin.exists():
+        try:
+            content = dropin.read_text(encoding="utf-8", errors="replace")
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+    return {"ok": True, "content": content, "path": str(dropin)}
+
+
+def service_edit_save(name, content):
+    """写入服务 drop-in override 文件并执行 daemon-reload；空内容则删除 override.conf。"""
+    unit = _normalize_service_name(name)
+    if not unit:
+        return {"ok": False, "message": "Invalid service name"}
+    dropin = Path("/etc/systemd/system") / f"{unit}.d" / "override.conf"
+    try:
+        if not (content or "").strip():
+            # 空内容：删除 override.conf（若存在），并清理空目录
+            if dropin.exists():
+                dropin.unlink()
+            dropin_dir = dropin.parent
+            if dropin_dir.exists() and not any(dropin_dir.iterdir()):
+                dropin_dir.rmdir()
+        else:
+            dropin.parent.mkdir(parents=True, exist_ok=True)
+            dropin.write_text(content, encoding="utf-8")
+            os.chmod(dropin, 0o644)
+    except Exception as e:
+        return {"ok": False, "message": str(e)}
+    if shutil_which("systemctl"):
+        result = run(["systemctl", "daemon-reload"], timeout=15)
+        if result["rc"] != 0:
+            return {
+                "ok": False,
+                "message": (result["stderr"] or "daemon-reload failed").strip(),
+            }
+    return {"ok": True}
+
+
+def systemd_analyze_plot():
+    """返回 systemd-analyze plot 生成的启动时间线 SVG。"""
+    if not shutil_which("systemd-analyze"):
+        return {"ok": False, "message": "systemd-analyze not found"}
+    result = run(["systemd-analyze", "plot"], timeout=30)
+    if result["rc"] == 0:
+        return {"ok": True, "svg": result["stdout"]}
+    return {
+        "ok": False,
+        "message": (result["stderr"] or result["stdout"] or "failed").strip(),
+    }
+
+
+def systemd_analyze_data():
+    """返回启动分析的具体数据：总时间、服务耗时排行、关键启动链。"""
+    if not shutil_which("systemd-analyze"):
+        return {"ok": False, "message": "systemd-analyze not found"}
+    result = {}
+    for key, args in (
+        ("time", ["time"]),
+        ("blame", ["blame"]),
+        ("critical", ["critical-chain"]),
+    ):
+        r = run(["systemd-analyze"] + args, timeout=20)
+        result[key] = (r["stdout"] or r["stderr"] or "").strip()
+    return {"ok": True, **result}
 
 
 def diag_stream_start(
@@ -3254,6 +3446,44 @@ def dispatch():
             json_response({"ok": False, "message": "pid required"}, 400)
             return
         json_response(signal_process(pid, sig))
+    elif action == "readServices":
+        json_response({"ok": True, "services": list_services()})
+    elif action == "serviceAction":
+        name = body.get("name")
+        act = body.get("op") or body.get("action", "restart")
+        if not name:
+            json_response({"ok": False, "message": "service name required"}, 400)
+            return
+        json_response(service_action(name, act))
+    elif action == "serviceCat":
+        name = body.get("name")
+        if not name:
+            json_response({"ok": False, "message": "service name required"}, 400)
+            return
+        json_response(service_cat(name))
+    elif action == "serviceStatus":
+        name = body.get("name")
+        if not name:
+            json_response({"ok": False, "message": "service name required"}, 400)
+            return
+        json_response(service_status(name))
+    elif action == "serviceEditRead":
+        name = body.get("name")
+        if not name:
+            json_response({"ok": False, "message": "service name required"}, 400)
+            return
+        json_response(service_edit_read(name))
+    elif action == "serviceEditSave":
+        name = body.get("name")
+        content = body.get("content", "")
+        if not name:
+            json_response({"ok": False, "message": "service name required"}, 400)
+            return
+        json_response(service_edit_save(name, content))
+    elif action == "systemdAnalyzePlot":
+        json_response(systemd_analyze_plot())
+    elif action == "systemdAnalyzeData":
+        json_response(systemd_analyze_data())
     elif action == "saveDisplay":
         safe_dispatch(save_display, body)
     elif action == "readDisplay":

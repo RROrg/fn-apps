@@ -291,6 +291,33 @@
           </div>
         </section>
 
+        <section id="servicePanel" class="panel hidden" data-panel="service">
+          <div class="section-head">
+            <h3 data-i18n="serviceSettings">服务管理</h3>
+            <div class="port-search">
+              <input id="serviceSearchInput" type="text" data-i18n-placeholder="searchService" placeholder="搜索服务..."
+                spellcheck="false">
+              <button id="bootAnalyzeBtn" class="ghost-btn" type="button" data-i18n="bootAnalyze">启动分析</button>
+            </div>
+          </div>
+          <div class="info-subsection">
+            <div class="table-wrap">
+              <table class="info-table" id="serviceTable">
+                <thead>
+                  <tr>
+                    <th data-i18n="serviceName">服务</th>
+                    <th data-i18n="serviceDescription">描述</th>
+                    <th data-i18n="serviceActive">状态</th>
+                    <th data-i18n="serviceSub">子状态</th>
+                    <th data-i18n="serviceEnabled">开机自启</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section id="diagPanel" class="panel hidden" data-panel="diag">
           <h3 data-i18n="diagSettings">网络诊断</h3>
           <div class="diag-toolbar">
@@ -382,20 +409,40 @@
     </div>
   </div>
 
-  <div id="contextMenu" class="context-menu hidden">
-    <div class="context-menu-item" data-action="term">
-      <span data-i18n="processTerm">结束进程 (-TERM)</span>
-    </div>
-    <div class="context-menu-item" data-action="kill">
-      <span data-i18n="processKill">强制杀死 (-KILL)</span>
-    </div>
-    <div class="context-menu-item" data-action="stop">
-      <span data-i18n="processStop">停止进程 (-STOP)</span>
-    </div>
-    <div class="context-menu-item" data-action="cont">
-      <span data-i18n="processCont">恢复进程 (-CONT)</span>
+  <div id="serviceModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content service-modal-content">
+      <div class="modal-header">
+        <h2 id="serviceModalTitle">服务详情</h2>
+        <button class="icon-btn" id="serviceModalClose" type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div class="service-modal-hint hidden" id="serviceModalHint"></div>
+      <pre id="serviceModalContent" class="service-modal-pre hidden" spellcheck="false"></pre>
+      <textarea id="serviceModalEditor" class="service-modal-editor hidden" spellcheck="false"
+        aria-label="服务配置编辑框" data-i18n-aria-label="serviceEditorLabel"></textarea>
+      <div id="analyzeZoom" class="analyze-zoom hidden">
+        <button id="zoomOut" type="button" aria-label="缩小">−</button>
+        <span id="zoomLevel">100%</span>
+        <button id="zoomIn" type="button" aria-label="放大">+</button>
+        <button id="zoomReset" type="button" data-i18n="zoomReset">重置</button>
+      </div>
+      <div id="serviceModalSvg" class="service-modal-svg hidden"></div>
+      <div id="serviceModalData" class="service-modal-data hidden">
+        <div class="analyze-tabs">
+          <button type="button" class="analyze-tab active" data-tab="time" data-i18n="analyzeTime">总时间</button>
+          <button type="button" class="analyze-tab" data-tab="blame" data-i18n="analyzeBlame">耗时排行</button>
+          <button type="button" class="analyze-tab" data-tab="critical" data-i18n="analyzeCritical">关键链</button>
+        </div>
+        <div class="analyze-panel" data-tab="time" id="analyzeTime"></div>
+        <div class="analyze-panel hidden" data-tab="blame" id="analyzeBlame"></div>
+        <div class="analyze-panel hidden" data-tab="critical" id="analyzeCritical"></div>
+      </div>
+      <div class="service-modal-footer">
+        <button id="serviceModalSave" class="primary-btn hidden" type="button" data-i18n="save">保存</button>
+      </div>
     </div>
   </div>
+
+  <div id="contextMenu" class="context-menu hidden"></div>
 
   <div id="toast" class="toast hidden"></div>
   <script src="/app/fn-advancedsettings/app.js"></script>

@@ -15,6 +15,7 @@ const sections = [
   ["device", "deviceSettings"],
   ["port", "portSettings"],
   ["process", "processSettings"],
+  ["service", "serviceSettings"],
   ["diag", "diagSettings"],
 ];
 
@@ -36,7 +37,10 @@ const icons = {
   device:
     '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h4M9 17h2"/></svg>',
   port: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>',
-  process: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2M7 12h4"/></svg>',
+  process:
+    '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2M7 12h4"/></svg>',
+  service:
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   diag: '<svg viewBox="0 0 24 24"><path d="M3 21l4-4M7 17l3-3M10 14l3-6M13 8l4-2M17 6l4-1"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="6" r="1.5"/></svg>',
 };
 
@@ -395,6 +399,57 @@ const I18N = {
     processConfirmSTOP: "确定要向进程 {pid} 发送 SIGSTOP 信号？",
     processConfirmCONT: "确定要向进程 {pid} 发送 SIGCONT 信号？",
     processSignalSent: "信号已发送",
+    serviceSettings: "服务管理",
+    searchService: "搜索服务...",
+    serviceName: "服务",
+    serviceDescription: "描述",
+    serviceActive: "状态",
+    serviceSub: "子状态",
+    serviceEnabled: "开机自启",
+    serviceStart: "启动服务",
+    serviceStop: "停止服务",
+    serviceRestart: "重启服务",
+    serviceReload: "重载服务",
+    serviceEnable: "启用开机自启",
+    serviceDisable: "禁用开机自启",
+    serviceConfirmStart: "确定要启动服务 {name}？",
+    serviceConfirmStop: "确定要停止服务 {name}？",
+    serviceConfirmRestart: "确定要重启服务 {name}？",
+    serviceConfirmReload: "确定要重载服务 {name}？",
+    serviceConfirmEnable: "确定要启用服务 {name} 的开机自启？",
+    serviceConfirmDisable: "确定要禁用服务 {name} 的开机自启？",
+    serviceActionDone: "操作已执行",
+    serviceStateRunning: "运行中",
+    serviceStateStopped: "已停止",
+    serviceStateFailed: "失败",
+    serviceStateStarting: "启动中",
+    serviceStateStopping: "停止中",
+    serviceStateReloading: "重载中",
+    serviceEnabledYes: "已启用",
+    serviceEnabledNo: "已禁用",
+    serviceEnabledStatic: "静态",
+    serviceEnabledMasked: "屏蔽",
+    serviceEnabledUnknown: "未知",
+    serviceStatus: "查看状态",
+    serviceCat: "查看配置",
+    serviceEdit: "编辑配置",
+    serviceStatusTitle: "服务状态 - {name}",
+    serviceCatTitle: "服务配置 - {name}",
+    serviceEditTitle: "编辑配置 - {name}",
+    serviceEditHint: "保存后将写入 {path} 并执行 daemon-reload",
+    serviceEditSaved: "配置已保存并已重载 systemd",
+    serviceEditClearConfirm: "内容为空，将删除该服务的 override 配置，继续？",
+    serviceEditorLabel: "服务配置编辑框",
+    bootAnalyze: "启动分析",
+    bootAnalyzeTitle: "启动时间线分析",
+    analyzeTime: "总时间",
+    analyzeBlame: "耗时排行",
+    analyzeCritical: "关键链",
+    analyzeBlameSummary: "共 {count} 个服务，累计 {total}s",
+    analyzeColUnit: "服务",
+    analyzeColTime: "耗时",
+    analyzeColShare: "占比",
+    zoomReset: "重置",
     killed: "进程已终止",
     tcpSettings: "拥塞控制",
     congestionControl: "拥塞控制算法",
@@ -700,6 +755,58 @@ const I18N = {
     processConfirmSTOP: "Send SIGSTOP to process {pid}?",
     processConfirmCONT: "Send SIGCONT to process {pid}?",
     processSignalSent: "Signal sent",
+    serviceSettings: "Service Management",
+    searchService: "Search services...",
+    serviceName: "Service",
+    serviceDescription: "Description",
+    serviceActive: "Active",
+    serviceSub: "Sub",
+    serviceEnabled: "Enabled",
+    serviceStart: "Start Service",
+    serviceStop: "Stop Service",
+    serviceRestart: "Restart Service",
+    serviceReload: "Reload Service",
+    serviceEnable: "Enable Autostart",
+    serviceDisable: "Disable Autostart",
+    serviceConfirmStart: "Start service {name}?",
+    serviceConfirmStop: "Stop service {name}?",
+    serviceConfirmRestart: "Restart service {name}?",
+    serviceConfirmReload: "Reload service {name}?",
+    serviceConfirmEnable: "Enable autostart for service {name}?",
+    serviceConfirmDisable: "Disable autostart for service {name}?",
+    serviceActionDone: "Action executed",
+    serviceStateRunning: "Running",
+    serviceStateStopped: "Stopped",
+    serviceStateFailed: "Failed",
+    serviceStateStarting: "Starting",
+    serviceStateStopping: "Stopping",
+    serviceStateReloading: "Reloading",
+    serviceEnabledYes: "Enabled",
+    serviceEnabledNo: "Disabled",
+    serviceEnabledStatic: "Static",
+    serviceEnabledMasked: "Masked",
+    serviceEnabledUnknown: "Unknown",
+    serviceStatus: "View Status",
+    serviceCat: "View Config",
+    serviceEdit: "Edit Config",
+    serviceStatusTitle: "Service Status - {name}",
+    serviceCatTitle: "Service Config - {name}",
+    serviceEditTitle: "Edit Config - {name}",
+    serviceEditHint: "Saved to {path} and systemd daemon-reload is run",
+    serviceEditSaved: "Config saved and systemd reloaded",
+    serviceEditClearConfirm:
+      "Content is empty. This will remove the override config for this service. Continue?",
+    serviceEditorLabel: "Service config editor",
+    bootAnalyze: "Boot Analysis",
+    bootAnalyzeTitle: "Boot Timeline Analysis",
+    analyzeTime: "Time",
+    analyzeBlame: "Blame",
+    analyzeCritical: "Critical Chain",
+    analyzeBlameSummary: "{count} services, total {total}s",
+    analyzeColUnit: "Unit",
+    analyzeColTime: "Time",
+    analyzeColShare: "Share",
+    zoomReset: "Reset",
     processUser: "User",
     processCpu: "CPU%",
     processStat: "STAT",
@@ -853,10 +960,15 @@ function currentTheme() {
     : "light";
 }
 
-function t(key) {
-  return (
-    (I18N[state.language] || I18N["zh-CN"])[key] || I18N["zh-CN"][key] || key
-  );
+function t(key, params) {
+  let text =
+    (I18N[state.language] || I18N["zh-CN"])[key] || I18N["zh-CN"][key] || key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      text = text.split(`{${k}}`).join(String(v));
+    }
+  }
+  return text;
 }
 
 function applyPreferences({ rerender = false } = {}) {
@@ -878,6 +990,9 @@ function applyPreferences({ rerender = false } = {}) {
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
     node.placeholder = t(node.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel));
   });
   document.title = t("appTitle");
   if (rerender) render();
@@ -1629,9 +1744,9 @@ function renderPort() {
 
 function renderProcess() {
   const processes = state.data.processes || [];
-  const keyword = (
-    document.getElementById("processSearchInput")?.value || ""
-  ).trim().toLowerCase();
+  const keyword = (document.getElementById("processSearchInput")?.value || "")
+    .trim()
+    .toLowerCase();
   const tbody = document.querySelector("#processTable tbody");
   if (!tbody) return;
 
@@ -1641,9 +1756,7 @@ function renderProcess() {
       const regex = new RegExp(keyword, "i");
       filtered = processes.filter((p) => {
         return (
-          regex.test(p.user) ||
-          regex.test(p.cmd) ||
-          regex.test(String(p.pid))
+          regex.test(p.user) || regex.test(p.cmd) || regex.test(String(p.pid))
         );
       });
     } catch (e) {
@@ -1662,8 +1775,8 @@ function renderProcess() {
             <td>${escapeHtml(p.pid)}</td>
             <td>${escapeHtml(p.cpu)}</td>
             <td>${escapeHtml(p.mem)}</td>
-            <td class="monospace">${escapeHtml(p.stat || '-')}</td>
-            <td>${escapeHtml(p.time || '-')}</td>
+            <td class="monospace">${escapeHtml(p.stat || "-")}</td>
+            <td>${escapeHtml(p.time || "-")}</td>
             <td class="muted" title="${escapeHtml(p.cmd)}">${escapeHtml(trunc(p.cmd, 60))}</td>
           </tr>`,
         )
@@ -1671,16 +1784,101 @@ function renderProcess() {
     : `<tr><td colspan="7" class="empty-cell">${escapeHtml(keyword ? t("noMatch") : t("noData"))}</td></tr>`;
 }
 
-let _contextPid = null;
+function renderServices() {
+  const services = state.data.services || [];
+  const keyword = (document.getElementById("serviceSearchInput")?.value || "")
+    .trim()
+    .toLowerCase();
+  const tbody = document.querySelector("#serviceTable tbody");
+  if (!tbody) return;
+
+  let filtered = services;
+  if (keyword) {
+    filtered = services.filter((s) =>
+      `${s.name} ${s.description} ${s.active} ${s.enabled}`
+        .toLowerCase()
+        .includes(keyword),
+    );
+  }
+
+  tbody.innerHTML = filtered.length
+    ? filtered
+        .map(
+          (s) => `<tr data-service="${escapeHtml(s.name)}">
+            <td class="mono">${escapeHtml(s.name)}</td>
+            <td class="muted">${escapeHtml(trunc(s.description || "-", 60))}</td>
+            <td><span class="badge-service ${escapeHtml(s.active)}">${escapeHtml(serviceStateText(s.active))}</span></td>
+            <td>${escapeHtml(s.sub || "-")}</td>
+            <td>${escapeHtml(serviceEnabledText(s.enabled))}</td>
+          </tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="5" class="empty-cell">${escapeHtml(keyword ? t("noMatch") : t("noData"))}</td></tr>`;
+}
+
+function serviceStateText(active) {
+  const map = {
+    active: "serviceStateRunning",
+    inactive: "serviceStateStopped",
+    failed: "serviceStateFailed",
+    activating: "serviceStateStarting",
+    deactivating: "serviceStateStopping",
+    reloading: "serviceStateReloading",
+  };
+  return t(map[active] || "serviceStateStopped");
+}
+
+function serviceEnabledText(enabled) {
+  const map = {
+    enabled: "serviceEnabledYes",
+    disabled: "serviceEnabledNo",
+    static: "serviceEnabledStatic",
+    masked: "serviceEnabledMasked",
+  };
+  return t(map[enabled] || "serviceEnabledUnknown");
+}
+
+const PROCESS_MENU = [
+  ["term", "processTerm"],
+  ["kill", "processKill"],
+  ["stop", "processStop"],
+  ["cont", "processCont"],
+];
+
+const SERVICE_MENU = [
+  ["start", "serviceStart"],
+  ["stop", "serviceStop"],
+  ["restart", "serviceRestart"],
+  ["reload", "serviceReload"],
+  ["enable", "serviceEnable"],
+  ["disable", "serviceDisable"],
+  ["status", "serviceStatus"],
+  ["cat", "serviceCat"],
+  ["edit", "serviceEdit"],
+];
+
+let _contextType = null; // "process" | "service"
+let _contextTarget = null; // pid 或服务名
 let _contextAction = null;
 
-function showContextMenu(e, pid) {
+function showContextMenu(e, type, target) {
   e.preventDefault();
-  _contextPid = pid;
+  _contextType = type;
+  _contextTarget = target;
   _contextAction = null;
   const menu = document.getElementById("contextMenu");
+  const items = type === "service" ? SERVICE_MENU : PROCESS_MENU;
+  menu.innerHTML = items
+    .map(
+      ([action, key]) =>
+        `<div class="context-menu-item" data-action="${action}"><span>${escapeHtml(t(key))}</span></div>`,
+    )
+    .join("");
   const x = Math.min(e.clientX, window.innerWidth - 160);
-  const y = Math.min(e.clientY, window.innerHeight - 140);
+  const y = Math.min(
+    e.clientY,
+    window.innerHeight - (type === "service" ? 210 : 140),
+  );
   menu.style.left = x + "px";
   menu.style.top = y + "px";
   menu.classList.remove("hidden");
@@ -1688,7 +1886,8 @@ function showContextMenu(e, pid) {
 
 function hideContextMenu() {
   document.getElementById("contextMenu").classList.add("hidden");
-  _contextPid = null;
+  _contextType = null;
+  _contextTarget = null;
   _contextAction = null;
 }
 
@@ -1702,36 +1901,265 @@ document.getElementById("contextMenu").addEventListener("click", (e) => {
 });
 
 document.addEventListener("contextmenu", (e) => {
-  const row = e.target.closest("#processTable tbody tr");
-  if (row) {
-    const pid = row.dataset.pid;
-    showContextMenu(e, pid);
-  } else {
-    hideContextMenu();
+  const processRow = e.target.closest("#processTable tbody tr");
+  if (processRow) {
+    showContextMenu(e, "process", processRow.dataset.pid);
+    return;
   }
+  const serviceRow = e.target.closest("#serviceTable tbody tr");
+  if (serviceRow) {
+    showContextMenu(e, "service", serviceRow.dataset.service);
+    return;
+  }
+  hideContextMenu();
 });
 
 document.addEventListener("click", hideContextMenu);
 document.addEventListener("scroll", hideContextMenu, true);
 
 function handleMenuAction(action) {
-  const pid = _contextPid;
-  if (pid === null) return;
+  const type = _contextType;
+  const target = _contextTarget;
   hideContextMenu();
+  if (type === "service") {
+    handleServiceAction(action, target);
+  } else if (target !== null && target !== undefined) {
+    handleProcessAction(action, target);
+  }
+}
+
+function handleProcessAction(action, pid) {
   const msg = t(`processConfirm${action.toUpperCase()}`).replace("{pid}", pid);
   showConfirm(msg).then((ok) => {
     if (!ok) return;
-    api("signalProcess", { pid, signal: action }).then(() => {
-      showToast(t("processSignalSent"));
-      loadProcesses();
-    }).catch((err) => showToast(err.message || t("processSignalSent"), true));
+    api("signalProcess", { pid, signal: action })
+      .then(() => {
+        showToast(t("processSignalSent"));
+        loadProcesses();
+      })
+      .catch((err) => showToast(err.message || t("processSignalSent"), true));
   });
+}
+
+function handleServiceAction(action, name) {
+  if (action === "status") {
+    openServiceStatus(name);
+    return;
+  }
+  if (action === "cat") {
+    openServiceCat(name);
+    return;
+  }
+  if (action === "edit") {
+    openServiceEdit(name);
+    return;
+  }
+  const cap = action.charAt(0).toUpperCase() + action.slice(1);
+  const msg = t(`serviceConfirm${cap}`).replace("{name}", name);
+  showConfirm(msg).then((ok) => {
+    if (!ok) return;
+    api("serviceAction", { name, op: action })
+      .then(() => {
+        showToast(t("serviceActionDone"));
+        loadServices();
+      })
+      .catch((err) => showToast(err.message || t("serviceActionDone"), true));
+  });
+}
+
+async function openServiceStatus(name) {
+  try {
+    const data = await api("serviceStatus", { name });
+    showServiceModal(
+      t("serviceStatusTitle").replace("{name}", name),
+      data.content || "",
+      false,
+      "",
+    );
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function openServiceCat(name) {
+  try {
+    const data = await api("serviceCat", { name });
+    showServiceModal(
+      t("serviceCatTitle").replace("{name}", name),
+      data.content || "",
+      false,
+      "",
+    );
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function openServiceEdit(name) {
+  try {
+    const data = await api("serviceEditRead", { name });
+    const hint = t("serviceEditHint").replace("{path}", data.path || "");
+    showServiceModal(
+      t("serviceEditTitle").replace("{name}", name),
+      data.content || "",
+      true,
+      name,
+      hint,
+    );
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+function showServiceModal(title, content, editable, name, hint) {
+  const modal = document.getElementById("serviceModal");
+  modal.classList.remove("analyze-modal");
+  document.getElementById("serviceModalTitle").textContent = title;
+  const pre = document.getElementById("serviceModalContent");
+  const editor = document.getElementById("serviceModalEditor");
+  const saveBtn = document.getElementById("serviceModalSave");
+  const hintEl = document.getElementById("serviceModalHint");
+  const svgEl = document.getElementById("serviceModalSvg");
+  const zoomEl = document.getElementById("analyzeZoom");
+  const dataEl = document.getElementById("serviceModalData");
+  svgEl.classList.add("hidden");
+  svgEl.innerHTML = "";
+  zoomEl.classList.add("hidden");
+  dataEl.classList.add("hidden");
+  pre.textContent = content;
+  pre.classList.toggle("hidden", editable);
+  editor.value = content;
+  editor.classList.toggle("hidden", !editable);
+  saveBtn.classList.toggle("hidden", !editable);
+  saveBtn.dataset.name = name || "";
+  hintEl.textContent = hint || "";
+  hintEl.classList.toggle("hidden", !hint);
+  modal.classList.remove("hidden");
+}
+
+let _svgZoom = 1;
+let _svgBaseW = 0;
+let _svgBaseH = 0;
+
+function showAnalyzeModal(svg, data) {
+  const modal = document.getElementById("serviceModal");
+  modal.classList.add("analyze-modal");
+  document.getElementById("serviceModalTitle").textContent =
+    t("bootAnalyzeTitle");
+  const pre = document.getElementById("serviceModalContent");
+  const editor = document.getElementById("serviceModalEditor");
+  const saveBtn = document.getElementById("serviceModalSave");
+  const hintEl = document.getElementById("serviceModalHint");
+  pre.classList.add("hidden");
+  editor.classList.add("hidden");
+  saveBtn.classList.add("hidden");
+  hintEl.classList.add("hidden");
+  const svgEl = document.getElementById("serviceModalSvg");
+  svgEl.innerHTML = svg || "";
+  svgEl.classList.toggle("hidden", !svg);
+  const zoomEl = document.getElementById("analyzeZoom");
+  zoomEl.classList.toggle("hidden", !svg);
+  if (svg) setupSvgZoom(svgEl);
+  const dataEl = document.getElementById("serviceModalData");
+  document.getElementById("analyzeTime").textContent =
+    (data && data.time) || t("noData");
+  document.getElementById("analyzeBlame").innerHTML = renderAnalyzeBlame(
+    (data && data.blame) || "",
+  );
+  document.getElementById("analyzeCritical").textContent =
+    (data && data.critical) || t("noData");
+  dataEl.classList.remove("hidden");
+  dataEl.querySelectorAll(".analyze-tab").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tab === "time");
+  });
+  dataEl.querySelectorAll(".analyze-panel").forEach((p) => {
+    p.classList.toggle("hidden", p.dataset.tab !== "time");
+  });
+  modal.classList.remove("hidden");
+}
+
+function setupSvgZoom(svgEl) {
+  const svg = svgEl.querySelector("svg");
+  if (!svg) return;
+  const w = parseFloat(svg.getAttribute("width")) || 0;
+  const h = parseFloat(svg.getAttribute("height")) || 0;
+  if (!w || !h) return;
+  _svgBaseW = w;
+  _svgBaseH = h;
+  _svgZoom = 1;
+  if (!svg.getAttribute("viewBox")) {
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  }
+  applySvgZoom();
+}
+
+function applySvgZoom() {
+  const svg = document.querySelector("#serviceModalSvg svg");
+  if (!svg || !_svgBaseW || !_svgBaseH) return;
+  svg.setAttribute("width", `${_svgBaseW * _svgZoom}px`);
+  svg.setAttribute("height", `${_svgBaseH * _svgZoom}px`);
+  document.getElementById("zoomLevel").textContent =
+    `${Math.round(_svgZoom * 100)}%`;
+}
+
+function renderAnalyzeBlame(text) {
+  const rows = [];
+  for (const line of String(text || "").split("\n")) {
+    const m = line.match(/^\s*(\d+(?:\.\d+)?)s\s+(.+)$/);
+    if (m) rows.push({ time: parseFloat(m[1]), unit: m[2].trim() });
+  }
+  if (!rows.length) {
+    return `<div class="muted">${escapeHtml(text || t("noData"))}</div>`;
+  }
+  const total = rows.reduce((a, r) => a + r.time, 0);
+  const max = Math.max(...rows.map((r) => r.time));
+  return `
+    <div class="analyze-blame-summary">${t("analyzeBlameSummary", {
+      count: rows.length,
+      total: total.toFixed(2),
+    })}</div>
+    <div class="analyze-blame-scroll">
+    <table class="analyze-blame-table">
+      <thead><tr>
+        <th>${escapeHtml(t("analyzeColUnit"))}</th>
+        <th>${escapeHtml(t("analyzeColTime"))}</th>
+        <th>${escapeHtml(t("analyzeColShare"))}</th>
+      </tr></thead>
+      <tbody>
+        ${rows
+          .map(
+            (r) => `<tr>
+          <td class="mono">${escapeHtml(r.unit)}</td>
+          <td class="mono">${r.time.toFixed(3)}s</td>
+          <td class="share-cell">
+            <div class="bar-wrap"><div class="bar" style="width:${((r.time / max) * 100).toFixed(1)}%"></div></div>
+            <span class="bar-label">${((r.time / total) * 100).toFixed(1)}%</span>
+          </td>
+        </tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function closeServiceModal() {
+  const modal = document.getElementById("serviceModal");
+  modal.classList.remove("analyze-modal");
+  modal.classList.add("hidden");
 }
 
 async function loadProcesses() {
   return api("readProcesses").then((data) => {
     state.data.processes = data.processes || [];
     renderProcess();
+  });
+}
+
+async function loadServices() {
+  return api("readServices").then((data) => {
+    state.data.services = data.services || [];
+    renderServices();
   });
 }
 
@@ -1912,6 +2340,7 @@ function renderPanels() {
         state.active === "device" ||
         state.active === "port" ||
         state.active === "process" ||
+        state.active === "service" ||
         state.active === "display" ||
         state.active === "diag",
     );
@@ -1931,6 +2360,7 @@ function render() {
   renderIdentity();
   renderDevice();
   renderProcess();
+  renderServices();
   renderPort();
   renderDiag();
 }
@@ -1943,6 +2373,7 @@ async function loadData() {
   document.getElementById("emptyState").classList.add("hidden");
   document.getElementById("editor").classList.remove("hidden");
   render();
+  loadServices().catch((error) => showToast(error.message, true));
 }
 
 async function saveActive() {
@@ -2119,6 +2550,9 @@ document.getElementById("portSearchInput").addEventListener("input", () => {
 });
 document.getElementById("processSearchInput").addEventListener("input", () => {
   renderProcess();
+});
+document.getElementById("serviceSearchInput").addEventListener("input", () => {
+  renderServices();
 });
 
 document.getElementById("diagTabs").addEventListener("click", (event) => {
@@ -2386,8 +2820,71 @@ document.getElementById("aboutModal").addEventListener("click", (event) => {
     document.getElementById("aboutModal").classList.add("hidden");
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape")
+  if (event.key === "Escape") {
     document.getElementById("aboutModal").classList.add("hidden");
+    document.getElementById("serviceModal").classList.add("hidden");
+  }
+});
+
+document
+  .getElementById("serviceModalClose")
+  .addEventListener("click", closeServiceModal);
+document.getElementById("serviceModal").addEventListener("click", (event) => {
+  if (event.target.id === "serviceModal") closeServiceModal();
+});
+document
+  .getElementById("serviceModalSave")
+  .addEventListener("click", async () => {
+    const name = document.getElementById("serviceModalSave").dataset.name;
+    const content = document.getElementById("serviceModalEditor").value;
+    if (!content.trim()) {
+      const ok = await showConfirm(t("serviceEditClearConfirm"));
+      if (!ok) return;
+    }
+    try {
+      await api("serviceEditSave", { name, content });
+      showToast(t("serviceEditSaved"));
+      closeServiceModal();
+      loadServices();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+document
+  .getElementById("bootAnalyzeBtn")
+  .addEventListener("click", async () => {
+    try {
+      const [plot, data] = await Promise.all([
+        api("systemdAnalyzePlot"),
+        api("systemdAnalyzeData"),
+      ]);
+      showAnalyzeModal(plot.svg || "", data);
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+document.querySelectorAll(".analyze-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.tab;
+    document
+      .querySelectorAll(".analyze-tab")
+      .forEach((b) => b.classList.toggle("active", b === tab));
+    document
+      .querySelectorAll(".analyze-panel")
+      .forEach((p) => p.classList.toggle("hidden", p.dataset.tab !== target));
+  });
+});
+document.getElementById("zoomIn").addEventListener("click", () => {
+  _svgZoom = Math.min(4, _svgZoom * 1.25);
+  applySvgZoom();
+});
+document.getElementById("zoomOut").addEventListener("click", () => {
+  _svgZoom = Math.max(0.1, _svgZoom / 1.25);
+  applySvgZoom();
+});
+document.getElementById("zoomReset").addEventListener("click", () => {
+  _svgZoom = 1;
+  applySvgZoom();
 });
 
 applyPreferences();
