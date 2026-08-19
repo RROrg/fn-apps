@@ -29,7 +29,7 @@ from urllib.parse import unquote, urlsplit
 
 APP_NAME = "fn-appdownload"
 APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
-APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"      # fnOS < 1.2.0401
+APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"  # fnOS < 1.2.0401
 DB_NAME = "appcenter"
 DB_USER = "postgres"
 VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
@@ -420,9 +420,14 @@ def decode_chunked(data):
 
 
 def app_center_socket():
-    if os.path.exists(APP_CENTER_WEB_SOCKET):
-        return APP_CENTER_WEB_SOCKET
-    return APP_CENTER_OLD_SOCKET
+    major = int(os.environ.get("TRIM_SYS_VERSION_MAJOR", "0") or 0)
+    minor = int(os.environ.get("TRIM_SYS_VERSION_MINOR", "0") or 0)
+    build = int(os.environ.get("TRIM_SYS_VERSION_BUILD", "0") or 0)
+    return (
+        APP_CENTER_WEB_SOCKET
+        if (major, minor, build) >= (1, 2, 401)
+        else APP_CENTER_OLD_SOCKET
+    )
 
 
 def unix_http(method, path, payload=None, timeout=15, token_override=None):
@@ -557,7 +562,21 @@ def is_done_status(status):
 
 def run_sql(sql):
     proc = subprocess.run(
-        ["psql", "-U", DB_USER, "-d", DB_NAME, "-X", "-v", "ON_ERROR_STOP=1", "-q", "-t", "-A", "-c", sql],
+        [
+            "psql",
+            "-U",
+            DB_USER,
+            "-d",
+            DB_NAME,
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-q",
+            "-t",
+            "-A",
+            "-c",
+            sql,
+        ],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

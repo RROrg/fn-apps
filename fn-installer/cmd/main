@@ -18,9 +18,10 @@ start_process() {
   fi
 
   log_msg "Starting process ..."
+  # run cmd to start process
   mkdir -p "${TRIM_PKGVAR}" >/dev/null 2>&1 || true
   rm -f "${SOCKET_PATH}"
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
   # log_msg "CMD = ${CMD}"

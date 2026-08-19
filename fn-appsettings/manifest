@@ -1,5 +1,5 @@
 appname               = fn-appsettings
-version               = 1.0.6
+version               = 1.0.7
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all

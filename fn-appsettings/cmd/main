@@ -5,6 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 SOCKET_PATH="${TRIM_APPDEST}/fn-appsettings.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+# write the command to start your program here
 CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/appsettings.py\" --unix-socket \"${SOCKET_PATH}\" --base-path \"/app/fn-appsettings\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {
@@ -20,7 +21,7 @@ start_process() {
   # run cmd to start process
   mkdir -p "${TRIM_PKGVAR}" >/dev/null 2>&1 || true
   rm -f "${SOCKET_PATH}"
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
   # log_msg "CMD = ${CMD}"

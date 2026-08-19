@@ -2,11 +2,10 @@
 
 LOG_FILE="${TRIM_PKGVAR}/info.log"
 PID_FILE="${TRIM_PKGVAR}/app.pid"
-DOWNLOAD_DIR="/var/apps/fn-appdownload/shares/fn-appdownload/downloads"
 SOCKET_PATH="${TRIM_APPDEST}/fn-appdownload.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-# Serve the UI and API through a Unix socket, matching fn-terminal's gateway mode.
+# write the command to start your program here
 CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/appdownload.py\" --unix-socket \"${SOCKET_PATH}\" --base-path \"/app/fn-appdownload\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {
@@ -19,10 +18,14 @@ start_process() {
   fi
 
   log_msg "Starting process ..."
-  mkdir -p "${TRIM_PKGVAR}" "${DOWNLOAD_DIR}" >/dev/null 2>&1 || true
+  # run cmd to start process
+  mkdir -p "${TRIM_PKGVAR}" >/dev/null 2>&1 || true
   rm -f "${SOCKET_PATH}"
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
+  # log_msg "CMD = ${CMD}"
+  # log_msg "pid = $!"
   return 0
 }
 
@@ -81,9 +84,11 @@ status() {
     pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
     if check_process "${pid}"; then
       return 0
+    else
+      # Process is not running but pidfile exists - clean it up
+      rm -f "${PID_FILE}"
+      rm -f "${SOCKET_PATH}"
     fi
-    rm -f "${PID_FILE}"
-    rm -f "${SOCKET_PATH}"
   fi
 
   return 1
