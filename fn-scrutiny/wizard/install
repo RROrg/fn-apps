@@ -14,7 +14,7 @@
         "type": "text",
         "field": "wizard_port",
         "label": "${wizard.install_item3_label}",
-        "initValue": "8080",
+        "initValue": "7780",
         "rules": [
           {
             "required": true,

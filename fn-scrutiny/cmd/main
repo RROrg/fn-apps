@@ -11,7 +11,7 @@ start_app() {
   if [ ! -f "${SETTINGS_FILE}" ]; then
     local default_schedule
     default_schedule=$(get_cron_schedule 15)
-    write_settings "${SETTINGS_FILE}" "8080" "${default_schedule}" "15" "fnOS" "auto" "localhost" "8086" "" "scrutiny" "scrutiny"
+    write_settings "${SETTINGS_FILE}" "7780" "${default_schedule}" "15" "fnOS" "auto" "localhost" "8086" "" "scrutiny" "scrutiny"
   fi
 
   if ! check_influxdb_running; then

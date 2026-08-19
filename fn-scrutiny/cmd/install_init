@@ -2,7 +2,7 @@
 
 ### This script is called before the user installs the application.
 
-echo "wizard_port=8080"
+echo "wizard_port=7780"
 echo "wizard_host_id=fnOS"
 echo "wizard_cron_interval=15"
 echo "wizard_influxdb_mode=auto"

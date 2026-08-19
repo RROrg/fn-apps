@@ -57,7 +57,7 @@ read_settings() {
 get_web_port() {
   local port
   port=$(read_settings "web_port")
-  echo "${port:-8080}"
+  echo "${port:-7780}"
 }
 
 get_host_id() {
