@@ -22,7 +22,7 @@
         "type": "text",
         "field": "wizard_port",
         "label": "${wizard.install_item5_label}",
-        "initValue": "18080",
+        "initValue": "7880",
         "description": "${wizard.install_item5_description}",
         "rules": [
           {

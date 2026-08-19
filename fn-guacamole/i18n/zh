@@ -11,7 +11,7 @@ config_item1_helpText="您即将修改 guacamole"
 config_item2_helpText="1. Guacamole Web 界面的默认用户名和密码为 <strong>guacadmin:guacadmin</strong>，请在首次登录后修改。"
 config_item3_helpText="2. Guacamole 支持 RDP、VNC、SSH、telnet 等协议，可在 Web 界面中创建连接。"
 config_item4_label="Web 界面端口"
-config_item4_description="Guacamole Web 界面映射到宿主机上的端口，默认 18080。"
+config_item4_description="Guacamole Web 界面映射到宿主机上的端口，默认 7880。"
 config_item4_required="请输入 Web 界面端口"
 config_item4_rules="请输入有效的端口号（1-65535）"
 
@@ -21,7 +21,7 @@ install_item2_helpText="1. Guacamole Web 界面的默认用户名和密码为 <s
 install_item3_helpText="2. Guacamole 支持 RDP、VNC、SSH、telnet 等协议，可在 Web 界面中创建连接。"
 install_item4_helpText="3. 应用数据（数据库）保存在数据目录中，卸载时可选择保留或删除。"
 install_item5_label="Web 界面端口"
-install_item5_description="Guacamole Web 界面映射到宿主机上的端口，默认 18080。"
+install_item5_description="Guacamole Web 界面映射到宿主机上的端口，默认 7880。"
 install_item5_required="请输入 Web 界面端口"
 install_item5_rules="请输入有效的端口号（1-65535）"
 

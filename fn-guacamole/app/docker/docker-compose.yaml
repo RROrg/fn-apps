@@ -37,7 +37,7 @@ services:
       guacdb:
         condition: service_healthy
     ports:
-      - ${wizard_port:-18080}:8080  # Guacamole Web 界面（宿主机端口，安装/配置时可修改）
+      - ${wizard_port:-7880}:8080  # Guacamole Web 界面（宿主机端口，安装/配置时可修改）
     environment:
       - TZ=Asia/Shanghai
       - GUACD_HOSTNAME=guacd
