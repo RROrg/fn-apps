@@ -22,6 +22,9 @@ FYGOPACK_URLS = {
 }
 
 
+WEB_APP_JS_URL = "https://cdn.jsdelivr.net/npm/@trimjs/web-app@latest/dist/index.js"
+
+
 def is_windows():
     return sys.platform == "win32"
 
@@ -94,6 +97,7 @@ def run(cmd, *, cwd=None):
 
 def download_fnpack(root):
     binary = root / ("fnpack.exe" if is_windows() else "fnpack")
+    # 用 fygopack 代替 fnpack
     url = FYGOPACK_URLS["windows" if is_windows() else "linux"]
     print(f"Downloading {url}", flush=True)
     urllib.request.urlretrieve(url, binary)
@@ -154,6 +158,11 @@ def package_name(app_dir):
 def build_app(root, fnpack, app_dir):
     app_name, version, target_platform = package_name(app_dir)
     print(f"Building {app_dir.name} ...", flush=True)
+
+    web_app_js = app_dir / "app/www/web-app.js"
+    if web_app_js.is_file():
+        print(f"Downloading {WEB_APP_JS_URL}", flush=True)
+        urllib.request.urlretrieve(WEB_APP_JS_URL, web_app_js)
 
     script = app_build_script(app_dir)
     if script:
