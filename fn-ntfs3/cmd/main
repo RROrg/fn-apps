@@ -1,13 +1,62 @@
 #!/bin/bash
 
 LOG_FILE="${TRIM_PKGVAR}/info.log"
-PID_FILE="${TRIM_PKGVAR}/app.pid"
-
-# write the command to start your program here
-CMD=""
 
 log_msg() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
+}
+
+check_with_build() {
+  KVER="$(uname -r)"
+  if [ ! -f "/usr/lib/modules/${KVER}/updates/fs/ntfs3.ko" ]; then
+    echo "Module file not found: /usr/lib/modules/${KVER}/updates/fs/ntfs3.ko" >>${LOG_FILE}
+    . "$(dirname "$0")/install_callback" >>${LOG_FILE}
+    return $?
+  fi
+
+  vermagic_module=$(modinfo -F vermagic "/usr/lib/modules/${KVER}/updates/fs/ntfs3.ko" 2>/dev/null | awk '{printf $1}')
+  vermagic_kernel=$(uname -r)
+  if [ "${vermagic_module}" != "${vermagic_kernel}" ]; then
+    echo "Module vermagic (${vermagic_module}) does not match kernel version (${vermagic_kernel})" >>${LOG_FILE}
+    . "$(dirname "$0")/install_callback" >>${LOG_FILE}
+    return $?
+  fi
+
+  return 0
+}
+
+insmod_from_file() {
+  [ -z "${1}" ] && return 1
+  local module_file module_name dep_modules
+  module_file="$1"
+  module_name=$(modinfo -F name "${module_file}" 2>/dev/null)
+  dep_modules=$(modinfo -F depends "${module_file}" 2>/dev/null | tr ',' ' ')
+  if [ -n "${dep_modules}" ]; then
+    for dep in ${dep_modules}; do
+      if ! lsmod | grep -q "^${dep}\b"; then
+        modprobe "${dep}"
+      fi
+    done
+  fi
+  lsmod | grep -q "^${module_name}\b" && rmmod "${module_name}"
+  insmod "${module_file}"
+}
+
+rmmod_from_file() {
+  [ -z "${1}" ] && return 1
+  local module_file module_name dep_modules
+  module_file="$1"
+  module_name=$(modinfo -F name "${module_file}" 2>/dev/null)
+  # shellcheck disable=SC2034
+  dep_modules=$(modinfo -F depends "${module_file}" 2>/dev/null | tr ',' ' ')
+  # if [ -n "${dep_modules}" ]; then
+  #   for dep in ${dep_modules}; do
+  #     if lsmod | grep -q "^${dep}\b"; then
+  #       modprobe -r "${dep}"
+  #     fi
+  #   done
+  # fi
+  lsmod | grep -q "^${module_name}\b" && rmmod "${module_name}"
 }
 
 start_process() {
@@ -16,73 +65,23 @@ start_process() {
   fi
 
   log_msg "Starting process ..."
-  # run cmd to start process
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
-  # write pid to pidfile
-  printf "%s" "$!" >${PID_FILE}
-  # log_msg "CMD = ${CMD}"
-  # log_msg "pid = $!"
+  check_with_build || return 1
+  insmod_from_file "/usr/lib/modules/${KVER}/updates/fs/ntfs3.ko" >>${LOG_FILE} 2>&1 || {
+    log_msg "insmod ntfs3.ko failed"
+    return 1
+  }
   return 0
 }
 
 stop_process() {
   log_msg "Stopping process ..."
-
-  if [ -r "${PID_FILE}" ]; then
-    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
-
-    log_msg "pid=${pid}"
-    if ! check_process "${pid}"; then
-      # process not exist, delete pidfile
-      rm -f "${PID_FILE}"
-      log_msg "remove pid file 1"
-      return
-    fi
-
-    log_msg "send TERM signal to PID:${pid}..."
-    kill -TERM ${pid} >>${LOG_FILE} 2>&1
-
-    local count=0
-    while check_process "${pid}" && [ $count -lt 10 ]; do
-      sleep 1
-      count=$((count + 1))
-      log_msg "waiting process terminal... (${count}s/10s)"
-    done
-
-    if check_process "${pid}"; then
-      log_msg "send KILL signal to PID:${pid}..."
-      kill -KILL "${pid}"
-      sleep 1
-      rm -f "${PID_FILE}"
-    else
-      log_msg "process killed... "
-    fi
-  fi
-
+  rmmod_from_file "/usr/lib/modules/${KVER}/updates/fs/ntfs3.ko" >>${LOG_FILE} 2>&1
   return 0
 }
 
-check_process() {
-  local pid=$1
-  if kill -0 "${pid}" 2>/dev/null; then
-    return 0 # process exist
-  else
-    return 1 # process not exist
-  fi
-}
-
 status() {
-  if [ -f "${PID_FILE}" ]; then
-    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
-    if check_process "${pid}"; then
-      return 0
-    else
-      # Process is not running but pidfile exists - clean it up
-      rm -f "${PID_FILE}"
-    fi
-  fi
-
-  return 1
+  lsmod | grep -q '^ntfs3\b' 2>/dev/null
+  return $?
 }
 
 case $1 in

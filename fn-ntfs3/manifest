@@ -1,5 +1,5 @@
 appname               = fn-ntfs3
-version               = 1.0.9
+version               = 1.1.0
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
@@ -8,5 +8,3 @@ maintainer            = Ing
 maintainer_url        = https://github.com/RROrg
 distributor           = RROrg
 distributor_url       = https://github.com/RROrg/fn-apps
-install_type          = root
-ctl_stop              = false

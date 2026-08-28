@@ -1,5 +1,5 @@
 appname               = fn-broadcom-sta
-version               = 1.0.5
+version               = 1.0.6
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
@@ -8,4 +8,3 @@ maintainer            = Ing
 maintainer_url        = https://github.com/RROrg
 distributor           = RROrg
 distributor_url       = https://github.com/RROrg/fn-apps
-install_type          = root
