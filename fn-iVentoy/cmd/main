@@ -23,6 +23,7 @@ setup_links() {
   # user    存放用户文件、第三方软件包、自动安装脚本等文件。
   #
 
+  # shellcheck disable=SC2043
   for d in data; do
     mkdir -p "${SHARE_PATH}/${d}" >/dev/null 2>&1 || true
     if [ "$(realpath "${SHARE_PATH}/${d}")" != "$(realpath "${IVENTOY_DIR}/${d}")" ]; then
@@ -35,6 +36,7 @@ setup_links() {
     fi
   done
 
+  # shellcheck disable=SC2043
   for d in iso; do
     mkdir -p "${wizard_iso_path:-"${SHARE_PATH}/${d}"}" >/dev/null 2>&1 || true
     if [ "$(realpath "${wizard_iso_path:-"${SHARE_PATH}/${d}"}")" != "$(realpath "${IVENTOY_DIR}/${d}")" ]; then
@@ -47,6 +49,7 @@ setup_links() {
     fi
   done
 
+  # shellcheck disable=SC2043
   for d in user; do
     mkdir -p "${wizard_user_path:-"${SHARE_PATH}/${d}"}" >/dev/null 2>&1 || true
     if [ "$(realpath "${wizard_user_path:-"${SHARE_PATH}/${d}"}")" != "$(realpath "${IVENTOY_DIR}/${d}")" ]; then
@@ -59,6 +62,7 @@ setup_links() {
     fi
   done
 
+  # shellcheck disable=SC2043
   for d in log; do
     mkdir -p "${TRIM_PKGVAR}/${d}" >/dev/null 2>&1 || true
     if [ "$(realpath "${TRIM_PKGVAR}/${d}")" != "$(realpath "${IVENTOY_DIR}/${d}")" ]; then
