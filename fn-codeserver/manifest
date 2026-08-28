@@ -1,5 +1,5 @@
 appname               = fn-codeserver
-version               = 1.1.0
+version               = 1.1.1
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
