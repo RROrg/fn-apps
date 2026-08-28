@@ -1,0 +1,17 @@
+{
+  ".url": {
+    "fn-speedtest.Application": {
+      "title": "${entry.title}",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "url": "/app/fn-speedtest",
+      "gatewaySocket": "fn-speedtest.sock",
+      "gatewayPrefix": "/app/fn-speedtest",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly",
+        "fullUrlPerm": "readonly"
+      }
+    }
+  }
+}

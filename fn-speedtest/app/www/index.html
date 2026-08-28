@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="appTitle">网络测速</title>
+  <link rel="stylesheet" href="/app/fn-speedtest/style.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <main class="content">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <h2 id="pageTitle" data-i18n="appTitle">网络测速</h2>
+        </div>
+        <div class="topbar-actions">
+          <button id="aboutBtn" class="ghost-btn" type="button" data-i18n="about">关于</button>
+        </div>
+      </header>
+
+      <!-- 主测速仪表盘 -->
+      <section class="gauge-wrap">
+        <div class="gauge" id="gauge">
+          <svg class="gauge-svg" viewBox="0 0 320 320" aria-hidden="true">
+            <circle class="gauge-track" cx="160" cy="160" r="140"></circle>
+            <circle class="gauge-progress" id="gaugeProgress" cx="160" cy="160" r="140"></circle>
+          </svg>
+          <button id="goBtn" class="gauge-center go-btn" type="button">
+            <span class="go-label" id="goLabel" data-i18n="start">开始测速</span>
+            <div class="gauge-readout">
+              <div class="spinner"></div>
+              <div class="gauge-value" id="gaugeValue">—</div>
+              <div class="gauge-unit" id="gaugeUnit">Mbps</div>
+              <div class="gauge-stage" id="gaugeStage" data-i18n="ready">准备就绪</div>
+            </div>
+          </button>
+        </div>
+        <div class="scope-note" id="scopeNote" data-i18n="scopeNote">此设备 ↔ 服务器 ↔ 互联网</div>
+      </section>
+
+      <!-- 网络地址信息 -->
+      <section class="ip-bar">
+        <div class="ip-cell">
+          <span class="ip-label" data-i18n="client">客户端</span>
+          <b id="ipClient">—</b>
+        </div>
+        <div class="ip-sep"></div>
+        <div class="ip-cell">
+          <span class="ip-label" data-i18n="server">服务端</span>
+          <b id="ipServer">—</b>
+        </div>
+        <div class="ip-sep"></div>
+        <div class="ip-cell">
+          <span class="ip-label" data-i18n="public">互联网</span>
+          <b id="ipPublic">—</b>
+        </div>
+      </section>
+
+      <!-- 实时指标 -->
+      <section class="metrics">
+        <div class="metric">
+          <div class="metric-icon ping"></div>
+          <div class="metric-body">
+            <div class="metric-label" data-i18n="pingLabel">延迟 / PING</div>
+            <div class="metric-value" id="mPing">— <small>ms</small></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon jitter"></div>
+          <div class="metric-body">
+            <div class="metric-label" data-i18n="jitterLabel">抖动 / JITTER</div>
+            <div class="metric-value" id="mJitter">— <small>ms</small></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon down"></div>
+          <div class="metric-body">
+            <div class="metric-label" data-i18n="downloadLabel">下载 / DOWNLOAD</div>
+            <div class="metric-value" id="mDown">— <small>Mbps</small></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon up"></div>
+          <div class="metric-body">
+            <div class="metric-label" data-i18n="uploadLabel">上传 / UPLOAD</div>
+            <div class="metric-value" id="mUp">— <small>Mbps</small></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 结果卡片：两段链路 -->
+      <section class="results">
+        <div class="result-card" id="cardLan">
+          <div class="result-head">
+            <span class="result-badge lan" data-i18n="lanBadge">本地</span>
+            <h3 data-i18n="lanTitle">客户端 ↔ 服务器</h3>
+            <span class="result-sub" id="lanHost">—</span>
+          </div>
+          <div class="result-grid">
+            <div><span data-i18n="latency">延迟</span><b id="lanPing">—</b></div>
+            <div><span data-i18n="jitter">抖动</span><b id="lanJitter">—</b></div>
+            <div><span data-i18n="download">下载</span><b id="lanDown">—</b></div>
+            <div><span data-i18n="upload">上传</span><b id="lanUp">—</b></div>
+          </div>
+          <div class="result-bar"><i id="lanBar" style="width:0%"></i></div>
+        </div>
+
+        <div class="result-card" id="cardWan">
+          <div class="result-head">
+            <span class="result-badge wan" data-i18n="wanBadge">外网</span>
+            <h3 data-i18n="wanTitle">服务器 ↔ 互联网</h3>
+            <span class="result-sub" id="wanHost">—</span>
+          </div>
+          <div class="result-grid">
+            <div><span data-i18n="latency">延迟</span><b id="wanPing">—</b></div>
+            <div><span data-i18n="jitter">抖动</span><b id="wanJitter">—</b></div>
+            <div><span data-i18n="download">下载</span><b id="wanDown">—</b></div>
+            <div><span data-i18n="upload">上传</span><b id="wanUp">—</b></div>
+          </div>
+          <div class="result-bar"><i id="wanBar" style="width:0%"></i></div>
+        </div>
+      </section>
+
+      <section class="records">
+        <div class="records-head">
+          <div class="records-title" data-i18n="records">测速记录</div>
+          <button id="clearRec" class="ghost-btn" type="button" data-i18n="clear">清空</button>
+        </div>
+        <div id="recList" class="records-list">
+          <div class="records-empty" data-i18n="emptyRecords">暂无记录，点击表盘开始测速。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="aboutModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 data-i18n="about">关于</h2>
+        </div>
+        <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-title="close">×</button>
+      </div>
+      <div class="about-body">
+        <div class="about-section">
+          <p class="about-declaration" data-i18n="aboutDeclaration">本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。</p>
+        </div>
+
+        <div class="about-section">
+          <h3 data-i18n="communitySupport">社区支持</h3>
+          <ul class="about-list">
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
+            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
+                rel="noopener noreferrer">RROrg/fn-apps</a></li>
+          </ul>
+        </div>
+
+        <div class="about-section">
+          <h3 data-i18n="sponsorSupport">赞助支持</h3>
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring" loading="lazy" decoding="async">
+        </div>
+
+        <div class="about-copyright">
+          <a href="https://github.com/RROrg" target="_blank" rel="noopener noreferrer">RROrg</a>
+          <a href="https://github.com/wjz304" target="_blank" rel="noopener noreferrer">wjz304</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="/app/fn-speedtest/app.js"></script>
+</body>
+
+</html>

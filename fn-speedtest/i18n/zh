@@ -1,0 +1,14 @@
+[common]
+display_name="网络测速"
+desc="测量客户端到服务器的速率，以及服务器到外网的出口速率。"
+
+[entry]
+title="网络测速"
+
+[wizard]
+uninstall_stepTitle="卸载向导"
+uninstall_item1_helpText="您即将卸载此应用。请选择如何处理应用配置和数据："
+uninstall_item1_label="数据保留选项"
+uninstall_item1_options1="保留数据 - 重安装时可恢复！（推荐）"
+uninstall_item1_options2="删除数据 - 此操作不可恢复！"
+uninstall_item1_rules="请选择数据保留选项"

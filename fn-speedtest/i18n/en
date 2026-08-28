@@ -1,0 +1,14 @@
+[common]
+display_name="Network Speed Test"
+desc="Measure LAN throughput from client to server and the server's outbound throughput to the internet."
+
+[entry]
+title="Network Speed Test"
+
+[wizard]
+uninstall_stepTitle="Uninstall Wizard"
+uninstall_item1_helpText="You are about to uninstall this application. Please select how to handle application configuration and data:"
+uninstall_item1_label="Data retention options"
+uninstall_item1_options1="Retain data - can be restored during reinstallation! (Recommended)"
+uninstall_item1_options2="Delete data - this operation is irreversible!"
+uninstall_item1_rules="Please select data retention options"
