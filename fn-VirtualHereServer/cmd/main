@@ -22,7 +22,7 @@ start_process() {
     return 1
   fi
   # run cmd to start process
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
   # log_msg "CMD = ${CMD}"
@@ -61,6 +61,7 @@ stop_process() {
       rm -f "${PID_FILE}"
     else
       log_msg "process killed... "
+      rm -f "${PID_FILE}"
     fi
   fi
 

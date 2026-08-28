@@ -1,5 +1,5 @@
 appname               = fn-VirtualHereServer
-version               = 4.8.6
+version               = 4.8.8
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
@@ -8,4 +8,3 @@ maintainer            = VirtualHere Pty. Ltd.
 maintainer_url        = https://www.virtualhere.com/usb_server_software
 distributor           = VirtualHere Pty. Ltd.
 distributor_url       = https://www.virtualhere.com
-
