@@ -1,6 +1,0 @@
-[common]
-display_name="APT Manager"
-desc="A lightweight APT package management tool with support for searching, installing, removing, upgrading packages and managing software sources."
-
-[entry]
-title="APT Manager"
