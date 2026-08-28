@@ -110,6 +110,53 @@ write_settings() {
 EOF
 }
 
+# HTTP GET helper - prefers curl, falls back to wget. Writes body to stdout.
+http_get() {
+  local url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl -s "${url}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- "${url}" 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+# HTTP POST JSON helper - prefers curl, falls back to wget.
+# Reads the JSON body from a file to avoid quoting pitfalls. Writes body to stdout.
+http_post_json() {
+  local url="$1"
+  local token="$2"
+  local data_file="$3"
+  if command -v curl >/dev/null 2>&1; then
+    curl -s -X POST "${url}" -H "Authorization: Token ${token}" \
+      -H "Content-Type: application/json" --data-binary @"${data_file}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q --post-file="${data_file}" --header="Authorization: Token ${token}" \
+      --header="Content-Type: application/json" -O- "${url}" 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+# Convert InfluxDB duration strings ("30d", "26000h", "2w") or plain seconds to seconds.
+retention_to_seconds() {
+  local r="$1"
+  local num
+  local unit
+  num=$(echo "${r}" | grep -oE '^[0-9]+')
+  unit=$(echo "${r}" | grep -oE '[a-zA-Z]+$')
+  [ -z "${num}" ] && num=0
+  case "${unit}" in
+    s) echo "${num}" ;;
+    m) echo $((num * 60)) ;;
+    h) echo $((num * 3600)) ;;
+    d) echo $((num * 86400)) ;;
+    w) echo $((num * 604800)) ;;
+    *) echo "${num}" ;;
+  esac
+}
+
 download_influxdb() {
   local arch_name
   case "$(uname -m)" in
@@ -118,7 +165,7 @@ download_influxdb() {
     *) arch_name="$(uname -m)" ;;
   esac
 
-  local influxdb_version="2.7.11"
+  local influxdb_version="2.9.1"
   local influxdb_url="https://download.influxdata.com/influxdb/releases/influxdb2-${influxdb_version}_linux_${arch_name}.tar.gz"
   local tmp_dir
   tmp_dir=$(mktemp -d)
@@ -135,13 +182,14 @@ download_influxdb() {
   local download_err
   download_err="${tmp_dir}/download_err.log"
 
+  local download_ok=1
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "${influxdb_url}" -o "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}"
+    curl -fsSL "${influxdb_url}" -o "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}" && download_ok=0
   elif command -v wget >/dev/null 2>&1; then
-    wget -q "${influxdb_url}" -O "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}"
+    wget -q "${influxdb_url}" -O "${tmp_dir}/influxdb.tar.gz" 2>"${download_err}" && download_ok=0
   fi
 
-  if [ $? -ne 0 ]; then
+  if [ "${download_ok}" -ne 0 ]; then
     local err_detail
     err_detail=$(cat "${download_err}" 2>/dev/null | head -1)
     log_msg "Failed to download InfluxDB: ${err_detail}"
@@ -209,7 +257,7 @@ start_process() {
   printf "%s" "$!" >${PID_FILE}
 
   local count=0
-  while ! curl -s "http://127.0.0.1:${port}/health" >/dev/null 2>&1; do
+  while ! http_get "http://127.0.0.1:${port}/health" >/dev/null 2>&1; do
     sleep 1
     count=$((count + 1))
     if [ ${count} -ge 30 ]; then
@@ -280,7 +328,7 @@ setup_influxdb() {
   port=$(get_port)
 
   local setup_check
-  setup_check=$(curl -s "http://127.0.0.1:${port}/api/v2/setup" 2>/dev/null)
+  setup_check=$(http_get "http://127.0.0.1:${port}/api/v2/setup")
   if echo "${setup_check}" | grep -qE '"allowed"\s*:\s*true'; then
     log_msg "InfluxDB not yet initialized, running setup..."
   else
@@ -305,16 +353,21 @@ setup_influxdb() {
     return 1
   fi
 
+  local setup_data
+  setup_data="${TRIM_PKGVAR}/.setup_payload.json"
+  cat >"${setup_data}" <<EOF
+{
+    "username": "${username}",
+    "password": "${password}",
+    "org": "${org}",
+    "bucket": "${bucket}",
+    "retentionDuration": "${retention}"
+}
+EOF
+
   local setup_response
-  setup_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/setup" \
-    -H "Content-Type: application/json" \
-    -d "{
-            \"username\": \"${username}\",
-            \"password\": \"${password}\",
-            \"org\": \"${org}\",
-            \"bucket\": \"${bucket}\",
-            \"retentionDuration\": \"${retention}\"
-        }" 2>/dev/null)
+  setup_response=$(http_post_json "http://127.0.0.1:${port}/api/v2/setup" "" "${setup_data}")
+  rm -f "${setup_data}"
 
   if echo "${setup_response}" | grep -qE '"code"\s*:\s*"invalid"'; then
     local error_msg
@@ -353,21 +406,20 @@ create_bucket_for_app() {
     return 1
   fi
 
+  # Filter by the target org so we don't pick the wrong org when several exist.
   local orgs_response
-  orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs" \
-    -H "Authorization: Token ${token}" 2>/dev/null)
+  orgs_response=$(http_get "http://127.0.0.1:${port}/api/v2/orgs?org=${app_org}")
 
   local org_id
   org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
 
   if [ -z "${org_id}" ]; then
-    log_msg "Failed to get org ID"
+    log_msg "Failed to get org ID for '${app_org}'"
     return 1
   fi
 
   local buckets_response
-  buckets_response=$(curl -s "http://127.0.0.1:${port}/api/v2/buckets?org=${admin_org}&name=${app_bucket}" \
-    -H "Authorization: Token ${token}" 2>/dev/null)
+  buckets_response=$(http_get "http://127.0.0.1:${port}/api/v2/buckets?org=${admin_org}&name=${app_bucket}")
 
   if echo "${buckets_response}" | grep -qE "\"name\"\\s*:\\s*\"${app_bucket}\""; then
     log_msg "Bucket '${app_bucket}' already exists"
@@ -376,19 +428,25 @@ create_bucket_for_app() {
 
   local retention_body=""
   if [ -n "${retention}" ] && [ "${retention}" != "0" ]; then
-    retention_body="\"retentionRules\": [{\"type\": \"expire\", \"everySeconds\": $(echo "${retention}" | sed 's/h//g' | awk '{print int($1 * 3600)}')}],"
+    local secs
+    secs=$(retention_to_seconds "${retention}")
+    retention_body="\"retentionRules\": [{\"type\": \"expire\", \"everySeconds\": ${secs}}],"
   fi
 
+  local payload
+  payload="${TRIM_PKGVAR}/.bucket_payload.json"
+  cat >"${payload}" <<EOF
+{
+    "orgID": "${org_id}",
+    "name": "${app_bucket}",
+    ${retention_body}
+    "description": "Bucket for ${app_org}"
+}
+EOF
+
   local create_response
-  create_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/buckets" \
-    -H "Authorization: Token ${token}" \
-    -H "Content-Type: application/json" \
-    -d "{
-            \"orgID\": \"${org_id}\",
-            \"name\": \"${app_bucket}\",
-            ${retention_body}
-            \"description\": \"Bucket for ${app_org}\"
-        }" 2>/dev/null)
+  create_response=$(http_post_json "http://127.0.0.1:${port}/api/v2/buckets" "${token}" "${payload}")
+  rm -f "${payload}"
 
   if echo "${create_response}" | grep -qE "\"name\"\\s*:\\s*\"${app_bucket}\""; then
     log_msg "Bucket '${app_bucket}' created successfully"
@@ -414,22 +472,31 @@ create_token_for_app() {
     return 1
   fi
 
+  # Filter by the admin org so we don't pick the wrong org when several exist.
   local orgs_response
-  orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs" \
-    -H "Authorization: Token ${token}" 2>/dev/null)
+  orgs_response=$(http_get "http://127.0.0.1:${port}/api/v2/orgs?org=${admin_org}")
 
   local org_id
   org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
 
+  if [ -z "${org_id}" ]; then
+    log_msg "Failed to get org ID for '${admin_org}'"
+    return 1
+  fi
+
+  local payload
+  payload="${TRIM_PKGVAR}/.token_payload.json"
+  cat >"${payload}" <<EOF
+{
+    "orgID": "${org_id}",
+    "description": "${app_name} access token",
+    "permissions": ${permissions}
+}
+EOF
+
   local auth_response
-  auth_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/authorizations" \
-    -H "Authorization: Token ${token}" \
-    -H "Content-Type: application/json" \
-    -d "{
-            \"orgID\": \"${org_id}\",
-            \"description\": \"${app_name} access token\",
-            \"permissions\": ${permissions}
-        }" 2>/dev/null)
+  auth_response=$(http_post_json "http://127.0.0.1:${port}/api/v2/authorizations" "${token}" "${payload}")
+  rm -f "${payload}"
 
   local app_token
   app_token=$(echo "${auth_response}" | grep -oE '"token"\s*:\s*"[^"]*"' | head -1 | sed 's/"token"\s*:\s*"//;s/"//')
@@ -457,19 +524,21 @@ ensure_scrutiny_resources() {
   local scrutiny_bucket="scrutiny"
 
   local orgs_response
-  orgs_response=$(curl -s "http://127.0.0.1:${port}/api/v2/orgs?org=${scrutiny_org}" \
-    -H "Authorization: Token ${token}" 2>/dev/null)
+  orgs_response=$(http_get "http://127.0.0.1:${port}/api/v2/orgs?org=${scrutiny_org}")
 
   local scrutiny_org_id
   scrutiny_org_id=$(echo "${orgs_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
 
   if [ -z "${scrutiny_org_id}" ]; then
     log_msg "Creating scrutiny org..."
+    local org_payload
+    org_payload="${TRIM_PKGVAR}/.scrutiny_org_payload.json"
+    cat >"${org_payload}" <<EOF
+{"name":"${scrutiny_org}","description":"Scrutiny Organization"}
+EOF
     local create_org_response
-    create_org_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/orgs" \
-      -H "Authorization: Token ${token}" \
-      -H "Content-Type: application/json" \
-      -d "{\"name\":\"${scrutiny_org}\",\"description\":\"Scrutiny Organization\"}" 2>/dev/null)
+    create_org_response=$(http_post_json "http://127.0.0.1:${port}/api/v2/orgs" "${token}" "${org_payload}")
+    rm -f "${org_payload}"
     scrutiny_org_id=$(echo "${create_org_response}" | grep -oE '"id"\s*:\s*"[^"]*"' | head -1 | sed 's/"id"\s*:\s*"//;s/"//')
     if [ -z "${scrutiny_org_id}" ]; then
       log_msg "Failed to create scrutiny org: ${create_org_response}"
@@ -479,8 +548,7 @@ ensure_scrutiny_resources() {
   fi
 
   local buckets_response
-  buckets_response=$(curl -s "http://127.0.0.1:${port}/api/v2/buckets?org=${scrutiny_org}&name=${scrutiny_bucket}" \
-    -H "Authorization: Token ${token}" 2>/dev/null)
+  buckets_response=$(http_get "http://127.0.0.1:${port}/api/v2/buckets?org=${scrutiny_org}&name=${scrutiny_bucket}")
 
   if echo "${buckets_response}" | grep -qE "\"name\"\\s*:\\s*\"${scrutiny_bucket}\""; then
     log_msg "Scrutiny bucket already exists"
@@ -488,11 +556,14 @@ ensure_scrutiny_resources() {
   fi
 
   log_msg "Creating scrutiny bucket..."
+  local bucket_payload
+  bucket_payload="${TRIM_PKGVAR}/.scrutiny_bucket_payload.json"
+  cat >"${bucket_payload}" <<EOF
+{"orgID":"${scrutiny_org_id}","name":"${scrutiny_bucket}","description":"Bucket for Scrutiny"}
+EOF
   local create_bucket_response
-  create_bucket_response=$(curl -s -X POST "http://127.0.0.1:${port}/api/v2/buckets" \
-    -H "Authorization: Token ${token}" \
-    -H "Content-Type: application/json" \
-    -d "{\"orgID\":\"${scrutiny_org_id}\",\"name\":\"${scrutiny_bucket}\",\"description\":\"Bucket for Scrutiny\"}" 2>/dev/null)
+  create_bucket_response=$(http_post_json "http://127.0.0.1:${port}/api/v2/buckets" "${token}" "${bucket_payload}")
+  rm -f "${bucket_payload}"
 
   if echo "${create_bucket_response}" | grep -qE "\"name\"\\s*:\\s*\"${scrutiny_bucket}\""; then
     log_msg "Scrutiny bucket created successfully"

@@ -1,5 +1,5 @@
 appname               = fn-influxdb
-version               = 2.7.11
+version               = 2.9.1
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
@@ -10,4 +10,3 @@ maintainer            = InfluxData
 maintainer_url        = https://www.influxdata.com
 distributor           = RROrg
 distributor_url       = https://github.com/RROrg/fn-apps
-install_type          = root

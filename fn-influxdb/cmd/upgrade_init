@@ -2,4 +2,21 @@
 
 ### This script is called before the user upgrades the application.
 
+# 历史版本兼容性处理
+MOD_VER="2.9.1"
+OLD_VER="${TRIM_OLD_APPVER:-}"
+if ! printf '%s\n%s\n' "${MOD_VER}" "${OLD_VER}" | sort -VC 2>/dev/null; then
+  SYS_LANGUAGE="${TRIM_SYS_LANGUAGE:-}"
+  case "${SYS_LANGUAGE,,}" in
+    zh[-_]cn)
+      MSG="由于 v${MOD_VER} 版本修改了安装位置，旧版本无法升级，请卸载后重新安装。"
+      ;;
+    *)
+      MSG="The installation location has been changed since v${MOD_VER}, and the old version cannot be upgraded. Please uninstall and reinstall."
+      ;;
+  esac
+  echo "${MSG}" >"$TRIM_TEMP_LOGFILE"
+  exit 1
+fi
+
 exit 0
