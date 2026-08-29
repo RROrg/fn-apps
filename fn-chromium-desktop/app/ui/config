@@ -4,9 +4,9 @@
       "title": "${entry.title}",
       "icon": "images/icon_{0}.png",
       "type": "iframe",
-      "protocol": "http",
-      "port": "${wizard_novnc_port}",
-      "url": "/vnc.html",
+      "url": "/app/fn-chromium-desktop/vnc.html",
+      "gatewaySocket": "fn-chromium-desktop.sock",
+      "gatewayPrefix": "/app/fn-chromium-desktop",
       "allUsers": false,
       "control": {
         "accessPerm": "readonly",

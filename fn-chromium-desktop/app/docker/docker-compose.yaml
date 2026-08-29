@@ -12,9 +12,10 @@ services:
       - USERNAME=chromium
       - PASSWORD=chromium
       - RESOLUTION=1920x1080x24
-      - VNC_PASSWORD=${wizard_vnc_password:-chromium}
-      - VNC_PORT=${wizard_vnc_port:-5901}
-      - NOVNC_PORT=${wizard_novnc_port:-6080}
+      - VNC_PASSWORD=${wizard_vnc_password:-}
+      - NOVNC_BASE_PATH=/app/fn-chromium-desktop
+      - NOVNC_SOCK=/sock/fn-chromium-desktop.sock
+      - NOVNC_SOCK_MODE=0777
       # - AUDIO_SINK=alsa_output.pci-0000_06_00.1.hdmi-stereo  # 设置默认音频输出设备（可选，运行 `docker compose exec -T chromium bash -lc 'su - chromium -c "export XDG_RUNTIME_DIR=/run/user/1001; export PULSE_SERVER=unix:/run/user/1001/pulse/native; pactl list short sinks"'` 查看可用设备）
       # - START_URL=https://www.google.com/  # 设置 Chromium 启动后打开的默认页面（可选）
       # - LIBGL_ALWAYS_SOFTWARE=1            # 强制使用软件渲染（可选）
@@ -26,6 +27,7 @@ services:
       - /dev/input:/dev/input      # 输入设备直通（键盘、鼠标、遥控器等）
     volumes:
       - /run/udev:/run/udev:ro     # 使容器能读取设备信息（设备热插拔、输入设备、GPU/DRM 等元数据）
+      - /var/apps/fn-chromium-desktop/target:/sock
       - /var/apps/fn-chromium-desktop/shares/chromium-desktop/home:/home     # 持久化用户文件（推荐）
       # - /run/user/1000/pulse/native:/run/user/1000/pulse/native # PulseAudio 支持，需额外配置（可选）
       # - /run/user/1000/pipewire-0:/run/user/1000/pipewire-0     # PipeWire 支持，需额外配置（可选）
@@ -33,9 +35,6 @@ services:
       - SYS_ADMIN                  # 允许使用 ioctl 等操作 DRM 设备
       - SYS_RAWIO                  # 允许直接访问硬件设备
     # network_mode: host           # 使用宿主网络模式 （可选，UPnP/DLNA 及 AirPlay 需要）
-    ports:
-      - ${wizard_vnc_port:-5901}:${wizard_vnc_port:-5901}
-      - ${wizard_novnc_port:-6080}:${wizard_novnc_port:-6080}
     shm_size: "1gb"
     security_opt:
       - seccomp=unconfined
