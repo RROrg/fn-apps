@@ -5,6 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 SOCKET_PATH="${TRIM_APPDEST}/fn-execute.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+# write the command to start your program here
 CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/execute.py\" --socket \"${SOCKET_PATH}\" --base-path \"/app/fn-execute\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {
@@ -18,7 +19,9 @@ start_process() {
 
   log_msg "Starting process ..."
   # run cmd to start process
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  mkdir -p "${TRIM_PKGVAR}" >/dev/null 2>&1 || true
+  rm -f "${SOCKET_PATH}"
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
   # log_msg "CMD = ${CMD}"
@@ -56,10 +59,12 @@ stop_process() {
       kill -KILL "${pid}"
       sleep 1
       rm -f "${PID_FILE}"
+      rm -f "${SOCKET_PATH}"
     else
       log_msg "process killed... "
+      rm -f "${PID_FILE}"
+      rm -f "${SOCKET_PATH}"
     fi
-    rm -f "${SOCKET_PATH}"
   fi
 
   return 0
