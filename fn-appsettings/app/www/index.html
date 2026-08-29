@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>应用设置</title>
+  <title data-i18n="appTitle">应用设置</title>
   <link rel="stylesheet" href="/app/fn-appsettings/style.css">
 </head>
 
@@ -27,11 +27,11 @@
 
     <main class="content">
       <header class="topbar">
-        <h2 id="pageTitle">应用配置</h2>
+        <h2 id="pageTitle" data-i18n="appConfig">应用配置</h2>
         <button id="saveBtn" class="primary-btn" type="button" data-i18n="save">保存修改</button>
       </header>
 
-      <div id="emptyState" class="empty">正在加载...</div>
+      <div id="emptyState" class="empty" data-i18n="loading">正在加载...</div>
       <form id="editor" class="editor hidden">
         <section class="panel">
           <h3 data-i18n="installInfo">安装信息</h3>
@@ -102,7 +102,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
 
         <div class="about-copyright">
@@ -115,7 +115,7 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="/app/fn-appsettings/app.js"></script>
+  <script type="module" src="/app/fn-appsettings/app.js"></script>
 </body>
 
 </html>

@@ -12,7 +12,6 @@ import mimetypes
 import os
 import shutil
 import signal
-import socket
 import socketserver
 import subprocess
 import sys
@@ -24,11 +23,14 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-APP_NAME = "fn-appsettings"
+
+def _env(name, default=""):
+    return os.environ.get(name, "").strip() or default
+
+
+APP_NAME = _env("TRIM_APPNAME", "fn-appsettings")
 DB_NAME = "appcenter"
 DB_USER = "postgres"
-APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
-APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"  # fnOS < 1.2.0401
 
 REQUEST_CONTEXT = threading.local()
 
@@ -172,15 +174,19 @@ class Handler(BaseHTTPRequestHandler):
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header(
-                "Location",
-                self.server.base_path
-                + "/"
-                + (("?" + parsed.query) if parsed.query else ""),
-            )
-            self.send_header("Content-Length", "0")
-            self.end_headers()
+            try:
+                self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+                self.send_header(
+                    "Location",
+                    self.server.base_path
+                    + "/"
+                    + (("?" + parsed.query) if parsed.query else ""),
+                )
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                # client disconnected; treat as normal
+                return
             return
         path = strip_base_path(parsed.path, self.server.base_path)
         if path.startswith("/api"):
@@ -216,9 +222,13 @@ class Handler(BaseHTTPRequestHandler):
             "Cache-Control",
             "no-store" if target.name == "index.html" else "public, max-age=60",
         )
-        self.end_headers()
-        if self.command != "HEAD":
-            self.wfile.write(data)
+        try:
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # client disconnected mid-response; treat as normal
+            return
 
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
@@ -233,7 +243,9 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 dispatch()
             except Exception as exc:
-                json_response({"ok": False, "message": str(exc)}, 500)
+                json_response(
+                    {"ok": False, "message": str(exc)}, "500 Internal Server Error"
+                )
 
 
 def normalize_base_path(path):
@@ -262,28 +274,43 @@ def normalize_status(status):
             phrase = "OK"
         return status, f"{status} {phrase}"
     text = str(status or "200 OK").strip()
+    if not text:
+        return 200, "200 OK"
     first, _, rest = text.partition(" ")
     if first.isdigit():
-        return int(first), text
+        code = int(first)
+        if not rest:
+            try:
+                rest = HTTPStatus(code).phrase
+            except Exception:
+                rest = ""
+        return code, f"{code} {rest}".strip()
     return 200, "200 OK"
 
 
-def json_response(payload, status=200):
+def json_response(payload, status="200 OK"):
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
         "utf-8"
     )
-    code, _status_text = normalize_status(status)
+    code, status_text = normalize_status(status)
     request = current_request()
     handler = request.get("handler", None)
     if handler is not None:
-        handler.send_response(code)
-        handler.send_header("Content-Type", "application/json; charset=utf-8")
-        handler.send_header("Content-Length", str(len(body)))
-        handler.end_headers()
-        if handler.command != "HEAD":
-            handler.wfile.write(body)
+        try:
+            handler.send_response(code)
+            handler.send_header("Content-Type", "application/json; charset=utf-8")
+            handler.send_header("Content-Length", str(len(body)))
+            handler.end_headers()
+            if handler.command != "HEAD":
+                handler.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # client disconnected mid-response (e.g. gateway timeout / tab closed);
+            # treat as normal and don't crash the request thread
+            return
         return
-    sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n\r\n")
+    sys.stdout.write(f"Status: {status_text}\r\n")
+    sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n")
+    sys.stdout.write(f"Content-Length: {len(body)}\r\n\r\n")
     sys.stdout.flush()
     sys.stdout.buffer.write(body)
 
@@ -294,20 +321,29 @@ def request_body():
         method = request.get("method", "GET").upper()
         body = request.get("body", b"") or b""
         query_string = request.get("query", "") or ""
+        content_type = header_value(request.get("headers", {}), "Content-Type")
         if method in {"POST", "PUT", "PATCH"}:
             raw = body.decode("utf-8", "replace") if body else ""
-            content_type = ""
-            for key, value in request.get("headers", {}).items():
-                if key.lower() == "content-type":
-                    content_type = value
-                    break
             if "application/json" in content_type:
                 return json.loads(raw or "{}")
             parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
             return {key: values[-1] for key, values in parsed.items()}
         parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
         return {key: values[-1] for key, values in parsed.items()}
-    return {}
+
+    method = os.environ.get("REQUEST_METHOD", "GET").upper()
+    if method in {"POST", "PUT", "PATCH"}:
+        length = int(os.environ.get("CONTENT_LENGTH") or 0)
+        raw = sys.stdin.buffer.read(length).decode("utf-8", "replace") if length else ""
+        content_type = os.environ.get("CONTENT_TYPE", "")
+        if "application/json" in content_type:
+            return json.loads(raw or "{}")
+        parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
+        return {key: values[-1] for key, values in parsed.items()}
+    parsed = urllib.parse.parse_qs(
+        os.environ.get("QUERY_STRING", ""), keep_blank_values=True
+    )
+    return {key: values[-1] for key, values in parsed.items()}
 
 
 def api_query_action(query):
@@ -488,109 +524,13 @@ def write_run_as(app_id, run_as):
 
 
 def header_value(headers, name):
+    if not headers:
+        return ""
     lowered = name.lower()
-    for key, value in (headers or {}).items():
+    for key, value in headers.items():
         if key.lower() == lowered:
             return value
     return ""
-
-
-def current_auth_token():
-    request = current_request()
-    headers = request.get("headers", {})
-    auth = header_value(headers, "Authorization") or os.environ.get("Authorization", "")
-    if isinstance(auth, str) and auth.lower().startswith("trim "):
-        return auth.split(None, 1)[1].strip()
-
-    cookie = header_value(headers, "Cookie") or os.environ.get("HTTP_COOKIE", "")
-    for part in str(cookie or "").split(";"):
-        key, _, value = part.strip().partition("=")
-        if key.lower() == "fnos-token" or "fnos-token" in key.lower():
-            return urllib.parse.unquote(value)
-    return ""
-
-
-def decode_chunked(data):
-    output = bytearray()
-    index = 0
-    while index < len(data):
-        line_end = data.find(b"\r\n", index)
-        if line_end < 0:
-            break
-        size_text = data[index:line_end].split(b";", 1)[0].strip()
-        try:
-            size = int(size_text, 16)
-        except ValueError:
-            return data
-        index = line_end + 2
-        if size == 0:
-            break
-        output.extend(data[index : index + size])
-        index += size + 2
-    return bytes(output)
-
-
-def app_center_socket():
-    major = int(os.environ.get("TRIM_SYS_VERSION_MAJOR", "0") or 0)
-    minor = int(os.environ.get("TRIM_SYS_VERSION_MINOR", "0") or 0)
-    build = int(os.environ.get("TRIM_SYS_VERSION_BUILD", "0") or 0)
-    return (
-        APP_CENTER_WEB_SOCKET
-        if (major, minor, build) >= (1, 2, 401)
-        else APP_CENTER_OLD_SOCKET
-    )
-
-
-def app_center_socket_request(method, path, payload=None, timeout=20):
-    socket_path = app_center_socket()
-    if not os.path.exists(socket_path):
-        raise RuntimeError(f"socket not found: {socket_path}")
-    token = current_auth_token()
-    if not token:
-        raise RuntimeError("app-center token not found")
-
-    body = b""
-    headers = [
-        f"{method} {path} HTTP/1.1",
-        "Host: system",
-        f"Authorization: trim {token}",
-        "Accept: application/json",
-        "Connection: close",
-    ]
-    if payload is not None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers.extend(
-            ["Content-Type: application/json", f"Content-Length: {len(body)}"]
-        )
-
-    request = ("\r\n".join(headers) + "\r\n\r\n").encode("utf-8") + body
-    with socket.socket(
-        socket.AF_UNIX,  # pyright: ignore[reportAttributeAccessIssue]
-        socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
-    ) as client:
-        client.settimeout(timeout)
-        client.connect(socket_path)
-        client.sendall(request)
-        chunks = []
-        while True:
-            chunk = client.recv(65536)
-            if not chunk:
-                break
-            chunks.append(chunk)
-
-    raw = b"".join(chunks)
-    header, _, response_body = raw.partition(b"\r\n\r\n")
-    header_text = header.decode("iso-8859-1", "replace")
-    status_line = (
-        header.splitlines()[0].decode("iso-8859-1", "replace") if header else ""
-    )
-    status_code = int(status_line.split()[1]) if len(status_line.split()) > 1 else 0
-    if "transfer-encoding: chunked" in header_text.lower():
-        response_body = decode_chunked(response_body)
-    text = response_body.decode("utf-8", "replace")
-    if status_code >= 400:
-        raise RuntimeError(f"app-center HTTP {status_code}: {text[:200]}")
-    return text
 
 
 def app_status_and_name(app_id):
@@ -607,30 +547,23 @@ def app_status_and_name(app_id):
 
 def restart_action(app_name, action):
     appcenter_path = shutil.which("appcenter-cli")
-    if appcenter_path:
-        try:
-            proc = subprocess.run(
-                [appcenter_path, action, app_name],
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=45,
-                check=False,
-            )
-            if proc.returncode == 0:
-                return f"info: {action} {app_name} via appcenter-cli"
-            detail = (proc.stderr or proc.stdout or "").strip()
-            fallback_reason = f"appcenter-cli rc={proc.returncode}: {detail}"
-        except Exception as error:
-            fallback_reason = str(error)
-    else:
-        fallback_reason = "appcenter-cli not found"
-
-    app_center_socket_request(
-        "POST",
-        f"/app-center/v1/app/{action}?appName={urllib.parse.quote(app_name)}",
-    )
-    return f"info: {action} {app_name} via socket fallback ({fallback_reason})"
+    if not appcenter_path:
+        raise RuntimeError("appcenter-cli not found")
+    try:
+        proc = subprocess.run(
+            [appcenter_path, action, app_name],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=45,
+            check=False,
+        )
+        if proc.returncode == 0:
+            return f"info: {action} {app_name} via appcenter-cli"
+        detail = (proc.stderr or proc.stdout or "").strip()
+        raise RuntimeError(f"appcenter-cli rc={proc.returncode}: {detail}")
+    except Exception as error:
+        raise RuntimeError(str(error))
 
 
 def restart_app_after_save(app_id):
@@ -655,11 +588,11 @@ def restart_app_after_save(app_id):
 def serve_app_icon():
     app_id = query_value("id")
     if not app_id:
-        json_response({"ok": False, "message": "missing app id"}, 400)
+        json_response({"ok": False, "message": "missing app id"}, "400 Bad Request")
         return
     icon_path = app_icon_path(app_id)
     if not icon_path or not icon_path.is_file():
-        json_response({"ok": False, "message": "icon not found"}, 404)
+        json_response({"ok": False, "message": "icon not found"}, "404 Not Found")
         return
     content_type = mimetypes.guess_type(str(icon_path))[0] or "image/png"
     send_binary_response(icon_path.read_bytes(), content_type)
@@ -790,7 +723,7 @@ def dispatch():
     elif action == "save":
         json_response({"ok": True, **save_data(payload)})
     else:
-        json_response({"ok": False, "message": "unsupported action"}, 400)
+        json_response({"ok": False, "message": "unsupported action"}, "400 Bad Request")
 
 
 def main():
