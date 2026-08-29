@@ -1,5 +1,5 @@
 appname               = fn-scrutiny
-version               = 1.68.0
+version               = 1.70.0
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
@@ -11,4 +11,3 @@ maintainer_url        = https://github.com/Starosdev/scrutiny
 distributor           = RROrg
 distributor_url       = https://github.com/RROrg/fn-apps
 install_dep_apps      = fn-influxdb
-install_type          = root
