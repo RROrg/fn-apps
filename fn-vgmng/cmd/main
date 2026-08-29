@@ -5,7 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 API_CGI="${TRIM_APPDEST}/www/api.cgi"
 AUTO_MOUNT_STATE_FILE="${TRIM_PKGVAR}/auto-mounts.state"
 
-# CGI runs on demand. Keep a lightweight status file so the app stays enabled.
+# write the command to start your program here
 CMD=""
 
 log_msg() {

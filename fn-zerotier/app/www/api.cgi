@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 Ing <https://github.com/wjz304>
@@ -16,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import NoReturn
 from urllib.parse import parse_qs
 
 SERVICE_NAME = "zerotier-one"
@@ -29,7 +31,8 @@ ZEROTIER_HOME_CANDIDATES = [
 ]
 
 
-def respond(obj):
+def respond(obj, status="200 OK") -> NoReturn:
+    print(f"Status: {status}")
     print("Content-Type: application/json")
     print()
     sys.stdout.write(json.dumps(obj, ensure_ascii=False))
@@ -636,7 +639,7 @@ def collect_status():
     }
 
 
-def validate_hex_id(value, length, field_label):
+def validate_hex_id(value, length, field_label) -> str:
     normalized = (value or "").strip().lower()
     if not re.fullmatch(rf"[0-9a-f]{{{length}}}", normalized):
         respond(
@@ -648,11 +651,11 @@ def validate_hex_id(value, length, field_label):
     return normalized
 
 
-def validate_network_id(network_id):
+def validate_network_id(network_id) -> str:
     return validate_hex_id(network_id, 16, "network id")
 
 
-def validate_moon_world_id(world_id):
+def validate_moon_world_id(world_id) -> str:
     normalized = (world_id or "").strip().lower()
     world_id = normalize_world_id(normalized)
     if world_id:
@@ -665,7 +668,7 @@ def validate_moon_world_id(world_id):
     )
 
 
-def validate_moon_seed(seed):
+def validate_moon_seed(seed) -> str:
     return validate_hex_id(seed, 10, "moon seed")
 
 
@@ -853,13 +856,13 @@ def handle_moon_join(body):
     if not ok:
         append_moon_audit(
             "moon_join_failed",
-            world_id if world_id else "",
+            world_id,
             seed,
             (err or out or "加入 moon 失败").strip(),
         )
         respond({"ok": False, "error": (err or out or "加入 moon 失败").strip()})
     upsert_joined_moon_registry(world_id, seed, active=True)
-    append_moon_audit("moon_join", world_id if world_id else "", seed, "joined moon")
+    append_moon_audit("moon_join", world_id, seed, "joined moon")
     payload = collect_status()
     payload["message"] = f"已加入 moon {world_id}"
     payload["moon"] = moon_summary(
@@ -886,7 +889,7 @@ def handle_moon_start(body):
     if not ok:
         append_moon_audit(
             "moon_start_failed",
-            world_id if world_id else "",
+            world_id,
             seed,
             (err or out or "启动 moon 失败").strip(),
         )
@@ -898,18 +901,13 @@ def handle_moon_start(body):
         created_moon_stable_endpoints(entry),
         active=True,
         timestamp=current_timestamp(),
-        sort_index=entry.get("sortIndex") if entry else 0,
-        orbit_command=(
-            entry.get("orbitCommand")
-            if entry
-            else f"zerotier-cli orbit {world_id} {seed}"
-        ),
-        moon_file_name=entry.get("moonFileName") if entry else "",
-        moon_file_base64=entry.get("moonFileBase64") if entry else "",
+        sort_index=entry.get("sortIndex") or 0,
+        orbit_command=entry.get("orbitCommand")
+        or f"zerotier-cli orbit {world_id} {seed}",
+        moon_file_name=entry.get("moonFileName") or "",
+        moon_file_base64=entry.get("moonFileBase64") or "",
     )
-    append_moon_audit(
-        "moon_start", world_id if world_id else "", seed, "started created moon"
-    )
+    append_moon_audit("moon_start", world_id, seed, "started created moon")
     payload = collect_status()
     payload["message"] = f"已启动 moon {world_id}"
     respond(payload)
@@ -924,7 +922,7 @@ def handle_moon_stop(body):
     if not ok:
         append_moon_audit(
             "moon_stop_failed",
-            world_id if world_id else "",
+            world_id,
             created_moon_seed(entry),
             (err or out or "停止 moon 失败").strip(),
         )
@@ -937,18 +935,15 @@ def handle_moon_stop(body):
         created_moon_stable_endpoints(entry),
         active=False,
         timestamp=current_timestamp(),
-        sort_index=entry.get("sortIndex", 0) if entry else 0,
-        orbit_command=(
-            entry.get("orbitCommand")
-            if entry
-            else f"zerotier-cli orbit {world_id} {seed}"
-        ),
-        moon_file_name=entry.get("moonFileName") if entry else "",
-        moon_file_base64=entry.get("moonFileBase64") if entry else "",
+        sort_index=entry.get("sortIndex") or 0,
+        orbit_command=entry.get("orbitCommand")
+        or f"zerotier-cli orbit {world_id} {seed}",
+        moon_file_name=entry.get("moonFileName") or "",
+        moon_file_base64=entry.get("moonFileBase64") or "",
     )
     append_moon_audit(
         "moon_stop",
-        world_id if world_id else "",
+        world_id,
         created_moon_seed(entry),
         "stopped created moon",
     )
@@ -973,15 +968,13 @@ def handle_moon_leave(body):
         if not ok:
             append_moon_audit(
                 "moon_leave_failed",
-                world_id if world_id else "",
+                world_id,
                 "",
                 (err or out or "移除 moon 失败").strip(),
             )
             respond({"ok": False, "error": (err or out or "移除 moon 失败").strip()})
     remove_joined_moon_registry(world_id)
-    append_moon_audit(
-        "moon_leave", world_id if world_id else "", "", "removed joined moon"
-    )
+    append_moon_audit("moon_leave", world_id, "", "removed joined moon")
     payload = collect_status()
     payload["message"] = f"已移除已加入 moon {world_id}"
     respond(payload)
@@ -1006,7 +999,7 @@ def handle_moon_update(body):
         if not ok:
             append_moon_audit(
                 "moon_update_failed",
-                world_id if world_id else "",
+                world_id,
                 seed,
                 (err or out or "更新 moon 失败").strip(),
             )
@@ -1026,14 +1019,14 @@ def handle_moon_update(body):
         stable_endpoints,
         active=old_active,
         timestamp=current_timestamp(),
-        sort_index=old_entry.get("sortIndex") if old_entry else 0,
-        orbit_command=result.get("orbitCommand") if old_entry else "",
-        moon_file_name=result.get("moonFileName") if old_entry else "",
-        moon_file_base64=result.get("moonFileBase64") if old_entry else "",
+        sort_index=old_entry.get("sortIndex") or 0,
+        orbit_command=result.get("orbitCommand") or "",
+        moon_file_name=result.get("moonFileName") or "",
+        moon_file_base64=result.get("moonFileBase64") or "",
     )
     append_moon_audit(
         "moon_update",
-        world_id if world_id else "",
+        world_id,
         seed,
         f"updated from {old_world_id}",
     )
@@ -1109,13 +1102,12 @@ def handle_moon_remove(body):
     entry = find_created_moon_registry(world_id)
     if not entry:
         respond({"ok": False, "error": f"未找到已创建的 moon {world_id}"})
-        return
     if bool(entry.get("active")):
         ok, out, err, _ = zerotier_exec("deorbit", world_id)
         if not ok:
             append_moon_audit(
                 "moon_remove_failed",
-                world_id if world_id else "",
+                world_id,
                 created_moon_seed(entry),
                 (err or out or "移除 moon 失败").strip(),
             )
@@ -1124,7 +1116,7 @@ def handle_moon_remove(body):
     remove_joined_moon_registry(world_id)
     append_moon_audit(
         "moon_remove",
-        world_id if world_id else "",
+        world_id,
         created_moon_seed(entry),
         "removed created moon",
     )
@@ -1164,4 +1156,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception as exc:
+        respond({"ok": False, "error": str(exc)}, "500 Internal Server Error")

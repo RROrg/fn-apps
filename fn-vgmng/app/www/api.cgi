@@ -1240,13 +1240,15 @@ enforce_mount_mode() {
   local requested_mode="$1"
   local requested_device="$2"
   local resolved_device="$3"
+  local resolved_device_mode=""
 
   if [ "${requested_mode}" != "rw" ]; then
     printf 'ro'
     return 0
   fi
 
-  if [ "$(device_mountmode "${resolved_device}")" = "ro" ] || [ "$(device_mountmode "${requested_device}")" = "ro" ]; then
+  resolved_device_mode=$(device_mountmode "${resolved_device}")
+  if [ "${resolved_device_mode}" = "ro" ] || [ "$(device_mountmode "${requested_device}")" = "ro" ]; then
     log_msg "force read-only mount for ${requested_device} via ${resolved_device}"
     printf 'ro'
     return 0

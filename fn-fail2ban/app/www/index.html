@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title data-i18n="appTitle">Fail2Ban 管理</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -36,7 +36,8 @@
         <h2 data-i18n="jails">Jail 列表</h2>
         <div class="section-actions">
           <label class="search-box">
-            <input id="searchInput" type="search" placeholder="搜索 Jail" data-i18n-placeholder="searchJail" aria-label="Search jail">
+            <input id="searchInput" type="search" placeholder="搜索 Jail" data-i18n-placeholder="searchJail"
+              aria-label="Search jail">
           </label>
           <button id="btn-new" class="btn primary" data-i18n="btn.new">新建</button>
           <button id="btn-edit" class="btn secondary" disabled data-i18n="btn.edit">编辑</button>
@@ -84,7 +85,8 @@
         </div>
         <label class="field">
           <span data-i18n="label.jailName">Jail 名称</span>
-          <input id="jail-name" type="text" spellcheck="false" data-i18n-placeholder="placeholder.jailName" autocomplete="off">
+          <input id="jail-name" type="text" spellcheck="false" data-i18n-placeholder="placeholder.jailName"
+            autocomplete="off">
         </label>
         <label class="field wide">
           <div class="field-head">
@@ -115,7 +117,8 @@
         </div>
         <input id="ban-import-file" type="file" accept=".json,.csv,.txt" class="hidden" aria-hidden="true">
         <div class="ban-input-row">
-          <input id="ban-input" class="input" placeholder="输入 IP 地址 或 CIDR" data-i18n-placeholder="placeholder.banInput" autocomplete="off">
+          <input id="ban-input" class="input" placeholder="输入 IP 地址 或 CIDR" data-i18n-placeholder="placeholder.banInput"
+            autocomplete="off">
           <button id="ban-add" class="btn primary small" data-i18n="btn.add">添加</button>
         </div>
       </div>
@@ -135,7 +138,8 @@
       </div>
       <div class="modal-body">
         <div class="audit-filter-row">
-          <input id="audit-filter" class="input" placeholder="筛选（jail / ip / action）" data-i18n-placeholder="placeholder.auditFilter" autocomplete="off">
+          <input id="audit-filter" class="input" placeholder="筛选（jail / ip / action）"
+            data-i18n-placeholder="placeholder.auditFilter" autocomplete="off">
           <select id="audit-action-filter" class="input" title="筛选操作">
             <option value="" data-i18n="audit.allActions">全部操作</option>
             <option value="ban">Ban</option>
@@ -194,7 +198,8 @@
       </div>
       <div class="modal-body">
         <div class="log-filter-row">
-          <input id="log-filter" class="input" placeholder="筛选日志" data-i18n-placeholder="placeholder.logFilter" autocomplete="off">
+          <input id="log-filter" class="input" placeholder="筛选日志" data-i18n-placeholder="placeholder.logFilter"
+            autocomplete="off">
           <select id="log-level" class="input" title="筛选级别">
             <option value="" data-i18n="log.allLevels">全部级别</option>
             <option value="ERROR">ERROR</option>
@@ -250,13 +255,16 @@
         <div class="about-section">
           <h3 data-i18n="communitySupport">社区支持</h3>
           <ul class="about-list">
-            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer" data-i18n="join">点击加入</a></li>
-            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank" rel="noopener noreferrer">RROrg/fn-apps</a></li>
+            <li>QQ 群：130359605 · <a href="https://qm.qq.com/q/xMUyJacSIw" target="_blank" rel="noopener noreferrer"
+                data-i18n="join">点击加入</a></li>
+            <li>Github：<a href="https://github.com/RROrg/fn-apps" target="_blank"
+                rel="noopener noreferrer">RROrg/fn-apps</a></li>
           </ul>
         </div>
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
-          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png" alt="sponsoring">
+          <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
         <div class="about-copyright">
           <a href="https://github.com/RROrg" target="_blank" rel="noopener noreferrer">RROrg</a>
@@ -271,7 +279,7 @@
   <div id="loading-overlay" class="loading-overlay hidden" role="status" aria-label="Loading">
     <div class="loading-spinner"></div>
   </div>
-  <script src="./app.js"></script>
+  <script src="app.js"></script>
 </body>
 
 </html>

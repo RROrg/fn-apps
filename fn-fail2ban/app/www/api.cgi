@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2022 Ing <https://github.com/wjz304>
@@ -14,14 +15,15 @@ import os
 from typing import Tuple
 
 
-def respond(obj, status=200):
+def respond(obj, status="200 OK"):
     # Note: many environments ignore Status header for CGI; keep JSON body consistent
+    print(f"Status: {status}")
     print("Content-Type: application/json")
     print()
     print(json.dumps(obj, ensure_ascii=False))
 
 
-def read_input_json():
+def read_post_json():
     try:
         data = sys.stdin.read()
         if not data:
@@ -278,7 +280,7 @@ def getFileJails():
 
 
 def main():
-    req = read_input_json()
+    req = read_post_json()
     action = req.get("action", "")
 
     if action == "status":

@@ -1,7 +1,6 @@
-const CGI_BASE_PATH = location.pathname.includes("index.cgi")
-  ? "../www/"
-  : "./";
-const API_ENDPOINT = `${CGI_BASE_PATH}api.cgi`;
+const API_ENDPOINT = location.pathname.includes("index.cgi")
+  ? "../www/api.cgi"
+  : "./api.cgi";
 const SUPPORTED_FILESYSTEMS = new Set([
   "btrfs",
   "ext4",
@@ -148,30 +147,11 @@ const appState = {
   theme: "light",
 };
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
-}
-
 function safeDecode(value) {
   try {
     return decodeURIComponent(value || "");
   } catch (_error) {
     return value || "";
-  }
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
   }
 }
 
@@ -188,78 +168,16 @@ function parentStoredValue(name) {
   }
 }
 
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
+function applyLanguage() {
+  const language = safeDecode(navigator.language || "zh-CN").replace("_", "-");
   return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
-function currentLanguage() {
-  return normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
-}
+function applyTheme() {
+  const thememode = parentStoredValue("fnos-theme-mode");
+  if (thememode === "10") return "light";
+  if (thememode === "20") return "dark";
 
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (theme === "system" || theme === "auto" || theme === "os") {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
-  return "";
-}
-
-function currentTheme() {
-  const fromSystem = [
-    queryValue("theme"),
-    cookieValue("fnos-theme-mode"),
-    cookieValue("os-theme-mode"),
-    storedValue("fnos-theme-mode"),
-    storedValue("os-theme-mode"),
-    parentStoredValue("fnos-theme-mode"),
-    parentStoredValue("os-theme-mode"),
-    documentThemeValue(document),
-    parentDocumentThemeValue(),
-    queryValue("fnos-theme-mode"),
-  ]
-    .map(normalizeTheme)
-    .find(Boolean);
-  if (fromSystem) return fromSystem;
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
@@ -274,8 +192,8 @@ function t(key, params = {}) {
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = currentLanguage();
-  const nextTheme = currentTheme();
+  const nextLanguage = applyLanguage();
+  const nextTheme = applyTheme();
   const languageChanged = nextLanguage !== appState.language;
 
   appState.language = nextLanguage;

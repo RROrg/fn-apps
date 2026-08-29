@@ -1,5 +1,5 @@
 appname               = fn-zerotier
-version               = 1.0.8
+version               = 1.0.9
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
@@ -10,4 +10,4 @@ maintainer            = ZeroTier
 maintainer_url        = https://www.zerotier.com
 distributor           = RROrg
 distributor_url       = https://github.com/RROrg/fn-apps
-install_type          = root
+reloadui              = yes

@@ -1,3 +1,7 @@
+const API_ENDPOINT = location.pathname.includes("index.cgi")
+  ? "../www/api.cgi"
+  : "./api.cgi";
+
 const nodeIdEl = document.getElementById("nodeId");
 const versionEl = document.getElementById("version");
 const onlineStateEl = document.getElementById("onlineState");
@@ -31,7 +35,7 @@ const joinForm = document.getElementById("joinForm");
 const networkIdInput = document.getElementById("networkId");
 const toastEl = document.getElementById("toast");
 
-const state = {
+const appState = {
   language: "zh-CN",
   theme: "light",
 };
@@ -39,6 +43,7 @@ const state = {
 const I18N = {
   "zh-CN": {
     appTitle: "ZeroTier 组网控制台",
+    appDocTitle: "ZeroTier",
     refresh: "刷新",
     serviceStatus: "服务状态",
     version: "版本",
@@ -128,6 +133,7 @@ const I18N = {
   },
   "en-US": {
     appTitle: "ZeroTier Console",
+    appDocTitle: "ZeroTier",
     refresh: "Refresh",
     serviceStatus: "Service Status",
     version: "Version",
@@ -245,30 +251,11 @@ let toastTimer = null;
 let latestStatusData = null;
 let editingCreatedMoonId = "";
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
-}
-
 function safeDecode(value) {
   try {
     return decodeURIComponent(value || "");
   } catch (_error) {
     return value || "";
-  }
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
   }
 }
 
@@ -285,85 +272,23 @@ function parentStoredValue(name) {
   }
 }
 
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
+function applyLanguage() {
+  const language = safeDecode(navigator.language || "zh-CN").replace("_", "-");
   return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
-function currentLanguage() {
-  return normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
-}
+function applyTheme() {
+  const thememode = parentStoredValue("fnos-theme-mode");
+  if (thememode === "10") return "light";
+  if (thememode === "20") return "dark";
 
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (theme === "system" || theme === "auto" || theme === "os") {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
-  return "";
-}
-
-function currentTheme() {
-  const fromSystem = [
-    queryValue("theme"),
-    cookieValue("fnos-theme-mode"),
-    cookieValue("os-theme-mode"),
-    storedValue("fnos-theme-mode"),
-    storedValue("os-theme-mode"),
-    parentStoredValue("fnos-theme-mode"),
-    parentStoredValue("os-theme-mode"),
-    documentThemeValue(document),
-    parentDocumentThemeValue(),
-    queryValue("fnos-theme-mode"),
-  ]
-    .map(normalizeTheme)
-    .find(Boolean);
-  if (fromSystem) return fromSystem;
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
 function t(key, params = {}) {
-  const messages = I18N[state.language] || I18N["zh-CN"];
+  const messages = I18N[appState.language] || I18N["zh-CN"];
   return String(messages[key] || I18N["zh-CN"][key] || key).replace(
     /\{(\w+)\}/g,
     (_match, name) => params[name] ?? "",
@@ -371,11 +296,11 @@ function t(key, params = {}) {
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = currentLanguage();
-  const nextTheme = currentTheme();
-  const languageChanged = nextLanguage !== state.language;
-  state.language = nextLanguage;
-  state.theme = nextTheme;
+  const nextLanguage = applyLanguage();
+  const nextTheme = applyTheme();
+  const languageChanged = nextLanguage !== appState.language;
+  appState.language = nextLanguage;
+  appState.theme = nextTheme;
   document.documentElement.lang = nextLanguage;
   document.documentElement.dataset.theme = nextTheme;
   document.body.dataset.theme = nextTheme;
@@ -385,7 +310,7 @@ function applyPreferences({ rerender = false } = {}) {
   document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
     node.placeholder = t(node.dataset.i18nPlaceholder);
   });
-  document.title = "ZeroTier";
+  document.title = t("appDocTitle");
   if (!latestStatusData) {
     networkCountEl.textContent = t("networkCountZero");
     createdMoonCountEl.textContent = t("createdCountZero");
@@ -607,7 +532,7 @@ function renderNetworks(data) {
     return;
   }
 
-  networkListEl.innerHTML = networks
+  const rows = networks
     .map((network) => {
       const name = network.name || t("unnamedNetwork");
       const nwid = network.nwid || "-";
@@ -665,7 +590,7 @@ function renderNetworks(data) {
       <span>${t("settings")}</span>
       <span>${t("actions")}</span>
     </div>
-    ${networkListEl.innerHTML}
+    ${rows}
   `;
 }
 
@@ -883,7 +808,7 @@ function renderAll(data) {
 
 async function refreshStatus(showMessage = false) {
   try {
-    const data = await requestJson("../www/api.cgi?action=status");
+    const data = await requestJson(API_ENDPOINT + "?action=status");
     renderAll(data);
     if (showMessage) showToast(t("refreshed"), "success");
   } catch (error) {
@@ -895,7 +820,7 @@ async function postAction(action, payload, successMessage) {
   setBusy(true);
   try {
     const data = await requestJson(
-      `../www/api.cgi?action=${encodeURIComponent(action)}`,
+      `${API_ENDPOINT}?action=${encodeURIComponent(action)}`,
       {
         method: "POST",
         headers: {
