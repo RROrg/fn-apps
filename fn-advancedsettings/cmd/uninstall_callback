@@ -27,7 +27,7 @@ rm -f /etc/gitconfig
 systemctl daemon-reload 2>/dev/null || true
 
 [ "${wizard_data_action:-}" == "delete" ] && {
-  rm -rf /var/lib/fn-advancedsettings
+  rm -rf "${TRIM_PKGVAR}"
 }
 
 exit 0

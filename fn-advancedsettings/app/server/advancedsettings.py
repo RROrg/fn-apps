@@ -19,15 +19,22 @@ import tempfile
 import threading
 import time
 import urllib.parse
+from contextlib import contextmanager
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-APP_NAME = "fn-advancedsettings"
-BASE_STATE_DIR = Path("/var/lib/fn-advancedsettings")
-DISPLAY_STATE_DIR = BASE_STATE_DIR / "display"
-STATE_FILE = BASE_STATE_DIR / "settings.json"
+
+def _env(name, default=""):
+    return os.environ.get(name, "").strip() or default
+
+
+APP_NAME = _env("TRIM_APPNAME", "fn-advancedsettings")
+# 运行时数据目录：优先用 TRIM_PKGVAR，回退到 /var/apps/<app>/var
+_pkgvar = _env("TRIM_PKGVAR")
+STATE_FILE = Path(_pkgvar) if _pkgvar else Path(f"/var/apps/{APP_NAME}/var")
+STATE_FILE = STATE_FILE / "settings.json"
 NETWORK_APPLY = Path("/usr/local/sbin/fn-advancedsettings-network-apply")
 NETWORK_SERVICE = Path("/etc/systemd/system/fn-advancedsettings-network.service")
 BRIDGE_APPLY = Path("/usr/local/sbin/fn-advancedsettings-bridge-apply")
@@ -46,7 +53,6 @@ PROXY_PIP = Path("/etc/pip.conf")
 PROXY_NPM = Path("/etc/npmrc")
 PROXY_GIT = Path("/etc/gitconfig")
 PROXY_KEYS = ["http_proxy", "https_proxy", "ftp_proxy", "socks_proxy", "no_proxy"]
-PROXY_TARGETS = ["apt", "docker", "pip", "npm", "git"]
 
 PATHS = {
     "grub": Path("/etc/default/grub"),
@@ -109,15 +115,19 @@ class Handler(BaseHTTPRequestHandler):
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header(
-                "Location",
-                self.server.base_path
-                + "/"
-                + (("?" + parsed.query) if parsed.query else ""),
-            )
-            self.send_header("Content-Length", "0")
-            self.end_headers()
+            try:
+                self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+                self.send_header(
+                    "Location",
+                    self.server.base_path
+                    + "/"
+                    + (("?" + parsed.query) if parsed.query else ""),
+                )
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                # client disconnected; treat as normal
+                return
             return
         path = strip_base_path(parsed.path, self.server.base_path)
         if path.startswith("/api"):
@@ -153,29 +163,27 @@ class Handler(BaseHTTPRequestHandler):
             "Cache-Control",
             "no-store" if target.name == "index.html" else "public, max-age=60",
         )
-        self.end_headers()
-        if self.command != "HEAD":
-            self.wfile.write(data)
+        try:
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # client disconnected mid-response; treat as normal
+            return
 
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length) if length else b""
-        previous = getattr(REQUEST_CONTEXT, "value", None)
-        REQUEST_CONTEXT.value = {
-            "method": self.command,
-            "query": query or "",
-            "body": body,
-            "handler": self,
-        }
-        try:
-            dispatch()
-        except Exception as exc:
-            json_response({"ok": False, "message": str(exc)}, 500)
-        finally:
-            if previous is None:
-                del REQUEST_CONTEXT.value
-            else:
-                REQUEST_CONTEXT.value = previous
+        headers = {key: value for key, value in self.headers.items()}
+        with request_context(
+            self.command, query=query, headers=headers, body=body, handler=self
+        ):
+            try:
+                dispatch()
+            except Exception as exc:
+                json_response(
+                    {"ok": False, "message": str(exc)}, "500 Internal Server Error"
+                )
 
 
 def normalize_base_path(path):
@@ -188,29 +196,95 @@ def normalize_base_path(path):
 
 
 def strip_base_path(path, base_path):
-    if base_path != "/" and path.startswith(base_path):
-        return path[len(base_path) :] or "/"
-    return path or "/"
+    normalized = path or "/"
+    if base_path != "/" and normalized.startswith(base_path):
+        normalized = normalized[len(base_path) :] or "/"
+    return normalized
 
 
 def current_request():
     return getattr(REQUEST_CONTEXT, "value", {})
 
 
-def json_response(payload, status=200):
+@contextmanager
+def request_context(method, query="", headers=None, body=b"", handler=None):
+    previous = getattr(REQUEST_CONTEXT, "value", None)
+    REQUEST_CONTEXT.value = {
+        "method": (method or "GET").upper(),
+        "query": query or "",
+        "headers": headers or {},
+        "body": body or b"",
+        "handler": handler,
+    }
+    try:
+        yield
+    finally:
+        if previous is None:
+            if hasattr(REQUEST_CONTEXT, "value"):
+                del REQUEST_CONTEXT.value
+        else:
+            REQUEST_CONTEXT.value = previous
+
+
+def header_value(headers, name):
+    if not headers:
+        return ""
+    lowered = name.lower()
+    for key, value in headers.items():
+        if key.lower() == lowered:
+            return value
+    return ""
+
+
+def normalize_status(status):
+    if isinstance(status, HTTPStatus):
+        return status.value, f"{status.value} {status.phrase}"
+    if isinstance(status, int):
+        try:
+            phrase = HTTPStatus(status).phrase
+        except Exception:
+            phrase = "OK"
+        return status, f"{status} {phrase}"
+    text = str(status or "200 OK").strip()
+    if not text:
+        return 200, "200 OK"
+    first, _, rest = text.partition(" ")
+    if first.isdigit():
+        code = int(first)
+        if not rest:
+            try:
+                rest = HTTPStatus(code).phrase
+            except Exception:
+                rest = ""
+        return code, f"{code} {rest}".strip()
+    return 200, "200 OK"
+
+
+def json_response(payload, status="200 OK"):
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
         "utf-8"
     )
+    code, status_text = normalize_status(status)
     request = current_request()
     handler = request.get("handler", None)
-    if handler is None:
+    if handler is not None:
+        try:
+            handler.send_response(code)
+            handler.send_header("Content-Type", "application/json; charset=utf-8")
+            handler.send_header("Content-Length", str(len(body)))
+            handler.end_headers()
+            if handler.command != "HEAD":
+                handler.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # client disconnected mid-response (e.g. gateway timeout / tab closed);
+            # treat as normal and don't crash the request thread
+            return
         return
-    handler.send_response(status)
-    handler.send_header("Content-Type", "application/json; charset=utf-8")
-    handler.send_header("Content-Length", str(len(body)))
-    handler.end_headers()
-    if handler.command != "HEAD":
-        handler.wfile.write(body)
+    sys.stdout.write(f"Status: {status_text}\r\n")
+    sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n")
+    sys.stdout.write(f"Content-Length: {len(body)}\r\n\r\n")
+    sys.stdout.flush()
+    sys.stdout.buffer.write(body)
 
 
 def sse_response():
@@ -238,11 +312,33 @@ def sse_send(wfile, event, data):
 
 def request_body():
     request = current_request()
-    body = request.get("body", b"")
-    if not body:
-        parsed = urllib.parse.parse_qs(request.get("query", ""), keep_blank_values=True)
+    if request != {}:
+        method = request.get("method", "GET").upper()
+        body = request.get("body", b"") or b""
+        query_string = request.get("query", "") or ""
+        content_type = header_value(request.get("headers", {}), "Content-Type")
+        if method in {"POST", "PUT", "PATCH"}:
+            raw = body.decode("utf-8", "replace") if body else ""
+            if "application/json" in content_type:
+                return json.loads(raw or "{}")
+            parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
+            return {key: values[-1] for key, values in parsed.items()}
+        parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
         return {key: values[-1] for key, values in parsed.items()}
-    return json.loads(body.decode("utf-8", "replace") or "{}")
+
+    method = os.environ.get("REQUEST_METHOD", "GET").upper()
+    if method in {"POST", "PUT", "PATCH"}:
+        length = int(os.environ.get("CONTENT_LENGTH") or 0)
+        raw = sys.stdin.buffer.read(length).decode("utf-8", "replace") if length else ""
+        content_type = os.environ.get("CONTENT_TYPE", "")
+        if "application/json" in content_type:
+            return json.loads(raw or "{}")
+        parsed = urllib.parse.parse_qs(raw, keep_blank_values=True)
+        return {key: values[-1] for key, values in parsed.items()}
+    parsed = urllib.parse.parse_qs(
+        os.environ.get("QUERY_STRING", ""), keep_blank_values=True
+    )
+    return {key: values[-1] for key, values in parsed.items()}
 
 
 def read_text(path, default=""):
@@ -310,7 +406,7 @@ def load_state():
 
 
 def save_state(data):
-    BASE_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     STATE_FILE.write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -689,6 +785,10 @@ def save_sshd(data):
     if data.get("password"):
         results.append(change_root_password(str(data.get("password"))))
     write_text(PATHS["sshd_custom"], custom_text)
+    # 持久化到应用数据目录：系统升级会还原 /etc/ssh，据此在 read_ssh 时恢复
+    state = load_state()
+    state["ssh"] = custom_text
+    save_state(state)
     if data.get("apply"):
         results.extend(try_run_many(SSH_RESTART_COMMANDS))
     if results:
@@ -705,6 +805,16 @@ def save_sshd(data):
 def read_ssh():
     text = read_text(PATHS["sshd"])
     custom_text = read_text(PATHS["sshd_custom"])
+    if not custom_text.strip():
+        # /etc/ssh/sshd_config.d/trim_sshd.conf 可能被系统升级覆盖/清除，从持久化的 STATE_FILE 恢复
+        saved = (load_state().get("ssh") or "").strip()
+        if saved:
+            custom_text = saved
+            try:
+                PATHS["sshd_custom"].parent.mkdir(parents=True, exist_ok=True)
+                write_text(PATHS["sshd_custom"], custom_text)
+            except Exception:
+                pass
     parsed = {k: SSH_DEFAULTS.get(k, "") for k in SSH_FIELDS if k in SSH_DEFAULTS}
     parsed.update(parse_sshd(text))
     parsed.update(parse_sshd(custom_text))
@@ -716,24 +826,19 @@ def read_ssh():
     }
 
 
-def _display_forced_off_path(name):
-    return DISPLAY_STATE_DIR / f"{name}.off"
-
-
 def _display_set_forced_off(name, off):
-    DISPLAY_STATE_DIR.mkdir(parents=True, exist_ok=True)
-    marker = _display_forced_off_path(name)
+    state = load_state()
+    lst = set(state.get("display_off") or [])
     if off:
-        marker.write_text("1", encoding="utf-8")
+        lst.add(name)
     else:
-        try:
-            marker.unlink()
-        except FileNotFoundError:
-            pass
+        lst.discard(name)
+    state["display_off"] = sorted(lst)
+    save_state(state)
 
 
 def _display_is_forced_off(name):
-    return _display_forced_off_path(name).exists()
+    return name in (load_state().get("display_off") or [])
 
 
 def read_display():
@@ -1331,20 +1436,15 @@ def save_display(data):
 
 
 def write_display_service():
-    off_names = []
-    if DISPLAY_STATE_DIR.exists():
-        for marker in sorted(DISPLAY_STATE_DIR.glob("*.off")):
-            off_names.append(marker.stem)
+    off_names = sorted(load_state().get("display_off") or [])
     if off_names:
         module_path = Path(__file__).resolve()
         script = f"""#!/usr/bin/env python3
 import importlib.util
 import sys
-from pathlib import Path
 
 module_path = Path({repr(str(module_path))})
-state_dir = Path({repr(str(DISPLAY_STATE_DIR))})
-off_names = [p.stem for p in sorted(state_dir.glob('*.off'))]
+off_names = {repr(off_names)}
 if not off_names:
     sys.exit(0)
 
@@ -3100,10 +3200,10 @@ def read_processes():
 
 def signal_process(pid, sig):
     signals = {
-        "term": signal.SIGTERM, # pyright: ignore[reportAttributeAccessIssue]
-        "kill": signal.SIGKILL, # pyright: ignore[reportAttributeAccessIssue]
-        "stop": signal.SIGSTOP, # pyright: ignore[reportAttributeAccessIssue]
-        "cont": signal.SIGCONT, # pyright: ignore[reportAttributeAccessIssue]
+        "term": signal.SIGTERM,  # pyright: ignore[reportAttributeAccessIssue]
+        "kill": signal.SIGKILL,  # pyright: ignore[reportAttributeAccessIssue]
+        "stop": signal.SIGSTOP,  # pyright: ignore[reportAttributeAccessIssue]
+        "cont": signal.SIGCONT,  # pyright: ignore[reportAttributeAccessIssue]
     }
     sig_int = signals.get(sig.lower())
     if sig_int is None:
@@ -3443,7 +3543,7 @@ def dispatch():
         pid = body.get("pid")
         sig = body.get("signal", "term")
         if not pid:
-            json_response({"ok": False, "message": "pid required"}, 400)
+            json_response({"ok": False, "message": "pid required"}, "400 Bad Request")
             return
         json_response(signal_process(pid, sig))
     elif action == "readServices":
@@ -3452,32 +3552,42 @@ def dispatch():
         name = body.get("name")
         act = body.get("op") or body.get("action", "restart")
         if not name:
-            json_response({"ok": False, "message": "service name required"}, 400)
+            json_response(
+                {"ok": False, "message": "service name required"}, "400 Bad Request"
+            )
             return
         json_response(service_action(name, act))
     elif action == "serviceCat":
         name = body.get("name")
         if not name:
-            json_response({"ok": False, "message": "service name required"}, 400)
+            json_response(
+                {"ok": False, "message": "service name required"}, "400 Bad Request"
+            )
             return
         json_response(service_cat(name))
     elif action == "serviceStatus":
         name = body.get("name")
         if not name:
-            json_response({"ok": False, "message": "service name required"}, 400)
+            json_response(
+                {"ok": False, "message": "service name required"}, "400 Bad Request"
+            )
             return
         json_response(service_status(name))
     elif action == "serviceEditRead":
         name = body.get("name")
         if not name:
-            json_response({"ok": False, "message": "service name required"}, 400)
+            json_response(
+                {"ok": False, "message": "service name required"}, "400 Bad Request"
+            )
             return
         json_response(service_edit_read(name))
     elif action == "serviceEditSave":
         name = body.get("name")
         content = body.get("content", "")
         if not name:
-            json_response({"ok": False, "message": "service name required"}, 400)
+            json_response(
+                {"ok": False, "message": "service name required"}, "400 Bad Request"
+            )
             return
         json_response(service_edit_save(name, content))
     elif action == "systemdAnalyzePlot":
@@ -3506,9 +3616,9 @@ def dispatch():
                 except Exception:
                     pass
             _diag_proc = None
-        proc, err = diag_stream_start(target, tool, count, server, ipv6)
+        proc, err = diag_stream_start(target, tool, count, server, bool(ipv6))
         if err:
-            json_response({"ok": False, "message": err}, 400)
+            json_response({"ok": False, "message": err}, "400 Bad Request")
             return
         assert proc is not None
         assert proc.stdout is not None
@@ -3554,7 +3664,7 @@ def dispatch():
                 _diag_proc = None
         json_response({"ok": True, "stopped": stopped})
     else:
-        json_response({"ok": False, "message": "unsupported action"}, 400)
+        json_response({"ok": False, "message": "unsupported action"}, "400 Bad Request")
 
 
 def main():

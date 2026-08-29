@@ -1,6 +1,9 @@
-const API_ENDPOINT = location.pathname.includes("/app/fn-advancedsettings")
-  ? "/app/fn-advancedsettings/api"
-  : "./api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+
+const API_ENDPOINT = "./api";
 
 const sections = [
   ["boot", "bootSettings"],
@@ -400,6 +403,7 @@ const I18N = {
     processConfirmCONT: "确定要向进程 {pid} 发送 SIGCONT 信号？",
     processSignalSent: "信号已发送",
     serviceSettings: "服务管理",
+    serviceDetailTitle: "服务详情",
     searchService: "搜索服务...",
     serviceName: "服务",
     serviceDescription: "描述",
@@ -756,6 +760,7 @@ const I18N = {
     processConfirmCONT: "Send SIGCONT to process {pid}?",
     processSignalSent: "Signal sent",
     serviceSettings: "Service Management",
+    serviceDetailTitle: "Service Details",
     searchService: "Search services...",
     serviceName: "Service",
     serviceDescription: "Description",
@@ -851,137 +856,39 @@ const state = {
   saving: false,
 };
 
-function safeDecode(value) {
-  try {
-    return decodeURIComponent(value || "");
-  } catch (_error) {
-    return value || "";
-  }
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
 }
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
+function applyTheme() {
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
+}
+
+function t(key, params = {}) {
+  const messages = I18N[state.language] || I18N["zh-CN"];
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
   );
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage?.getItem(name) ||
-      window.parent.sessionStorage?.getItem(name) ||
-      ""
-    );
-  } catch (_error) {
-    return "";
-  }
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeLanguage(value) {
-  return safeDecode(value).replace("_", "-").toLowerCase().startsWith("zh")
-    ? "zh-CN"
-    : "en-US";
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (theme === "system" || theme === "auto" || theme === "os") {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
-  return "";
-}
-
-function currentTheme() {
-  const fromSystem = [
-    queryValue("theme"),
-    cookieValue("fnos-theme-mode"),
-    cookieValue("os-theme-mode"),
-    storedValue("fnos-theme-mode"),
-    storedValue("os-theme-mode"),
-    parentStoredValue("fnos-theme-mode"),
-    parentStoredValue("os-theme-mode"),
-    documentThemeValue(document),
-    parentDocumentThemeValue(),
-    queryValue("fnos-theme-mode"),
-  ]
-    .map(normalizeTheme)
-    .find(Boolean);
-  if (fromSystem) return fromSystem;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
-function t(key, params) {
-  let text =
-    (I18N[state.language] || I18N["zh-CN"])[key] || I18N["zh-CN"][key] || key;
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      text = text.split(`{${k}}`).join(String(v));
-    }
-  }
-  return text;
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  state.language = normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
-  state.theme = currentTheme();
-  document.documentElement.lang = state.language;
-  document.documentElement.dataset.theme = state.theme;
-  document.body.dataset.theme = state.theme;
+  applyLanguage();
+  applyTheme();
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     node.textContent = t(node.dataset.i18n);
   });
@@ -1002,9 +909,13 @@ function escapeHtml(value) {
   return String(value ?? "").replace(
     /[&<>"']/g,
     (char) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        char
-      ],
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[char],
   );
 }
 
@@ -1022,8 +933,9 @@ async function api(action, data = {}) {
     body: JSON.stringify({ action, ...data }),
   });
   const result = await response.json();
-  if (!response.ok || !result.ok)
+  if (!response.ok || !result.ok) {
     throw new Error(result.message || `HTTP ${response.status}`);
+  }
   return result;
 }
 
@@ -1874,14 +1786,20 @@ function showContextMenu(e, type, target) {
         `<div class="context-menu-item" data-action="${action}"><span>${escapeHtml(t(key))}</span></div>`,
     )
     .join("");
-  const x = Math.min(e.clientX, window.innerWidth - 160);
-  const y = Math.min(
-    e.clientY,
-    window.innerHeight - (type === "service" ? 210 : 140),
-  );
+  // 先移除 hidden 以测量实际尺寸，再按实际尺寸把菜单完全限制在视口内
+  menu.classList.remove("hidden");
+  const rect = menu.getBoundingClientRect();
+  const margin = 8;
+  let x = e.clientX;
+  let y = e.clientY;
+  if (x + rect.width + margin > window.innerWidth) {
+    x = Math.max(margin, window.innerWidth - rect.width - margin);
+  }
+  if (y + rect.height + margin > window.innerHeight) {
+    y = Math.max(margin, window.innerHeight - rect.height - margin);
+  }
   menu.style.left = x + "px";
   menu.style.top = y + "px";
-  menu.classList.remove("hidden");
 }
 
 function hideContextMenu() {
@@ -1914,7 +1832,91 @@ document.addEventListener("contextmenu", (e) => {
   hideContextMenu();
 });
 
-document.addEventListener("click", hideContextMenu);
+// 长按唤出右键菜单（兼容 iOS Safari 等不支持 contextmenu 的移动端）
+const LONG_PRESS_MS = 500;
+let _longPressTimer = null;
+let _longPressStart = { x: 0, y: 0 };
+
+function clearLongPress() {
+  if (_longPressTimer) {
+    clearTimeout(_longPressTimer);
+    _longPressTimer = null;
+  }
+}
+
+document.addEventListener(
+  "touchstart",
+  (e) => {
+    clearLongPress();
+    const row = e.target.closest(
+      "#processTable tbody tr, #serviceTable tbody tr",
+    );
+    if (!row) return;
+    _longPressStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    _longPressTimer = setTimeout(() => {
+      // 长按期间移动了太远则取消
+      const row2 = e.target.closest(
+        "#processTable tbody tr, #serviceTable tbody tr",
+      );
+      if (!row2) return;
+      const isProcess = !!e.target.closest("#processTable tbody tr");
+      const target = isProcess ? row2.dataset.pid : row2.dataset.service;
+      const type = isProcess ? "process" : "service";
+      const touch = e.touches[0];
+      const evt = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+      };
+      showContextMenu(evt, type, target);
+      // 阻止随后的 click 关闭菜单
+      suppressNextClick();
+    }, LONG_PRESS_MS);
+  },
+  { passive: true },
+);
+
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    if (!_longPressTimer) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - _longPressStart.x;
+    const dy = touch.clientY - _longPressStart.y;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      clearLongPress();
+    }
+  },
+  { passive: true },
+);
+
+document.addEventListener("touchend", clearLongPress);
+
+// 长按唤出的菜单不应被紧接着的 click 立即关闭
+let _suppressNextClick = false;
+let _suppressClickTimer = null;
+function suppressNextClick() {
+  _suppressNextClick = true;
+  if (_suppressClickTimer) clearTimeout(_suppressClickTimer);
+  // 长按后若未产生 click（如手指滑开），则自动复位，避免吞掉后续真实点击
+  _suppressClickTimer = setTimeout(() => {
+    _suppressNextClick = false;
+  }, 600);
+}
+document.addEventListener(
+  "click",
+  (e) => {
+    // 点击菜单内部时不隐藏（交给菜单自己的 click 处理）
+    if (e.target.closest("#contextMenu")) return;
+    if (_suppressNextClick) {
+      _suppressNextClick = false;
+      if (_suppressClickTimer) clearTimeout(_suppressClickTimer);
+      return;
+    }
+    hideContextMenu();
+  },
+  true,
+);
 document.addEventListener("scroll", hideContextMenu, true);
 
 function handleMenuAction(action) {
@@ -2887,14 +2889,25 @@ document.getElementById("zoomReset").addEventListener("click", () => {
   applySvgZoom();
 });
 
-applyPreferences();
-window
-  .matchMedia?.("(prefers-color-scheme: dark)")
-  .addEventListener?.("change", () => applyPreferences({ rerender: true }));
-window.addEventListener("storage", () => applyPreferences({ rerender: true }));
-setInterval(() => applyPreferences(), 1500);
+window.addEventListener("load", async () => {
+  platformConfig = await sdk.getPlatformConfig();
+  applyPreferences();
 
-loadData().catch((error) => {
-  document.getElementById("emptyState").textContent = error.message;
-  showToast(error.message, true);
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
+  try {
+    await loadData();
+  } catch (error) {
+    document.getElementById("emptyState").textContent = error.message;
+    showToast(error.message, true);
+  }
 });

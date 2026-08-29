@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>高级设置</title>
+  <title data-i18n="appTitle">高级设置</title>
   <link rel="stylesheet" href="/app/fn-advancedsettings/style.css">
 </head>
 
@@ -20,7 +20,7 @@
 
     <main class="content">
       <header class="topbar">
-        <h2 id="pageTitle">启动设置</h2>
+        <h2 id="pageTitle" data-i18n="bootSettings">启动设置</h2>
         <div class="topbar-actions">
           <button id="refreshBtn" class="ghost-btn" type="button" data-i18n="refresh">刷新</button>
           <button id="saveBtn" class="primary-btn" type="button" data-i18n="save">保存</button>
@@ -387,7 +387,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
 
         <div class="about-copyright">
@@ -412,13 +412,13 @@
   <div id="serviceModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-content service-modal-content">
       <div class="modal-header">
-        <h2 id="serviceModalTitle">服务详情</h2>
+        <h2 id="serviceModalTitle" data-i18n="serviceDetailTitle">服务详情</h2>
         <button class="icon-btn" id="serviceModalClose" type="button" aria-label="关闭" data-i18n-title="close">×</button>
       </div>
       <div class="service-modal-hint hidden" id="serviceModalHint"></div>
       <pre id="serviceModalContent" class="service-modal-pre hidden" spellcheck="false"></pre>
-      <textarea id="serviceModalEditor" class="service-modal-editor hidden" spellcheck="false"
-        aria-label="服务配置编辑框" data-i18n-aria-label="serviceEditorLabel"></textarea>
+      <textarea id="serviceModalEditor" class="service-modal-editor hidden" spellcheck="false" aria-label="服务配置编辑框"
+        data-i18n-aria-label="serviceEditorLabel"></textarea>
       <div id="analyzeZoom" class="analyze-zoom hidden">
         <button id="zoomOut" type="button" aria-label="缩小">−</button>
         <span id="zoomLevel">100%</span>
@@ -445,7 +445,7 @@
   <div id="contextMenu" class="context-menu hidden"></div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="/app/fn-advancedsettings/app.js"></script>
+  <script type="module" src="/app/fn-advancedsettings/app.js"></script>
 </body>
 
 </html>

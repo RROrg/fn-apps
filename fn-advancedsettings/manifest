@@ -1,14 +1,15 @@
 appname               = fn-advancedsettings
-version               = 1.1.0
+version               = 1.1.1
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
 source                = thirdparty
 desktop_uidir         = ui
 desktop_applaunchname = fn-advancedsettings.Application
+micro_app             = true
+os_min_version        = 1.2.0401
 maintainer            = Ing
 maintainer_url        = https://github.com/RROrg
 distributor           = RROrg
 distributor_url       = https://github.com/RROrg/fn-apps
-install_type          = root
 reloadui              = yes

@@ -202,10 +202,12 @@ textarea {
 }
 
 .content {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   height: 100vh;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   padding: 0 0 8px;
   background: var(--surface);
   border-radius: 10px 10px 0 0;
@@ -256,8 +258,11 @@ textarea {
 
 .editor {
   display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
   flex-direction: column;
-  padding: 0 20px 20px;
+  padding: 0 10px 0;
+  overflow: hidden;
 }
 
 .hidden {
@@ -328,11 +333,13 @@ textarea {
 }
 
 .panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   padding: 16px 18px 18px;
-  overflow: hidden;
   min-width: 0;
 }
 
@@ -840,6 +847,11 @@ textarea {
   background: var(--field);
 }
 
+.analyze-blame-table td.mono,
+.analyze-blame-table th {
+  white-space: nowrap;
+}
+
 .analyze-blame-table td.mono {
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
 }
@@ -975,7 +987,7 @@ textarea {
 }
 
 .table-wrap {
-  overflow-x: auto;
+  min-width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -1052,6 +1064,8 @@ textarea {
   box-shadow: var(--shadow);
   padding: 4px 0;
   min-width: 140px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
 }
 
 .context-menu.hidden {
@@ -1636,18 +1650,69 @@ textarea {
 
 @media (max-width: 860px) {
   .app-shell {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
   }
 
   .sidebar {
-    height: 38vh;
-    max-height: 38vh;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    max-height: none;
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    padding: 8px 0;
+  }
+
+  .nav-list {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 8px 8px;
+  }
+
+  .nav-list::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .nav-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--line-strong);
+  }
+
+  @supports (scrollbar-width: thin) {
+    .nav-list {
+      scrollbar-width: thin;
+    }
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 38px;
+    padding: 6px 12px;
+  }
+
+  .nav-icon {
+    display: none;
+  }
+
+  .side-footer {
+    display: none;
   }
 
   .content {
-    height: 62vh;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    min-width: 0;
+    height: auto;
     border-radius: 0;
   }
 
@@ -1731,5 +1796,14 @@ textarea {
     padding: 8px 10px;
     font-size: 13px;
     white-space: nowrap;
+  }
+
+  /* 长按唤出菜单的行，屏蔽 iOS 原生长按放大镜/文本选择 */
+  #processTable tbody tr,
+  #serviceTable tbody tr {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
