@@ -19,14 +19,12 @@ if [ "${wizard_with_tmux:-true}" = "true" ]; then
   tmux set-option -g history-limit 50000                                                   # 历史记录条数
   tmux set-option -g set-clipboard on                                                      # 开启剪贴板同步
   tmux set-option -g mouse on                                                              # 开启鼠标支持
-  [ "${wizard_right_type:-tmux}" = "tmux" ] || tmux unbind -T root MouseDown3Pane          # 禁用鼠标滚动
   tmux kill-session -t __init__
 fi
 
 TTYDARGS=()
-TTYDARGS+=(${TRIM_APPDEST}/server/ttyd.${ARCH:-} -a -W)
+TTYDARGS+=("${TRIM_APPDEST}/server/ttyd.${ARCH:-}" -a -W)
 TTYDARGS+=(-i "${TRIM_APPDEST}/fn-terminal.sock" -b "/app/fn-terminal")
-[ "${wizard_with_tmux:-true}" = "true" ] && [ "${wizard_right_type:-tmux}" = "tmux" ] && TTYDARGS+=(-I "${TRIM_APPDEST}/server/ttyd-index.html")
 TTYDARGS+=(-t titleFixed=fnOS -t allow-clipboard-read=true -t allow-clipboard-write=true -t rendererType=canvas)
 [ "${wizard_with_tmux:-true}" = "true" ] && TTYDARGS+=(tmux -u new -A -s terminal)
 [ "${wizard_user_login:-root}" = "login" ] && TTYDARGS+=(login) || { [ "${wizard_with_tmux:-true}" = "true" ] || TTYDARGS+=(bash); }
@@ -46,7 +44,7 @@ start_process() {
   log_msg "Starting process ..."
   # run cmd to start process
   rm -f "${TRIM_APPDEST}/fn-terminal.sock"
-  bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
   # log_msg "CMD = ${CMD}"

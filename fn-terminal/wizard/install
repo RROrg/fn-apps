@@ -7,6 +7,10 @@
         "helpText": "${wizard.install_item1_helpText}"
       },
       {
+        "type": "tips",
+        "helpText": "${wizard.install_item2_helpText}"
+      },
+      {
         "type": "radio",
         "field": "wizard_with_tmux",
         "label": "${wizard.install_item1_label}",
@@ -24,32 +28,16 @@
       },
       {
         "type": "radio",
-        "field": "wizard_right_type",
-        "label": "${wizard.install_item2_label}",
-        "initValue": "tmux",
-        "options": [
-          {
-            "label": "${wizard.install_item2_options1}",
-            "value": "tmux"
-          },
-          {
-            "label": "${wizard.install_item2_options2}",
-            "value": "base"
-          }
-        ]
-      },
-      {
-        "type": "radio",
         "field": "wizard_user_login",
-        "label": "${wizard.install_item3_label}",
+        "label": "${wizard.install_item2_label}",
         "initValue": "root",
         "options": [
           {
-            "label": "${wizard.install_item3_options1}",
+            "label": "${wizard.install_item2_options1}",
             "value": "root"
           },
           {
-            "label": "${wizard.install_item3_options2}",
+            "label": "${wizard.install_item2_options2}",
             "value": "login"
           }
         ]
