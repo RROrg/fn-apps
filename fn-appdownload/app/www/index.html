@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>应用管理</title>
+  <title data-i18n="appTitle">应用管理</title>
   <link rel="stylesheet" href="/app/fn-appdownload/style.css">
 </head>
 
@@ -16,7 +16,9 @@
         <input id="searchInput" type="search" placeholder="搜索" data-i18n-placeholder="search">
       </label>
 
-      <div class="side-spacer"></div>
+      <div class="side-spacer">
+        <canvas id="matrixRain" aria-hidden="true"></canvas>
+      </div>
 
       <div class="side-footer">
         <button id="settingsBtn" class="footer-action" type="button">
@@ -143,8 +145,10 @@
           <div class="settings-list-head">
             <span data-i18n="sourceUrl">源地址</span>
             <div class="settings-list-actions">
-              <button id="syncSourceBtn" class="plain-btn add-source-btn" type="button" data-i18n="syncOnlineSource">同步线上源</button>
-              <button id="addSourceBtn" class="plain-btn add-source-btn" type="button" data-i18n="addSource">添加源</button>
+              <button id="syncSourceBtn" class="plain-btn add-source-btn" type="button"
+                data-i18n="syncOnlineSource">同步线上源</button>
+              <button id="addSourceBtn" class="plain-btn add-source-btn" type="button"
+                data-i18n="addSource">添加源</button>
             </div>
           </div>
           <div id="sourceList" class="source-list"></div>
@@ -183,7 +187,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
 
         <div class="about-copyright">
@@ -196,7 +200,7 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="/app/fn-appdownload/app.js"></script>
+  <script type="module" src="/app/fn-appdownload/app.js"></script>
 </body>
 
 </html>

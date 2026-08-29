@@ -1,6 +1,9 @@
-const API_ENDPOINT = location.pathname.includes("/app/fn-appdownload")
-  ? "/app/fn-appdownload/api"
-  : "./api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+
+const API_ENDPOINT = "./api";
 
 const state = {
   apps: [],
@@ -304,62 +307,13 @@ function actionButtonContent(app, busy = false) {
   return t("downloadingAction");
 }
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
-}
-
-function safeDecode(value) {
-  try {
-    return decodeURIComponent(value || "");
-  } catch (_error) {
-    return value || "";
-  }
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage.getItem(name) ||
-      window.parent.sessionStorage.getItem(name) ||
-      ""
-    );
-  } catch (_error) {
-    return "";
-  }
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-}
-
-function currentLanguage() {
-  return normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
 }
 
 function t(key, params = {}) {
@@ -370,85 +324,27 @@ function t(key, params = {}) {
   );
 }
 
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (theme === "system" || theme === "auto" || theme === "os") {
-    return prefersDarkTheme() ? "dark" : "light";
-  }
-  return "";
-}
-
-function themeMedia() {
-  return typeof window.matchMedia === "function"
-    ? window.matchMedia("(prefers-color-scheme: dark)")
-    : null;
-}
-
-function prefersDarkTheme() {
-  return Boolean(themeMedia()?.matches);
-}
-
-function currentTheme() {
-  const fromSystem = [
-    queryValue("theme"),
-    cookieValue("fnos-theme-mode"),
-    cookieValue("os-theme-mode"),
-    storedValue("fnos-theme-mode"),
-    storedValue("os-theme-mode"),
-    parentStoredValue("fnos-theme-mode"),
-    parentStoredValue("os-theme-mode"),
-    documentThemeValue(document),
-    parentDocumentThemeValue(),
-    queryValue("fnos-theme-mode"),
-  ]
-    .map(normalizeTheme)
-    .find(Boolean);
-  if (fromSystem) return fromSystem;
-  return prefersDarkTheme() ? "dark" : "light";
-}
-
 function applyTheme() {
-  const theme = currentTheme();
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
   document.documentElement.dataset.theme = theme;
   document.body.dataset.theme = theme;
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = currentLanguage();
-  const languageChanged = nextLanguage !== state.language;
-
-  state.language = nextLanguage;
-  document.documentElement.lang = nextLanguage;
-  document.title = t("appTitle");
+  const languageChanged = applyLanguage();
   applyTheme();
+  const title = t("appTitle");
+  document.title = title;
+  if (sdk.setTitle) {
+    sdk.setTitle(title).catch(() => {});
+  }
 
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     node.textContent = t(node.dataset.i18n);
@@ -469,23 +365,11 @@ function applyPreferences({ rerender = false } = {}) {
   return languageChanged;
 }
 
-function authToken() {
-  return safeDecode(
-    cookieValue("fnos-token") ||
-      cookieValue("trim_token") ||
-      cookieValue("token"),
-  );
-}
-
 async function api(action, data = {}) {
-  const token = authToken();
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `trim ${token}`;
-  }
+  // token 由 fnOS 网关注入；后端不再依赖前端转发 token（app-center 调用已前移）
   const response = await fetch(API_ENDPOINT, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     cache: "no-store",
     credentials: "include",
     body: JSON.stringify({ action, ...data }),
@@ -497,6 +381,37 @@ async function api(action, data = {}) {
   return result;
 }
 
+// 直接调用 app-center（fnOS 网关注入鉴权，无需 token）。
+// 后端不再转发 /app-center/ 请求，故 token 获取逻辑已彻底移除。
+async function appCenter(path, options = {}) {
+  const response = await fetch(`/app-center/v1/${path}`, {
+    method: options.method || "GET",
+    headers: options.body ? { "Content-Type": "application/json" } : {},
+    cache: "no-store",
+    credentials: "include",
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(`app-center HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function defaultDownloadVolume() {
+  // 默认下载卷由前端确定（参照 installer 的 loadVolumes），再传给后端
+  try {
+    const dv = await appCenter("common/remember-volume/config");
+    const dvData = dv && dv.data ? dv.data : dv || {};
+    const vid =
+      dvData.downloadAndInstallVolumeID != null
+        ? dvData.downloadAndInstallVolumeID
+        : dvData.volumeID;
+    return vid != null ? parseInt(vid) || 1 : 1;
+  } catch (_error) {
+    return 1;
+  }
+}
+
 function showToast(message, isError = false) {
   const toast = document.getElementById("toast");
   toast.textContent = message;
@@ -506,181 +421,8 @@ function showToast(message, isError = false) {
   toast._timer = setTimeout(() => toast.classList.add("hidden"), 3200);
 }
 
-let _fnAppRemote = null;
-let _fnAppConnectPromise = null;
-
-function invalidateFnAppRemote() {
-  _fnAppRemote = null;
-  _fnAppConnectPromise = null;
-}
-
-function connectFnApp() {
-  if (_fnAppRemote) return Promise.resolve(_fnAppRemote);
-  if (_fnAppConnectPromise) return _fnAppConnectPromise;
-
-  _fnAppConnectPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      cleanup();
-      _fnAppConnectPromise = null;
-      reject(new Error("Connection timeout"));
-    }, 5000);
-
-    function onMessage(event) {
-      if (!event.data || event.data.penpal !== "synAck") return;
-      clearTimeout(timeout);
-
-      const { methodNames } = event.data;
-      const ackOrigin = event.origin === "null" ? "*" : event.origin;
-      window.parent.postMessage(
-        { penpal: "ack", methodNames: [], config: {} },
-        ackOrigin,
-      );
-
-      const callOrigin = ackOrigin;
-      const remote = {};
-      (methodNames || []).forEach((name) => {
-        remote[name] = (...args) => {
-          return new Promise((res, rej) => {
-            const id = Math.random().toString(36).slice(2);
-            function onReply(e) {
-              if (!e.data || e.data.penpal !== "reply" || e.data.id !== id)
-                return;
-              window.removeEventListener("message", onReply);
-              if (e.data.resolution === "fulfilled") {
-                res(e.data.returnValue);
-              } else {
-                const err = e.data.returnValue;
-                const error = new Error(
-                  err && err.message ? err.message : "Remote call failed",
-                );
-                if (err) Object.assign(error, err);
-                rej(error);
-              }
-            }
-            window.addEventListener("message", onReply);
-            window.parent.postMessage(
-              { penpal: "call", id, methodName: name, args },
-              callOrigin,
-            );
-          });
-        };
-      });
-
-      _fnAppRemote = remote;
-      resolve(remote);
-    }
-
-    function cleanup() {
-      window.removeEventListener("message", onMessage);
-    }
-
-    window.addEventListener("message", onMessage);
-    window.parent.postMessage({ penpal: "syn" }, "*");
-  });
-
-  return _fnAppConnectPromise;
-}
-
-function toFileManagerPath(path) {
-  try {
-    const parts = path.split("/");
-    const sharesIdx = parts.indexOf("shares");
-    if (sharesIdx >= 0 && parts.length > sharesIdx + 1) {
-      return "/vol1/@appshare/" + parts.slice(sharesIdx + 1).join("/");
-    }
-  } catch (_error) {}
-  return path;
-}
-
-function openFileManagerFallback(path) {
-  const fmPath = toFileManagerPath(path);
-  const tab = "app-share-files";
-  const anchor = encodeURIComponent(
-    "trim.file-manager/" +
-      tab +
-      "?key=" +
-      tab +
-      "&path=" +
-      fmPath.replace(/^\//, ""),
-  );
-  const url = "/appview?anchor=" + anchor;
-  window.open(url, "_blank");
-}
-
 async function openFileManager(path) {
-  const fmPath = toFileManagerPath(path);
-  try {
-    const remote = await connectFnApp();
-    let method;
-    let args;
-    if (typeof remote.openFileManagerApp === "function") {
-      method = "openFileManagerApp";
-      args = [fmPath];
-    } else if (typeof remote.openCustomApp === "function") {
-      method = "openCustomApp";
-      args = [
-        "trim.file-manager",
-        "app-share-files",
-        {
-          params: {
-            key: "app-share-files",
-            path: fmPath.replace(/^\//, ""),
-          },
-        },
-      ];
-    } else {
-      openFileManagerFallback(path);
-      return;
-    }
-    try {
-      await Promise.race([
-        remote[method](...args),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), 5000),
-        ),
-      ]);
-    } catch (callErr) {
-      invalidateFnAppRemote();
-      if (callErr.message === "timeout") {
-        try {
-          const retryRemote = await connectFnApp();
-          let retryMethod;
-          let retryArgs;
-          if (typeof retryRemote.openFileManagerApp === "function") {
-            retryMethod = "openFileManagerApp";
-            retryArgs = [fmPath];
-          } else if (typeof retryRemote.openCustomApp === "function") {
-            retryMethod = "openCustomApp";
-            retryArgs = [
-              "trim.file-manager",
-              "app-share-files",
-              {
-                params: {
-                  key: "app-share-files",
-                  path: fmPath.replace(/^\//, ""),
-                },
-              },
-            ];
-          } else {
-            openFileManagerFallback(path);
-            return;
-          }
-          await Promise.race([
-            retryRemote[retryMethod](...retryArgs),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("timeout")), 5000),
-            ),
-          ]);
-        } catch {
-          openFileManagerFallback(path);
-        }
-      } else {
-        openFileManagerFallback(path);
-      }
-    }
-  } catch (_error) {
-    openFileManagerFallback(path);
-  }
+  await sdk.openFileManager(path);
 }
 
 function fallbackIcon(app) {
@@ -822,7 +564,11 @@ async function loadSettings() {
 async function loadApps() {
   document.getElementById("summary").textContent = t("loading");
   try {
-    const result = await api("app-list");
+    const [appList, latest] = await Promise.all([
+      appCenter("app/list?language=zh-CN"),
+      appCenter("app/latest-release?language=zh-CN"),
+    ]);
+    const result = await api("process-apps", { appList, latest });
     state.apps = result.apps || [];
     state.tasks = result.tasks || {};
     applyFileStatus(result.files || {});
@@ -844,7 +590,25 @@ async function loadApps() {
 async function refreshStatus() {
   try {
     const before = rowsStateSignature();
-    const result = await api("status", { apps: statusAppPayload() });
+    const statusResults = {};
+    const fetches = Object.entries(state.tasks || {}).map(
+      async ([key, task]) => {
+        if (task.store !== "official" || !task.taskId) return;
+        try {
+          const raw = await appCenter(
+            `download/status?downloadTaskId=${encodeURIComponent(task.taskId)}&language=zh-CN`,
+          );
+          statusResults[key] = raw;
+        } catch (_error) {
+          // 单个任务查询失败不阻断整体轮询
+        }
+      },
+    );
+    await Promise.all(fetches);
+    const result = await api("status", {
+      apps: statusAppPayload(),
+      statusResults,
+    });
     state.tasks = result.tasks || {};
     applyFileStatus(result.files || {});
     if (rowsStateSignature() !== before) {
@@ -1032,11 +796,15 @@ function bindEvents() {
     }
   });
 
-  document.getElementById("openDirBtn").addEventListener("click", () => {
+  document.getElementById("openDirBtn").addEventListener("click", async () => {
     const dir =
       state.settings.downloadDir ||
       "/var/apps/fn-appdownload/shares/fn-appdownload/downloads";
-    openFileManager(dir);
+    try {
+      await openFileManager(dir);
+    } catch (error) {
+      showToast(error.message || t("openDirFailed"), true);
+    }
   });
 
   document
@@ -1051,79 +819,87 @@ function bindEvents() {
     );
   });
 
-  document.getElementById("syncSourceBtn").addEventListener("click", async () => {
-    const btn = document.getElementById("syncSourceBtn");
-    btn.disabled = true;
-    const originalText = btn.textContent;
-    btn.textContent = t("loading");
+  document
+    .getElementById("syncSourceBtn")
+    .addEventListener("click", async () => {
+      const btn = document.getElementById("syncSourceBtn");
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = t("loading");
 
-    async function tryFetch(url) {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) {
-        const err = new Error(`HTTP ${response.status}`);
-        err.status = response.status;
-        throw err;
-      }
-      return response.json();
-    }
-
-    async function fetchSources() {
-      const rawUrl = "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appdownload/thirdPartySources.json";
-      const proxyEnabled = document.getElementById("githubProxyToggle").checked;
-      const proxyUrl = document.getElementById("githubProxyUrlInput").value.trim().replace(/\/+$/, "");
-
-      // 如果代理已启用，优先走代理
-      if (proxyEnabled && proxyUrl) {
-        try {
-          return await tryFetch(`${proxyUrl}/${rawUrl}`);
-        } catch (err) {
-          if (err.status !== 429) throw err;
-          // 429 时降级到直连
+      async function tryFetch(url) {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          const err = new Error(`HTTP ${response.status}`);
+          err.status = response.status;
+          throw err;
         }
+        return response.json();
       }
 
-      // 直连
-      return await tryFetch(rawUrl);
-    }
+      async function fetchSources() {
+        const rawUrl =
+          "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appdownload/thirdPartySources.json";
+        const proxyEnabled =
+          document.getElementById("githubProxyToggle").checked;
+        const proxyUrl = document
+          .getElementById("githubProxyUrlInput")
+          .value.trim()
+          .replace(/\/+$/, "");
 
-    try {
-      const remoteSources = await fetchSources();
-      if (!Array.isArray(remoteSources)) throw new Error(t("loadFailed"));
-
-      const existingSources = collectSources();
-      let added = 0;
-      let updated = 0;
-
-      remoteSources.forEach((remote) => {
-        const idx = existingSources.findIndex((s) => s.url === remote.url);
-        if (idx === -1) {
-          existingSources.push({
-            name: remote.name || "",
-            url: remote.url || "",
-            enabled: remote.enabled !== false,
-          });
-          added++;
-        } else if (existingSources[idx].name !== remote.name) {
-          existingSources[idx].name = remote.name || "";
-          updated++;
+        // 如果代理已启用，优先走代理
+        if (proxyEnabled && proxyUrl) {
+          try {
+            return await tryFetch(`${proxyUrl}/${rawUrl}`);
+          } catch (err) {
+            if (err.status !== 429) throw err;
+            // 429 时降级到直连
+          }
         }
-      });
 
-      renderSourceList(existingSources);
-      const summary = added
-        ? `添加 ${added} 个，更新 ${updated} 个`
-        : `已是最新`;
-      showToast(t("syncOnlineSource") + "：" + summary);
-    } catch (error) {
-      const msg = error.status === 429
-        ? "请求过于频繁，请稍后重试或启用 GitHub 加速代理"
-        : error.message;
-      showToast(msg, true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
-  });
+        // 直连
+        return await tryFetch(rawUrl);
+      }
+
+      try {
+        const remoteSources = await fetchSources();
+        if (!Array.isArray(remoteSources)) throw new Error(t("loadFailed"));
+
+        const existingSources = collectSources();
+        let added = 0;
+        let updated = 0;
+
+        remoteSources.forEach((remote) => {
+          const idx = existingSources.findIndex((s) => s.url === remote.url);
+          if (idx === -1) {
+            existingSources.push({
+              name: remote.name || "",
+              url: remote.url || "",
+              enabled: remote.enabled !== false,
+            });
+            added++;
+          } else if (existingSources[idx].name !== remote.name) {
+            existingSources[idx].name = remote.name || "";
+            updated++;
+          }
+        });
+
+        renderSourceList(existingSources);
+        const summary = added
+          ? `添加 ${added} 个，更新 ${updated} 个`
+          : `已是最新`;
+        showToast(t("syncOnlineSource") + "：" + summary);
+      } catch (error) {
+        const msg =
+          error.status === 429
+            ? "请求过于频繁，请稍后重试或启用 GitHub 加速代理"
+            : error.message;
+        showToast(msg, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
 
   document.getElementById("sourceList").addEventListener("click", (event) => {
     const button = event.target.closest(".source-remove");
@@ -1176,9 +952,32 @@ function bindEvents() {
       const action = button.dataset.action;
       button.disabled = true;
       button.classList.add("is-progress");
-      button.textContent = action === "delete" ? t("deleting") : t("downloadingAction");
+      button.textContent =
+        action === "delete" ? t("deleting") : t("downloadingAction");
       try {
-        const result = await api(action, { app });
+        let result;
+        if (action === "download" && app.store === "official") {
+          // 官方应用：前端直接向 app-center 创建下载任务，后端只注册任务状态
+          // 默认下载卷由前端确定，再传给后端
+          const downloadVolume =
+            Number(app.volumeID) || (await defaultDownloadVolume()) || 1;
+          const taskResult = await appCenter("download/task", {
+            method: "POST",
+            body: {
+              packageSourceType: app.packageSourceType || "cloud",
+              appName: app.id,
+              sourceID: app.sourceID,
+              version: app.version,
+              volumeID: downloadVolume,
+            },
+          });
+          result = await api("download", {
+            app: { ...app, volumeID: downloadVolume },
+            taskResult,
+          });
+        } else {
+          result = await api(action, { app });
+        }
         if (action === "delete") {
           delete state.tasks[taskKey(app)];
           app.downloaded = false;
@@ -1201,7 +1000,20 @@ function bindEvents() {
 }
 
 window.addEventListener("load", async () => {
+  platformConfig = await sdk.getPlatformConfig();
   applyPreferences();
+
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
   bindEvents();
   try {
     await loadSettings();
@@ -1214,5 +1026,72 @@ window.addEventListener("load", async () => {
   }
 });
 
-themeMedia()?.addEventListener?.("change", () => applyPreferences());
-window.addEventListener("storage", () => applyPreferences({ rerender: true }));
+/* ===== 黑客帝国矩阵雨 ===== */
+(function initMatrixRain() {
+  const canvas = document.getElementById("matrixRain");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  // 矩阵字符集：复杂繁体汉字（笔画繁密，更有黑客帝国密雨感）
+  const CHARS = "菩提本无树，明镜亦非台。本来无一物，何处惹尘埃！";
+
+  let columns = 0;
+  let drops = [];
+  let chars = [];
+  let fontSize = 12;
+  // 下落速度（每帧移动的字符高度数，<1 即慢速下落）
+  let speed = 0.1;
+
+  function isDark() {
+    return document.documentElement.getAttribute("data-theme") !== "light";
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fontSize = 18;
+    columns = Math.floor(rect.width / fontSize);
+    drops = Array.from({ length: columns }, () =>
+      Math.floor((Math.random() * rect.height) / fontSize),
+    );
+    // 每列一个固定字符：雨滴存活期间不变，只有新雨滴开始时才换新字符
+    chars = Array.from(
+      { length: columns },
+      () => CHARS[Math.floor(Math.random() * CHARS.length)],
+    );
+  }
+
+  function draw() {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    ctx.fillStyle = isDark() ? "rgba(13,17,23,0.12)" : "rgba(255,255,255,0.12)";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.font = fontSize + "px 'Courier New', monospace";
+
+    for (let i = 0; i < columns; i++) {
+      // 雨滴字符在存活期间保持固定不变，只随位置下移
+      const char = chars[i];
+      const y = drops[i] * fontSize;
+      ctx.fillStyle = isDark() ? "#0f0" : "#006b00";
+      ctx.fillText(char, i * fontSize, y);
+      // 雨滴落到底部后开始新雨滴：重置位置并换一个新字符
+      if (y > rect.height && Math.random() > 0.975) {
+        drops[i] = -Math.random() * 6;
+        chars[i] = CHARS[Math.floor(Math.random() * CHARS.length)];
+      }
+      drops[i] += speed;
+    }
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener("resize", resize);
+  const observer = new ResizeObserver(resize);
+  observer.observe(canvas);
+  requestAnimationFrame(draw);
+})();

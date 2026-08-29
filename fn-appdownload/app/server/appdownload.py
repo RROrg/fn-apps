@@ -13,7 +13,6 @@ import os
 import re
 import signal
 import shutil
-import socket
 import socketserver
 import subprocess
 import sys
@@ -27,13 +26,26 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-APP_NAME = "fn-appdownload"
-APP_CENTER_WEB_SOCKET = "/var/run/com.trim.app.center.web.sock"  # fnOS >= 1.2.0401
-APP_CENTER_OLD_SOCKET = "/var/run/com.trim.app.center.sock"  # fnOS < 1.2.0401
+
+def _env(name, default=""):
+    return os.environ.get(name, "").strip() or default
+
+
+def _share_dir():
+    # 共享数据目录：优先按 TRIM_APPDEST_VOL 推导（/vol1/@appshare/<app>），否则回退到软链路径
+    vol = _env("TRIM_APPDEST_VOL")
+    if vol:
+        return Path(vol) / "@appshare" / APP_NAME
+    return Path(f"/var/apps/{APP_NAME}/shares/{APP_NAME}")
+
+
+APP_NAME = _env("TRIM_APPNAME", "fn-appdownload")
 DB_NAME = "appcenter"
 DB_USER = "postgres"
-VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
-SHARE_DIR = Path(f"/var/apps/{APP_NAME}/shares/{APP_NAME}")
+# 运行时数据目录：优先用 TRIM_PKGVAR，回退到 /var/apps/<app>/var
+_pkgvar = _env("TRIM_PKGVAR")
+VAR_DIR = Path(_pkgvar) if _pkgvar else Path(f"/var/apps/{APP_NAME}/var")
+SHARE_DIR = _share_dir()
 DEFAULT_DOWNLOAD_DIR = SHARE_DIR / "downloads"
 SETTINGS_FILE = VAR_DIR / "settings.json"
 DEFAULT_SETTINGS = {
@@ -159,15 +171,19 @@ class Handler(BaseHTTPRequestHandler):
     def route(self):
         parsed = urlsplit(self.path)
         if parsed.path == self.server.base_path:
-            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header(
-                "Location",
-                self.server.base_path
-                + "/"
-                + (("?" + parsed.query) if parsed.query else ""),
-            )
-            self.send_header("Content-Length", "0")
-            self.end_headers()
+            try:
+                self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+                self.send_header(
+                    "Location",
+                    self.server.base_path
+                    + "/"
+                    + (("?" + parsed.query) if parsed.query else ""),
+                )
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                # client disconnected; treat as normal
+                return
             return
         path = strip_base_path(parsed.path, self.server.base_path)
         if path.startswith("/api"):
@@ -203,9 +219,13 @@ class Handler(BaseHTTPRequestHandler):
             "Cache-Control",
             "no-store" if target.name == "index.html" else "public, max-age=60",
         )
-        self.end_headers()
-        if self.command != "HEAD":
-            self.wfile.write(data)
+        try:
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # client disconnected mid-response; treat as normal
+            return
 
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
@@ -275,12 +295,17 @@ def json_response(payload, status="200 OK"):
     request = current_request()
     handler = request.get("handler", None)
     if handler is not None:
-        handler.send_response(code)
-        handler.send_header("Content-Type", "application/json; charset=utf-8")
-        handler.send_header("Content-Length", str(len(body)))
-        handler.end_headers()
-        if handler.command != "HEAD":
-            handler.wfile.write(body)
+        try:
+            handler.send_response(code)
+            handler.send_header("Content-Type", "application/json; charset=utf-8")
+            handler.send_header("Content-Length", str(len(body)))
+            handler.end_headers()
+            if handler.command != "HEAD":
+                handler.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # client disconnected mid-response (e.g. gateway timeout / tab closed);
+            # treat as normal and don't crash the request thread
+            return
         return
     sys.stdout.write(f"Status: {status_text}\r\n")
     sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n")
@@ -370,115 +395,6 @@ def request_body():
         os.environ.get("QUERY_STRING", ""), keep_blank_values=True
     )
     return {key: values[-1] for key, values in parsed.items()}
-
-
-def incoming_token():
-    request = current_request()
-    if request == {}:
-        return ""
-
-    auth = header_value(request.get("headers", {}), "Authorization") or os.environ.get(
-        "Authorization", ""
-    )
-    if auth.lower().startswith("trim "):
-        return auth.split(None, 1)[1].strip()
-
-    cookie = header_value(request.get("headers", {}), "Cookie") or os.environ.get(
-        "HTTP_COOKIE", ""
-    )
-    if cookie:
-        parsed = {}
-        for part in str(cookie).split(";"):
-            key, _, value = part.strip().partition("=")
-            if key:
-                parsed[key.lower()] = urllib.parse.unquote(value)
-
-        for item_key, item_value in parsed.items():
-            if "fnos-token" == item_key or "fnos-token" in item_key:
-                return item_value
-    return ""
-
-
-def decode_chunked(data):
-    output = bytearray()
-    index = 0
-    while index < len(data):
-        line_end = data.find(b"\r\n", index)
-        if line_end < 0:
-            break
-        size_text = data[index:line_end].split(b";", 1)[0].strip()
-        try:
-            size = int(size_text, 16)
-        except ValueError:
-            return data
-        index = line_end + 2
-        if size == 0:
-            break
-        output.extend(data[index : index + size])
-        index += size + 2
-    return bytes(output)
-
-
-def app_center_socket():
-    major = int(os.environ.get("TRIM_SYS_VERSION_MAJOR", "0") or 0)
-    minor = int(os.environ.get("TRIM_SYS_VERSION_MINOR", "0") or 0)
-    build = int(os.environ.get("TRIM_SYS_VERSION_BUILD", "0") or 0)
-    return (
-        APP_CENTER_WEB_SOCKET
-        if (major, minor, build) >= (1, 2, 401)
-        else APP_CENTER_OLD_SOCKET
-    )
-
-
-def unix_http(method, path, payload=None, timeout=15, token_override=None):
-    socket_path = app_center_socket()
-    if not os.path.exists(socket_path):
-        raise RuntimeError(f"socket not found: {socket_path}")
-    token = token_override or incoming_token()
-    if not token:
-        raise RuntimeError(
-            "app-center token not found; open the app from fnOS desktop so gateway headers can be captured"
-        )
-    body = b""
-    headers = [
-        f"{method} {path} HTTP/1.1",
-        "Host: system",
-        f"Authorization: trim {token}",
-        "Accept: application/json",
-        "Connection: close",
-    ]
-    if payload is not None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers.extend(
-            ["Content-Type: application/json", f"Content-Length: {len(body)}"]
-        )
-    request = ("\r\n".join(headers) + "\r\n\r\n").encode("utf-8") + body
-    with socket.socket(
-        socket.AF_UNIX,  # pyright: ignore[reportAttributeAccessIssue]
-        socket.SOCK_STREAM,  # pyright: ignore[reportAttributeAccessIssue]
-    ) as client:
-        client.settimeout(timeout)
-        client.connect(socket_path)
-        client.sendall(request)
-        chunks = []
-        while True:
-            chunk = client.recv(65536)
-            if not chunk:
-                break
-            chunks.append(chunk)
-    raw = b"".join(chunks)
-    header, _, response_body = raw.partition(b"\r\n\r\n")
-    header_text = header.decode("iso-8859-1", "replace")
-    status_line = (
-        header.splitlines()[0].decode("iso-8859-1", "replace") if header else ""
-    )
-    status_code = int(status_line.split()[1]) if len(status_line.split()) > 1 else 0
-    if "transfer-encoding: chunked" in header_text.lower():
-        response_body = decode_chunked(response_body)
-    text = response_body.decode("utf-8", "replace")
-    if status_code >= 400:
-        raise RuntimeError(f"app-center HTTP {status_code}: {text[:200]}")
-    return json.loads(text or "{}")
 
 
 def first_array(value):
@@ -672,22 +588,33 @@ def first_path_value(value):
     return ""
 
 
-def appcenter_download_dir(app_id, version):
+def appcenter_download_dir(app_id, version, volume_id=None):
+    # vol 由前端确定（参照 loadVolumes 从 app-center 查默认下载卷）并传入，
+    # 后端不再自行硬编码 /vol1
     name = "".join(
         ch if ch.isalnum() or ch in "._-" else "_" for ch in f"{app_id}-{version}"
     )
-    return Path("/vol1/appcenter-downloads") / f"{name}-tpk"
+    vol = f"/vol{int(volume_id)}" if volume_id else _env("TRIM_APPDEST_VOL")
+    base = (
+        Path(vol) / "appcenter-downloads" if vol else Path("/vol1/appcenter-downloads")
+    )
+    return base / f"{name}-tpk"
 
 
 def source_path_for_official(task, raw):
     source_path = first_path_value(raw)
     if source_path:
         return source_path
-    inferred = appcenter_download_dir(task.get("appId", ""), task.get("version", ""))
+    inferred = appcenter_download_dir(
+        task.get("appId", ""),
+        task.get("version", ""),
+        task.get("volumeID"),
+    )
     return str(inferred) if inferred.is_dir() else ""
 
 
 def package_official_download(app_id, version, source_path):
+    """/volN/appcenter-downloads/ 下载目录 需要 root 权限"""
     source = Path(str(source_path))
     target = download_path_for(app_id, version)
     if target.exists():
@@ -727,7 +654,11 @@ def package_official_download(app_id, version, source_path):
 def finalize_download_file(path):
     target = Path(path)
     try:
-        shutil.chown(target, user=APP_NAME, group="AppUsers")
+        shutil.chown(
+            target,
+            user=_env("TRIM_USERNAME", APP_NAME),
+            group=_env("TRIM_GROUPNAME", "AppUsers"),
+        )
     except Exception:
         pass
     try:
@@ -783,6 +714,14 @@ def normalize_official_item(
     return {
         "id": app_id,
         "store": "official",
+        "volumeID": int(
+            pick(
+                item,
+                ("volumeID", "volumeId", "volume_id", "installVolumeID"),
+                "1",
+            )
+            or 1
+        ),
         "name": str(
             pick(
                 item,
@@ -836,44 +775,13 @@ def expand_upgrade_versions(item):
     return entries
 
 
-def official_apps(settings=None, token=None):
+def official_apps_from_raw(app_raw, latest_raw, settings=None):
+    # app-center 原始数据由前端直接获取，后端仅做处理
     if settings is None:
         settings = read_settings()
     tasks = read_tasks()["tasks"]
-    app_raw_box: list[dict | None] = [None]
-    latest_raw_box: list[dict | None] = [None]
-    app_raw_error: list[Exception | None] = [None]
-    latest_raw_error: list[Exception | None] = [None]
-
-    def fetch_app_list():
-        try:
-            app_raw_box[0] = unix_http(
-                "GET", "/app-center/v1/app/list?language=zh-CN", token_override=token
-            )
-        except Exception as exc:
-            app_raw_error[0] = exc
-
-    def fetch_latest():
-        try:
-            latest_raw_box[0] = unix_http(
-                "GET",
-                "/app-center/v1/app/latest-release?language=zh-CN",
-                token_override=token,
-            )
-        except Exception as exc:
-            latest_raw_error[0] = exc
-
-    t1 = threading.Thread(target=fetch_app_list, daemon=True)
-    t2 = threading.Thread(target=fetch_latest, daemon=True)
-    t1.start()
-    t2.start()
-    t1.join(timeout=20)
-    t2.join(timeout=20)
-
-    app_raw = app_raw_box[0] or {}
-    latest_raw = latest_raw_box[0] or {}
-    if app_raw_error[0] and not app_raw:
-        raise app_raw_error[0]
+    app_raw = app_raw or {}
+    latest_raw = latest_raw or {}
     latest_by_app = latest_map(latest_raw)
     try:
         VAR_DIR.mkdir(parents=True, exist_ok=True)
@@ -1044,7 +952,8 @@ def orphaned_apps(known_keys, official_ids=None, all_known_ids=None, settings=No
     return apps
 
 
-def third_party_apps(official_ids=None, settings=None, token=None):
+def third_party_apps(official_ids, settings=None):
+    # official_ids 由前端处理官方应用后得到
     if settings is None:
         settings = read_settings()
     apps = []
@@ -1076,24 +985,13 @@ def third_party_apps(official_ids=None, settings=None, token=None):
             errors.append({"source": name, "url": url, "message": str(exc)})
     if official_ids is None:
         official_ids = set()
-        try:
-            official_raw = unix_http(
-                "GET", "/app-center/v1/app/list?language=zh-CN", token_override=token
-            )
-            for item in first_array(official_raw):
-                app_id = str(
-                    pick(item, ("appName", "name", "packageName", "id", "app_id"))
-                )
-                if app_id:
-                    official_ids.add(app_id)
-        except Exception:
-            pass
-    appcenter_dir = Path("/vol1/@appcenter")
+    vol = _env("TRIM_APPDEST_VOL")
+    appcenter_dir = Path(vol) / "@appcenter" if vol else Path("/vol1/@appcenter")
     if appcenter_dir.is_dir():
         for entry in appcenter_dir.iterdir():
             if entry.is_dir() and not entry.name.startswith("."):
                 official_ids.add(entry.name)
-    appmeta_dir = Path("/vol1/@appmeta")
+    appmeta_dir = Path(vol) / "@appmeta" if vol else Path("/vol1/@appmeta")
     if appmeta_dir.is_dir():
         for entry in appmeta_dir.iterdir():
             if entry.is_dir() and not entry.name.startswith("."):
@@ -1233,20 +1131,15 @@ def download_worker(key, url, target):
             update_task(key, status="failed", error=str(exc))
 
 
-def official_download(app):
+def register_official_download(app, result):
+    # 前端已调用 /app-center/v1/download/task，后端只注册任务状态
     app_id = str(app.get("id", ""))
     version = str(app.get("version", ""))
     source_id = str(app.get("sourceID", ""))
+    volume_id = int(app.get("volumeID") or app.get("volume_id") or 1)
     if not app_id or not version or not source_id:
         raise RuntimeError("missing official download fields")
-    payload = {
-        "packageSourceType": app.get("packageSourceType") or "cloud",
-        "appName": app_id,
-        "sourceID": source_id,
-        "version": version,
-        "volumeID": int(app.get("volumeID") or 1),
-    }
-    result = unix_http("POST", "/app-center/v1/download/task", payload)
+    result = result or {}
     task_id = str(
         pick(
             result,
@@ -1266,6 +1159,7 @@ def official_download(app):
         "version": version,
         "sourceID": source_id,
         "taskId": task_id,
+        "volumeID": volume_id,
         "status": "downloading",
         "path": str(download_path_for(app_id, version)),
         "fileExists": False,
@@ -1276,15 +1170,8 @@ def official_download(app):
     return tasks["tasks"][key]
 
 
-def refresh_official_status(task_id):
-    result = unix_http(
-        "GET",
-        f"/app-center/v1/download/status?downloadTaskId={urllib.parse.quote(task_id)}&language=zh-CN",
-    )
-    return result
-
-
-def status_payload(apps=None, skip_remote=False):
+def status_payload(apps=None, status_results=None):
+    # status_results: {taskKey: app-center 原始状态响应}，由前端直接从 /app-center/ 获取
     tasks = read_tasks()
     changed = False
     for key, task in list(tasks["tasks"].items()):
@@ -1306,10 +1193,10 @@ def status_payload(apps=None, skip_remote=False):
             continue
         if task.get("store") != "official" or not task.get("taskId"):
             continue
-        if skip_remote:
+        raw = (status_results or {}).get(key)
+        if not raw:
             continue
         try:
-            raw = refresh_official_status(str(task["taskId"]))
             status = str(
                 pick(
                     raw,
@@ -1390,50 +1277,22 @@ def dispatch():
         json_response({"ok": True, "settings": read_settings()})
     elif action == "save-settings":
         json_response({"ok": True, "settings": save_settings(payload)})
-    elif action == "app-list":
+    elif action == "process-apps":
+        # app-center 原始数据（appList/latest）由前端直接获取，后端仅做处理
         settings = read_settings()
-        token = incoming_token()
-        official_result_box: list[dict | None] = [None]
-        official_error_box: list[Exception | None] = [None]
-        thirdparty_result_box: list[dict | None] = [None]
-        thirdparty_error_box: list[Exception | None] = [None]
-
-        def fetch_official():
-            try:
-                official_result_box[0] = official_apps(settings=settings, token=token)
-            except Exception as exc:
-                official_error_box[0] = exc
-
-        def fetch_thirdparty():
-            try:
-                thirdparty_result_box[0] = third_party_apps(
-                    settings=settings, token=token
-                )
-            except Exception as exc:
-                thirdparty_error_box[0] = exc
-
-        t_official = threading.Thread(target=fetch_official, daemon=True)
-        t_thirdparty = threading.Thread(target=fetch_thirdparty, daemon=True)
-        t_official.start()
-        t_thirdparty.start()
-        t_official.join(timeout=30)
-        t_thirdparty.join(timeout=30)
-
-        if official_error_box[0] and not official_result_box[0]:
-            raise official_error_box[0]
-
-        official_result = official_result_box[0] or {}
+        app_raw = payload.get("appList") or {}
+        latest_raw = payload.get("latest") or {}
+        official_result = official_apps_from_raw(app_raw, latest_raw, settings=settings)
         official_ids = official_result.get("official_ids", set())
-        thirdparty_result = thirdparty_result_box[0] or {}
-        thirdparty_errors = thirdparty_result.get("errors", [])
-        if thirdparty_error_box[0]:
-            thirdparty_errors.append(
-                {"source": "thirdparty", "message": str(thirdparty_error_box[0])}
-            )
-
+        try:
+            thirdparty_result = third_party_apps(official_ids, settings=settings)
+            thirdparty_errors = thirdparty_result.get("errors", [])
+        except Exception as exc:
+            thirdparty_result = {}
+            thirdparty_errors = [{"source": "thirdparty", "message": str(exc)}]
         all_apps = official_result.get("apps", []) + thirdparty_result.get("apps", [])
         annotate_install_status(all_apps)
-        tasks_data = status_payload(skip_remote=True)
+        tasks_data = status_payload(all_apps)
         json_response(
             {
                 "ok": True,
@@ -1443,44 +1302,17 @@ def dispatch():
                 "files": tasks_data.get("files", {}),
             }
         )
-    elif action == "official-list":
-        settings = read_settings()
-        token = incoming_token()
-        result = official_apps(settings=settings, token=token)
-        annotate_install_status(result.get("apps", []))
-        tasks_data = status_payload()
-        json_response(
-            {
-                "ok": True,
-                "apps": result.get("apps", []),
-                "tasks": tasks_data.get("tasks", {}),
-                "raw": result.get("raw"),
-            }
-        )
-    elif action == "thirdparty-list":
-        settings = read_settings()
-        token = incoming_token()
-        result = third_party_apps(settings=settings, token=token)
-        annotate_install_status(result.get("apps", []))
-        tasks_data = status_payload()
-        json_response(
-            {
-                "ok": True,
-                **result,
-                "tasks": tasks_data.get("tasks", {}),
-            }
-        )
     elif action == "download":
         app = payload.get("app")
         if isinstance(app, str):
             app = json.loads(app)
         if not isinstance(app, dict):
             raise RuntimeError("missing app")
-        task = (
-            official_download(app)
-            if app.get("store") == "official"
-            else start_third_party_download(app)
-        )
+        if app.get("store") == "official":
+            # 前端已调用 /app-center/v1/download/task，后端只注册任务
+            task = register_official_download(app, payload.get("taskResult"))
+        else:
+            task = start_third_party_download(app)
         json_response({"ok": True, "task": task})
     elif action == "delete":
         app = payload.get("app")
@@ -1490,7 +1322,10 @@ def dispatch():
             raise RuntimeError("missing app")
         json_response({"ok": True, "deleted": delete_download(app), **status_payload()})
     elif action == "status":
-        json_response({"ok": True, **status_payload(payload.get("apps"))})
+        status_results = payload.get("statusResults") or {}
+        json_response(
+            {"ok": True, **status_payload(payload.get("apps"), status_results)}
+        )
     else:
         json_response({"ok": False, "message": "unsupported action"}, "400 Bad Request")
 
