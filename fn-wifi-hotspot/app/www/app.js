@@ -1,4 +1,9 @@
-const API = "/app/fn-wifi-hotspot/api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+
+const API_ENDPOINT = "./api";
 
 const state = {
   language: "zh-CN",
@@ -10,6 +15,8 @@ const state = {
   loaded: false,
   busy: false,
   polling: false,
+  countryLocked: false,
+  regdom: "00",
 };
 
 const I18N = {
@@ -28,6 +35,8 @@ const I18N = {
     uplink: "共享网卡",
     address: "地址",
     internet: "互联网",
+    ssid: "SSID",
+    ipCidr: "IP/CIDR",
     password: "密码",
     allowPorts: "放行端口",
     country: "国家码",
@@ -61,6 +70,9 @@ const I18N = {
     sponsorSupport: "赞助支持",
     join: "点击加入",
     close: "关闭",
+    showPassword: "显示密码",
+    hidePassword: "隐藏密码",
+    countryLockedHint: "当前系统不允许修改国家码",
   },
   "en-US": {
     appTitle: "Wi-Fi Hotspot",
@@ -77,6 +89,8 @@ const I18N = {
     uplink: "Uplink",
     address: "Address",
     internet: "Internet",
+    ssid: "SSID",
+    ipCidr: "IP/CIDR",
     password: "Password",
     allowPorts: "Allowed Ports",
     country: "Country Code",
@@ -110,6 +124,110 @@ const I18N = {
     sponsorSupport: "Sponsor Support",
     join: "Join",
     close: "Close",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    countryLockedHint:
+      "Changing the country code is not allowed on this system",
+  },
+};
+
+// 错误码 → 前端多语言映射。后端只返回 { ok:false, code, params }，
+// 前端通过 t("err_" + code, params) 产生本地化文案。
+const ERRORS = {
+  "zh-CN": {
+    field_ssid: "SSID 不能为空",
+    field_password: "密码长度至少 8 位",
+    field_ipCidr: "IP/CIDR 格式无效（例如 192.168.12.1/24）",
+    field_allowPorts: "放行端口格式不正确",
+    field_country: "国家码需为空的或 2 位字母（如 CN/US）",
+    field_band: "频段需为 2.4G(bg) 或 5G(a)",
+    field_channel: "信道需为数字，且在该频段的合法范围内（bg:1-14，a:≥34）",
+    field_channelWidth: "带宽需为 20/40/80/160，且 2.4G 仅支持 20/40",
+    field_uplinkIface: "共享网卡名称无效",
+    field_IP: "配置校验失败",
+    err_config_invalid: "配置无效：{field}",
+    err_save_failed: "保存配置失败（配置文件不可写）",
+    err_country_unsupported: "系统不支持设置国家码 {country}",
+    err_channel_disabled:
+      "信道 {channel} 在当前国家码下不可用（regdom={regdom}）",
+    err_channel_no_ir:
+      "信道 {channel} 标记为 no IR（regdom={regdom}），无线热点可能无法正常工作。请改用 2.4G（bg）信道",
+    err_no_wifi_iface: "未检测到 Wi-Fi 设备，请检查 'nmcli dev status'",
+    err_iface_not_wifi: "设备 {iface} 不是 Wi-Fi 设备，请换用无线网卡",
+    err_uplink_same_as_hotspot:
+      "共享网卡不能与热点网卡相同（{iface}），请改选其它网卡或留空(自动)",
+    err_ap_not_supported: "设备 {iface} 不支持 AP/热点模式，请换用其它无线网卡",
+    err_nmcli_add_failed: "创建热点连接失败",
+    err_nmcli_mod_failed: "配置热点连接失败",
+    err_nmcli_up_failed: "热点连接启动失败（nmcli）",
+    err_setup_timeout: "热点启动超时（等待 {wait} 秒）",
+    err_dnsmasq_failed: "DNS/DHCP 服务(dnsmasq)启动失败",
+    err_client_invalid_mac: "无效的 MAC 地址",
+    err_client_no_wifi_iface: "未检测到 Wi-Fi 设备",
+    err_client_iw_missing: "缺少 iw 工具",
+    err_kick_failed: "下线客户端失败",
+    err_missing_action: "缺少操作(action)",
+    err_unsupported_action: "不支持的操作：{action}",
+    err_unexpected: "发生意外错误（步骤 {step}）",
+    warn_country_00: "国家码为 00，5GHz 频段可能未启用",
+    warn_no_sta_ap_interrupt:
+      "网卡不支持 STA+AP；热点将使用 {iface}（可能中断 Wi-Fi）",
+    warn_no_sta_ap_disconnect: "网卡不支持 STA+AP；将断开连接 {con}（{iface}）",
+    warn_channel_disabled: "信道 {channel} 当前不可用（regdom={regdom}）",
+    warn_channel_no_ir:
+      "信道 {channel} 标记为 no IR（regdom={regdom}），热点可能不被允许",
+    warn_low_tx_power:
+      "驱动 {driver} 上报的发射率过低（{txPower} dBm），热点可启动但覆盖/发现可能较差。建议先用 2.4G/20MHz",
+  },
+  "en-US": {
+    field_ssid: "SSID is required",
+    field_password: "Password must be at least 8 characters",
+    field_ipCidr: "Invalid IP/CIDR (e.g. 192.168.12.1/24)",
+    field_allowPorts: "Invalid allowed ports format",
+    field_country: "Country code must be empty or a 2-letter code (e.g. CN/US)",
+    field_band: "Band must be bg (2.4G) or a (5G)",
+    field_channel:
+      "Channel must be a number within the valid range (bg 1-14, a >= 34)",
+    field_channelWidth:
+      "Bandwidth must be 20/40/80/160; 2.4G only supports 20/40",
+    field_uplinkIface: "Invalid uplink interface name",
+    err_config_invalid: "Invalid config: {field}",
+    err_save_failed: "Failed to save config (config file not writable)",
+    err_country_unsupported:
+      "System does not support setting country code {country}",
+    err_channel_disabled:
+      "Channel {channel} is not available under the current country code (regdom={regdom})",
+    err_channel_no_ir:
+      "Channel {channel} is marked 'no IR' (regdom={regdom}); the hotspot may not work. Use a 2.4G channel instead",
+    err_no_wifi_iface: "No Wi-Fi device found. Check 'nmcli dev status'",
+    err_iface_not_wifi: "Device {iface} is not a Wi-Fi device",
+    err_uplink_same_as_hotspot:
+      "Uplink cannot be the same as hotspot iface ({iface}). Choose another or leave empty (auto)",
+    err_ap_not_supported:
+      "Device {iface} does not support AP/hotspot mode. Use another Wi-Fi adapter",
+    err_nmcli_add_failed: "Failed to create hotspot connection",
+    err_nmcli_mod_failed: "Failed to configure hotspot connection",
+    err_nmcli_up_failed: "Failed to bring up hotspot connection (nmcli)",
+    err_setup_timeout: "Hotspot setup timed out after {wait}s",
+    err_dnsmasq_failed: "DNS/DHCP service (dnsmasq) failed to start",
+    err_client_invalid_mac: "Invalid MAC address",
+    err_client_no_wifi_iface: "No Wi-Fi device found",
+    err_client_iw_missing: "Missing iw tool",
+    err_kick_failed: "Failed to kick client",
+    err_missing_action: "Missing action",
+    err_unsupported_action: "Unsupported action: {action}",
+    err_unexpected: "Unexpected error (step {step})",
+    warn_country_00: "Country code is 00; the 5GHz band may not be enabled",
+    warn_no_sta_ap_interrupt:
+      "Adapter does not support STA+AP; hotspot will use {iface} (may interrupt Wi-Fi)",
+    warn_no_sta_ap_disconnect:
+      "Adapter does not support STA+AP; will disconnect {con} on {iface}",
+    warn_channel_disabled:
+      "Channel {channel} is not available (regdom={regdom})",
+    warn_channel_no_ir:
+      "Channel {channel} is marked 'no IR' (regdom={regdom}); hotspot may not be allowed",
+    warn_low_tx_power:
+      "Driver {driver} is reporting very low TX power ({txPower} dBm). Hotspot can start but coverage may be poor. Try 2.4G/20MHz first",
   },
 };
 
@@ -167,6 +285,7 @@ const els = {
   iface: document.getElementById("ifaceSelect"),
   uplink: document.getElementById("uplinkSelect"),
   country: document.getElementById("countrySelect"),
+  countryLocked: document.getElementById("countryLocked"),
   channel: document.getElementById("channelSelect"),
   clients: document.getElementById("clients"),
   clientCount: document.getElementById("clientCount"),
@@ -184,150 +303,162 @@ const els = {
   aboutModal: document.getElementById("aboutModal"),
 };
 
-function safeDecode(value) {
-  try {
-    return decodeURIComponent(value || "");
-  } catch (_error) {
-    return value || "";
-  }
-}
-
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage.getItem(name) ||
-      window.parent.sessionStorage.getItem(name) ||
-      ""
-    );
-  } catch (_error) {
-    return "";
-  }
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (["system", "auto", "os"].includes(theme))
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  return "";
-}
-
-function currentTheme() {
-  return (
-    [
-      queryValue("theme"),
-      cookieValue("fnos-theme-mode"),
-      cookieValue("os-theme-mode"),
-      storedValue("fnos-theme-mode"),
-      storedValue("os-theme-mode"),
-      parentStoredValue("fnos-theme-mode"),
-      parentStoredValue("os-theme-mode"),
-      documentThemeValue(document),
-      parentDocumentThemeValue(),
-    ]
-      .map(normalizeTheme)
-      .find(Boolean) ||
-    (window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light")
-  );
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
 }
 
 function t(key, params = {}) {
-  const messages = I18N[state.language] || I18N["zh-CN"];
-  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+  const lang = state.language;
+  const messages = I18N[lang] || I18N["zh-CN"];
+  const errors = ERRORS[lang] || ERRORS["zh-CN"];
+  const text =
+    messages[key] ||
+    I18N["zh-CN"][key] ||
+    errors[key] ||
+    ERRORS["zh-CN"][key] ||
+    key;
+  return String(text).replace(
     /\{(\w+)\}/g,
     (_match, name) => params[name] ?? "",
   );
 }
 
+function applyTheme() {
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
+}
+
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
-  const changed = nextLanguage !== state.language;
-  state.language = nextLanguage;
-  state.theme = currentTheme();
-  document.documentElement.lang = nextLanguage;
-  document.documentElement.dataset.theme = state.theme;
-  document.body.dataset.theme = state.theme;
+  const languageChanged = applyLanguage();
+  applyTheme();
+  const title = t("appTitle");
+  document.title = title;
+  if (sdk.setTitle) {
+    sdk.setTitle(title).catch(() => {});
+  }
+
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     node.textContent = t(node.dataset.i18n);
   });
-  document.title = t("appTitle");
-  if (state.status) {
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    node.title = t(node.dataset.i18nTitle);
+    node.setAttribute("aria-label", t(node.dataset.i18nTitle));
+  });
+
+  if (rerender && languageChanged) {
     render();
-  } else {
-    els.summary.textContent = t("loading");
-    els.toggle.textContent = t("start");
   }
-  if (rerender && changed) render();
+  return languageChanged;
 }
 
-function showToast(message, error = false) {
+async function api(action, data = {}) {
+  // token 由 fnOS 网关注入；前端同样不转发 token
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    credentials: "include",
+    body: JSON.stringify({ action, ...data }),
+  });
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    // 新协议优先：code + params → t("err_"+code, params)
+    if (result && result.code) {
+      throw new Error(t("err_" + result.code, result.params || {}));
+    }
+    // 兼容旧字段
+    throw new Error(result.message || `HTTP ${response.status}`);
+  }
+  return result;
+}
+
+// 前端校验：能挪到前端的校验都在这里完成，返回错误 key+params；合法返回 null。
+function validateConfig() {
+  const form = collectForm();
+  if (!form.ssid)
+    return { key: "config_invalid", params: { field: t("field_ssid") } };
+  if (String(form.password).length < 8)
+    return { key: "config_invalid", params: { field: t("field_password") } };
+  if (form.ipCidr && !/^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/.test(form.ipCidr))
+    return { key: "config_invalid", params: { field: t("field_ipCidr") } };
+  if (form.allowPorts && !isValidPorts(form.allowPorts))
+    return { key: "config_invalid", params: { field: t("field_allowPorts") } };
+  if (
+    form.countryCode &&
+    form.countryCode !== "00" &&
+    !/^[A-Za-z]{2}$/.test(form.countryCode)
+  )
+    return { key: "config_invalid", params: { field: t("field_country") } };
+  if (!["bg", "a"].includes(form.band))
+    return { key: "config_invalid", params: { field: t("field_band") } };
+  if (!/^\d+$/.test(form.channel)) {
+    return { key: "config_invalid", params: { field: t("field_channel") } };
+  }
+  const ch = Number(form.channel);
+  if (form.band === "bg" && !(ch >= 1 && ch <= 14))
+    return { key: "config_invalid", params: { field: t("field_channel") } };
+  if (form.band === "a" && ch < 34)
+    return { key: "config_invalid", params: { field: t("field_channel") } };
+  if (!["20", "40", "80", "160"].includes(form.channelWidth))
+    return {
+      key: "config_invalid",
+      params: { field: t("field_channelWidth") },
+    };
+  if (form.band === "bg" && !["20", "40"].includes(form.channelWidth))
+    return {
+      key: "config_invalid",
+      params: { field: t("field_channelWidth") },
+    };
+  return null;
+}
+
+function isValidPorts(value) {
+  // 与后端 allow_ports_to_rules 一致：允许 "80"、"8000-9000"、可选 "/tcp|/udp" 后缀、逗号/空格分隔组合
+  const parts = String(value).split(/[, ]+/).filter(Boolean);
+  if (!parts.length) return true;
+  return parts.every((part) => {
+    let port = part;
+    if (part.includes("/")) {
+      const slash = part.lastIndexOf("/");
+      const proto = part.slice(slash + 1).toLowerCase();
+      if (proto !== "tcp" && proto !== "udp") return false;
+      port = part.slice(0, slash);
+    }
+    const from = port.includes("-") ? port.split("-", 1)[0] : port;
+    const to = port.includes("-") ? port.slice(port.indexOf("-") + 1) : port;
+    if (!/^\d+$/.test(from) || !/^\d+$/.test(to)) return false;
+    const nFrom = Number(from);
+    const nTo = Number(to);
+    if (nFrom < 1 || nFrom > 65535 || nTo < 1 || nTo > 65535) return false;
+    if (nFrom > nTo) return false;
+    return true;
+  });
+}
+
+async function openFileManager(path) {
+  // 打开目录：调用 fnOS 文件管理器
+  await sdk.openFileManager(path);
+}
+
+function showToast(message, isError = false) {
   els.toast.textContent = message;
-  els.toast.classList.toggle("error", error);
+  els.toast.classList.toggle("error", isError);
   els.toast.classList.remove("hidden");
   clearTimeout(els.toast._timer);
   els.toast._timer = setTimeout(() => els.toast.classList.add("hidden"), 2600);
@@ -338,30 +469,6 @@ function setBusy(busy) {
   els.refresh.disabled = state.busy;
   els.save.disabled = state.busy || !state.loaded;
   els.toggle.disabled = state.busy || !state.loaded;
-}
-
-function apiUrl(action) {
-  const [path, rawQuery = ""] = String(action).split("?", 2);
-  const params = new URLSearchParams(rawQuery);
-  params.set("lang", state.language === "zh-CN" ? "zh-CN" : "en-US");
-  return `${API}/${encodeURIComponent(path)}?${params.toString()}`;
-}
-
-async function api(action, { method = "GET", data = null } = {}) {
-  const options = { method, cache: "no-store" };
-  if (data) {
-    options.method = method === "GET" ? "POST" : method;
-    options.headers = { "Content-Type": "application/x-www-form-urlencoded" };
-    options.body = new URLSearchParams(data);
-  }
-  const response = await fetch(apiUrl(action), options);
-  const result = await response.json();
-  if (!response.ok || result.ok === false) {
-    throw new Error(
-      result.error || result.message || `HTTP ${response.status}`,
-    );
-  }
-  return result;
 }
 
 function escapeHtml(value) {
@@ -417,6 +524,18 @@ function channelOptions() {
   return parsed;
 }
 
+function applyCountryLock() {
+  // 国家码不可修改时：禁用下拉框并显示提示，收藏保存时固定为当前 regdom。
+  const locked = state.countryLocked;
+  els.country.disabled = locked;
+  if (els.countryLocked) {
+    els.countryLocked.classList.toggle("hidden", !locked);
+  }
+  if (locked && els.country.value !== state.regdom) {
+    els.country.value = state.regdom || "00";
+  }
+}
+
 function fillForm() {
   const cfg = state.config || {};
   els.form.ssid.value = cfg.ssid || "";
@@ -427,9 +546,14 @@ function fillForm() {
   els.form.channelWidth.value = cfg.channelWidth || "20";
   setOptions(els.country, countries, cfg.countryCode || "00");
   setOptions(els.channel, channelOptions(), cfg.channel || "");
+  applyCountryLock();
 }
 
 function collectForm() {
+  // 国家码锁定时不得改动/保存，固定为系统真实 regdom
+  const countryCode = state.countryLocked
+    ? state.regdom || "00"
+    : els.form.countryCode.value;
   return {
     iface: els.form.iface.value,
     uplinkIface: els.form.uplinkIface.value,
@@ -437,7 +561,7 @@ function collectForm() {
     password: els.form.password.value,
     ipCidr: els.form.ipCidr.value,
     allowPorts: els.form.allowPorts.value,
-    countryCode: els.form.countryCode.value,
+    countryCode,
     band: els.form.band.value,
     channel: els.form.channel.value,
     channelWidth: els.form.channelWidth.value,
@@ -503,6 +627,9 @@ async function loadAll() {
     ]);
     state.config = config.config || {};
     state.channels = config.channelOptions || { bg: [], a: [] };
+    state.countryLocked = Boolean(config.countryLocked);
+    state.regdom = config.regdom || "00";
+    applyCountryLock();
     setOptions(
       els.iface,
       ifaces.ifaces || [],
@@ -561,11 +688,16 @@ function confirmDialog(title, body) {
 
 async function saveConfig() {
   if (!state.loaded) return;
+  const invalid = validateConfig();
+  if (invalid) {
+    showToast(t(invalid.key, invalid.params), true);
+    return;
+  }
   const shouldRestart = state.running;
   setBusy(true);
   els.save.textContent = t("saving");
   try {
-    await api("config_set", { method: "POST", data: collectForm() });
+    await api("config_set", collectForm());
     if (shouldRestart) {
       els.save.textContent = t("restarting");
       await api("stop");
@@ -575,6 +707,11 @@ async function saveConfig() {
       showToast(t("saved"));
     }
     await loadAll();
+  } catch (error) {
+    // 保存/重启失败：表单所有参数恢复到当前已保存（运行）的配置。
+    // state.config 只在 loadAll() 成功后才更新，故此处仍为改动前的值。
+    fillForm();
+    throw error;
   } finally {
     setBusy(false);
     els.save.textContent = t("save");
@@ -583,20 +720,29 @@ async function saveConfig() {
 
 async function toggleHotspot() {
   if (!state.loaded) return;
+  const invalid = validateConfig();
+  if (invalid) {
+    showToast(t(invalid.key, invalid.params), true);
+    return;
+  }
   setBusy(true);
   try {
     if (state.running) {
       await api("stop");
       showToast(t("stoppedDone"));
     } else {
-      await api("config_set", { method: "POST", data: collectForm() });
+      await api("config_set", collectForm());
       const pre = await api("stpre");
-      if (pre.abort) throw new Error(pre.error || "start aborted");
+      if (pre.abort) {
+        // 预检失败：优先按 code 映射，兼容旧 error 字段
+        if (pre.code) {
+          throw new Error(t("err_" + pre.code, pre.params || {}));
+        }
+        throw new Error(pre.error || "start aborted");
+      }
       if (Array.isArray(pre.warnings) && pre.warnings.length) {
-        const ok = await confirmDialog(
-          t("warningTitle"),
-          pre.warnings.join("\n"),
-        );
+        const lines = renderWarnings(pre.warnings);
+        const ok = await confirmDialog(t("warningTitle"), lines.join("\n"));
         if (!ok) return;
       }
       await api("start");
@@ -606,6 +752,18 @@ async function toggleHotspot() {
   } finally {
     setBusy(false);
   }
+}
+
+// 语义化警告：后端返回 [{code, params}]（或兼容旧版 {text}），本地化渲染。
+function renderWarnings(warnings) {
+  return warnings.map((warning) => {
+    if (warning && warning.code) {
+      return t("warn_" + warning.code, warning.params || {});
+    }
+    // 兼容旧格式（纯文本或 {text}）
+    if (warning && warning.text) return String(warning.text);
+    return String(warning ?? "");
+  });
 }
 
 els.refresh.addEventListener("click", () =>
@@ -634,26 +792,54 @@ document.addEventListener("click", (event) => {
 els.form.elements.band.addEventListener("change", () =>
   setOptions(els.channel, channelOptions(), ""),
 );
+// 密码显示/隐藏切换
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-pw-toggle]");
+  if (!toggle) return;
+  const wrap = toggle.closest(".pw-wrap");
+  if (!wrap) return;
+  const input = wrap.querySelector("input");
+  if (!input) return;
+  const shown = input.type === "text";
+  input.type = shown ? "password" : "text";
+  toggle.setAttribute("aria-pressed", String(!shown));
+  toggle.setAttribute(
+    "aria-label",
+    shown ? t("showPassword") : t("hidePassword"),
+  );
+  input.focus({ preventScroll: true });
+});
 els.clients.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-kick]");
   if (!button) return;
   const mac = button.dataset.kick;
   const ok = await confirmDialog(t("kickTitle"), t("kickConfirm", { mac }));
   if (!ok) return;
-  await api(`kick?mac=${encodeURIComponent(mac)}`);
+  await api("kick", { mac });
   showToast(t("kicked"));
   await loadAll();
 });
 
-applyPreferences();
-window
-  .matchMedia?.("(prefers-color-scheme: dark)")
-  .addEventListener?.("change", () => applyPreferences());
-window.addEventListener("storage", () => applyPreferences({ rerender: true }));
-setInterval(() => refreshLiveData(), 5000);
-setBusy(true);
-loadAll().catch((error) => {
-  state.loaded = false;
-  setBusy(false);
-  showToast(error.message, true);
+window.addEventListener("load", async () => {
+  platformConfig = await sdk.getPlatformConfig();
+  applyPreferences();
+
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
+  setInterval(() => refreshLiveData(), 5000);
+  setBusy(true);
+  loadAll().catch((error) => {
+    state.loaded = false;
+    setBusy(false);
+    showToast(error.message, true);
+  });
 });

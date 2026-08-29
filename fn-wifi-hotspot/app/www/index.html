@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>无线热点</title>
+  <title data-i18n="appTitle">无线热点</title>
   <link rel="stylesheet" href="/app/fn-wifi-hotspot/style.css">
 </head>
 
@@ -13,12 +13,12 @@
     <header class="topbar">
       <div>
         <h1 data-i18n="appTitle">无线热点</h1>
-        <p id="statusSummary">正在加载...</p>
+        <p id="statusSummary" data-i18n="loading">正在加载...</p>
       </div>
       <div class="row-actions">
         <button id="btnAbout" class="ghost-btn" type="button" data-i18n="about">关于</button>
         <button id="refreshBtn" class="ghost-btn" type="button" data-i18n="refresh">刷新</button>
-        <button id="toggleBtn" class="primary-btn" type="button" disabled>开启热点</button>
+        <button id="toggleBtn" class="primary-btn" type="button" disabled data-i18n="start">开启热点</button>
       </div>
     </header>
 
@@ -50,15 +50,32 @@
             <select name="uplinkIface" id="uplinkSelect"></select>
           </label>
           <label class="field">
-            <span>SSID</span>
+            <span data-i18n="ssid">SSID</span>
             <input name="ssid" autocomplete="off">
           </label>
           <label class="field">
             <span data-i18n="password">密码</span>
-            <input name="password" type="password" autocomplete="off">
+            <span class="pw-wrap">
+              <input name="password" type="password" autocomplete="off">
+              <button type="button" class="pw-toggle" data-pw-toggle aria-label="显示密码" aria-pressed="false"
+                tabindex="-1">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" class="eye-open" aria-hidden="true">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" class="eye-closed" aria-hidden="true">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </span>
           </label>
           <label class="field">
-            <span>IP/CIDR</span>
+            <span data-i18n="ipCidr">IP/CIDR</span>
             <input name="ipCidr" placeholder="192.168.12.1/24" autocomplete="off">
           </label>
           <label class="field">
@@ -66,7 +83,14 @@
             <input name="allowPorts" placeholder="80,443,5666,5667,67-68/udp" autocomplete="off">
           </label>
           <label class="field">
-            <span data-i18n="country">国家码</span>
+            <span class="field-label"><span data-i18n="country">国家码</span><span id="countryLocked"
+                class="field-hint hidden"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                  </path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg><span data-i18n="countryLockedHint">当前系统不允许修改国家码</span></span></span>
             <select name="countryCode" id="countrySelect"></select>
           </label>
           <label class="field">
@@ -116,7 +140,7 @@
     <div class="modal-content">
       <div class="about-modal-header">
         <h2 data-i18n="about">关于</h2>
-        <button class="icon-btn" data-close type="button" aria-label="关闭">×</button>
+        <button class="icon-btn" data-close type="button" data-i18n-title="close" aria-label="关闭">×</button>
       </div>
       <div class="about-body">
         <div class="about-section">
@@ -134,7 +158,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
         <div class="about-copyright">
           <a href="https://github.com/RROrg" target="_blank" rel="noopener noreferrer">RROrg</a>
@@ -145,7 +169,7 @@
     </div>
   </div>
   <div id="toast" class="toast hidden"></div>
-  <script src="/app/fn-wifi-hotspot/app.js"></script>
+  <script type="module" src="/app/fn-wifi-hotspot/app.js"></script>
 </body>
 
 </html>

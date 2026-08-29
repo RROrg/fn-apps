@@ -258,6 +258,83 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.16);
 }
 
+/* 密码显示/隐藏切换 */
+.pw-wrap {
+  position: relative;
+  display: block;
+}
+
+.pw-wrap input {
+  padding-right: 40px;
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.pw-toggle:hover {
+  color: var(--text);
+}
+
+.pw-toggle .eye-closed {
+  display: none;
+}
+
+.pw-toggle[aria-pressed="true"] .eye-open {
+  display: none;
+}
+
+.pw-toggle[aria-pressed="true"] .eye-closed {
+  display: block;
+}
+
+.field-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warn, #d97706);
+}
+
+.field-hint .field-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+/* 国家码标签 + 提示同行显示 */
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.field-label .field-hint {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .client-list {
   display: grid;
   gap: 8px;
