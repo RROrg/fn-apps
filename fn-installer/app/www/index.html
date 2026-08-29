@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>安装器</title>
+  <title data-i18n="appTitle">安装器</title>
   <link rel="stylesheet" href="/app/fn-installer/style.css">
 </head>
 
@@ -12,7 +12,7 @@
   <div class="container">
     <div class="header">
       <h1 data-i18n="appTitle">📦 应用安装器</h1>
-      <button class="about-btn" id="btnAbout" onclick="openAbout()" data-i18n="about">关于</button>
+      <button class="about-btn" id="btnAbout" data-i18n="about">关于</button>
     </div>
 
     <div class="step-indicator" id="stepIndicator">
@@ -41,12 +41,12 @@
       <div class="card-title">
         <span class="icon">📁</span>
         <span data-i18n="selectPackage">选择安装包</span>
-        <button class="scan-all-btn" onclick="loadFiles()" data-i18n="scanAll">扫描全部</button>
+        <button class="scan-all-btn" id="btnScanAll" data-i18n="scanAll">扫描全部</button>
       </div>
       <div class="path-input-row">
         <input type="text" id="customPath" data-i18n-placeholder="pathPlaceholder"
           placeholder="输入 NAS 目录路径，如 /vol1/docker" />
-        <button class="btn btn-default" onclick="browsePath()" data-i18n="browse">浏览</button>
+        <button class="btn btn-default" id="btnBrowse" data-i18n="browse">浏览</button>
       </div>
       <div id="dirBrowser" class="dir-browser hidden">
         <div class="dir-breadcrumb" id="dirBreadcrumb"></div>
@@ -59,7 +59,7 @@
         </div>
       </div>
       <div class="actions">
-        <button class="btn btn-primary" id="btnNext1" disabled onclick="goToStep2()" data-i18n="nextStep">下一步</button>
+        <button class="btn btn-primary" id="btnNext1" disabled data-i18n="nextStep">下一步</button>
       </div>
     </div>
 
@@ -80,14 +80,14 @@
         <div id="volumeSection" class="wizard-section hidden">
           <div class="wizard-title" data-i18n="selectVolume">选择安装卷</div>
           <div class="wizard-item">
-            <select id="volumeSelect" onchange="state.volumeID=parseInt(this.value)||1" title="选择安装卷"></select>
+            <select id="volumeSelect" title="选择安装卷" data-i18n-title="selectVolume"></select>
           </div>
         </div>
         <div id="wizardSection" class="wizard-section hidden"></div>
       </div>
       <div class="actions">
-        <button class="btn btn-default" id="btnBack2" onclick="goToStep1()" data-i18n="prevStep">上一步</button>
-        <button class="btn btn-primary" id="btnInstall" disabled onclick="goToStep3()" data-i18n="install">安装</button>
+        <button class="btn btn-default" id="btnBack2" data-i18n="prevStep">上一步</button>
+        <button class="btn btn-primary" id="btnInstall" disabled data-i18n="install">安装</button>
       </div>
     </div>
 
@@ -114,7 +114,7 @@
         <div class="result-desc" id="resultErrorDesc"></div>
       </div>
       <div class="actions">
-        <button class="btn btn-primary" onclick="resetWizard()" data-i18n="continueInstall">继续安装</button>
+        <button class="btn btn-primary" id="btnReset" data-i18n="continueInstall">继续安装</button>
       </div>
     </div>
   </div>
@@ -125,7 +125,7 @@
         <div>
           <h2 data-i18n="about">关于</h2>
         </div>
-        <button class="icon-btn" onclick="closeAbout()" type="button" aria-label="关闭">×</button>
+        <button class="icon-btn" id="btnCloseAbout" type="button" aria-label="关闭">×</button>
       </div>
       <div class="about-body">
         <div class="about-section">
@@ -145,7 +145,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
 
         <div class="about-copyright">
@@ -158,7 +158,7 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="/app/fn-installer/app.js"></script>
+  <script type="module" src="/app/fn-installer/app.js"></script>
 </body>
 
 </html>

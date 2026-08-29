@@ -1,6 +1,9 @@
-const API_ENDPOINT = location.pathname.includes("/app/fn-installer")
-  ? "/app/fn-installer/api"
-  : "./api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+
+const API_ENDPOINT = "./api";
 
 const state = {
   selectedFile: null,
@@ -20,6 +23,10 @@ const state = {
   isUpdate: false,
   installedInfo: null,
   canUpdate: false,
+  canOverwrite: false,
+  installAction: "install",
+  installed: false,
+  packageType: "file",
   _updateConfirmed: false,
 };
 
@@ -85,6 +92,14 @@ const I18N = {
     updatingApp: "正在更新应用...",
     updateSuccess: "更新成功",
     updateFailed: "更新失败",
+    overwriteApp: "覆盖",
+    overwriteAvailable: "已安装相同或更高版本，可覆盖",
+    overwritingApp: "正在覆盖安装...",
+    overwriteSuccess: "覆盖成功",
+    overwriteFailed: "覆盖失败",
+    overwriteConfirmTitle: "覆盖安装",
+    overwriteConfirmDesc:
+      "当前已安装 {installedVersion}，安装包版本 {newVersion}，将覆盖安装，是否继续？",
     sameVersion: "当前已是最新版本",
     updateConfirmTitle: "发现新版本",
     updateConfirmDesc:
@@ -159,6 +174,14 @@ const I18N = {
     updatingApp: "Updating application...",
     updateSuccess: "Update Successful",
     updateFailed: "Update Failed",
+    overwriteApp: "Overwrite",
+    overwriteAvailable: "Same or higher version installed, can overwrite",
+    overwritingApp: "Overwriting application...",
+    overwriteSuccess: "Overwrite Successful",
+    overwriteFailed: "Overwrite Failed",
+    overwriteConfirmTitle: "Overwrite Install",
+    overwriteConfirmDesc:
+      "Currently installed {installedVersion}, package version {newVersion}. This will overwrite the install. Continue?",
     sameVersion: "Already on the latest version",
     updateConfirmTitle: "New Version Available",
     updateConfirmDesc:
@@ -173,17 +196,6 @@ const I18N = {
   },
 };
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
-}
-
 function safeDecode(value) {
   try {
     return decodeURIComponent(value || "");
@@ -192,67 +204,13 @@ function safeDecode(value) {
   }
 }
 
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage.getItem(name) ||
-      window.parent.sessionStorage.getItem(name) ||
-      ""
-    );
-  } catch (_error) {
-    return "";
-  }
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-}
-
-function currentLanguage() {
-  return normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
 }
 
 function t(key, params = {}) {
@@ -263,58 +221,21 @@ function t(key, params = {}) {
   );
 }
 
-function themeMedia() {
-  return typeof window.matchMedia === "function"
-    ? window.matchMedia("(prefers-color-scheme: dark)")
-    : null;
-}
-
-function prefersDarkTheme() {
-  return Boolean(themeMedia()?.matches);
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (theme === "system" || theme === "auto" || theme === "os") {
-    return prefersDarkTheme() ? "dark" : "light";
-  }
-  return "";
-}
-
-function currentTheme() {
-  const fromSystem = [
-    queryValue("theme"),
-    cookieValue("fnos-theme-mode"),
-    cookieValue("os-theme-mode"),
-    storedValue("fnos-theme-mode"),
-    storedValue("os-theme-mode"),
-    parentStoredValue("fnos-theme-mode"),
-    parentStoredValue("os-theme-mode"),
-    documentThemeValue(document),
-    parentDocumentThemeValue(),
-    queryValue("fnos-theme-mode"),
-  ]
-    .map(normalizeTheme)
-    .find(Boolean);
-  if (fromSystem) return fromSystem;
-  return prefersDarkTheme() ? "dark" : "light";
-}
-
 function applyTheme() {
-  const theme = currentTheme();
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
   document.documentElement.dataset.theme = theme;
   document.body.dataset.theme = theme;
 }
 
-function applyPreferences() {
-  const nextLanguage = currentLanguage();
-  state.language = nextLanguage;
-  state.theme = currentTheme();
-  document.documentElement.lang = nextLanguage;
+function applyPreferences({ rerender = false } = {}) {
+  const languageChanged = applyLanguage();
   applyTheme();
 
   document.querySelectorAll("[data-i18n]").forEach((node) => {
@@ -328,6 +249,21 @@ function applyPreferences() {
     node.setAttribute("aria-label", t(node.dataset.i18nTitle));
   });
   document.title = t("appTitle").replace(/📦\s*/, "");
+
+  if (rerender && languageChanged) {
+    const dirBrowser = document.getElementById("dirBrowser");
+    const isDirView = dirBrowser && !dirBrowser.classList.contains("hidden");
+    if (state.currentStep === 1) {
+      if (isDirView && state._dirEntries) {
+        renderDirEntries(state._dirEntries, state.currentDir);
+      } else if (state._files) {
+        renderFileList(state._files);
+      }
+    } else if (state.installInfo) {
+      loadInstallInfo();
+    }
+  }
+  return languageChanged;
 }
 
 function formatSize(bytes) {
@@ -356,23 +292,10 @@ function escapeHtml(value) {
   );
 }
 
-function authToken() {
-  return safeDecode(
-    cookieValue("fnos-token") ||
-      cookieValue("trim_token") ||
-      cookieValue("token"),
-  );
-}
-
 async function api(action, data = {}) {
-  const token = authToken();
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `trim ${token}`;
-  }
   const response = await fetch(API_ENDPOINT, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     cache: "no-store",
     credentials: "include",
     body: JSON.stringify({ action, ...data }),
@@ -380,6 +303,281 @@ async function api(action, data = {}) {
   const result = await response.json();
   if (!response.ok || !result.ok) {
     throw new Error(result.message || `HTTP ${response.status}`);
+  }
+  return result;
+}
+
+// 直接调用 app-center（fnOS 网关注入鉴权，无需 token）。
+// 后端不再转发 /app-center/ 请求，故 token 获取逻辑已彻底移除。
+async function appCenter(path, options = {}) {
+  const response = await fetch(`/app-center/v1/${path}`, {
+    method: options.method || "GET",
+    headers: options.body ? { "Content-Type": "application/json" } : {},
+    cache: "no-store",
+    credentials: "include",
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(`app-center HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+// ---------- app-center 安装流程封装（前端直连，网关注入鉴权） ----------
+
+// 归一化 app-center 响应：取 data 或整体
+function acData(result) {
+  return result && typeof result === "object" && result.data != null
+    ? result.data
+    : result;
+}
+
+// 已安装应用列表：只从 /app/installed 获取。
+// 列表项字段：name(appName) / version(已安装版本) / installedVolumeID(安装卷)。
+let _installedAppsCache = null;
+async function acInstalledApps(force) {
+  if (!force && _installedAppsCache) return _installedAppsCache;
+  let apps = [];
+  try {
+    const result = await appCenter(`app/installed?language=${state.language}`);
+    const data = acData(result);
+    if (Array.isArray(data)) {
+      apps = data;
+    } else if (data && typeof data === "object") {
+      for (const key of ["list", "apps", "items"]) {
+        if (Array.isArray(data[key])) {
+          apps = data[key];
+          break;
+        }
+      }
+    }
+  } catch (_e) {}
+  _installedAppsCache = apps;
+  return apps;
+}
+function clearInstalledAppsCache() {
+  _installedAppsCache = null;
+}
+
+// 在 /app/installed 列表里按名字查找应用
+function findInstalledApp(apps, appName) {
+  const want = String(appName ?? "").trim();
+  if (!want) return null;
+  const keys = [
+    "appName",
+    "app_name",
+    "name",
+    "appKey",
+    "app_key",
+    "appId",
+    "app_id",
+    "id",
+    "packageName",
+    "package_name",
+  ];
+  for (const app of apps || []) {
+    if (!app || typeof app !== "object") continue;
+    for (const key of keys) {
+      if (String(app[key] ?? "").trim() === want) return app;
+    }
+  }
+  return null;
+}
+
+// 已安装/可更新检测：只读 /app/installed，按名字匹配即视为已安装。
+// 返回 { installed, info }，info 为 { name, version, volumeID }。
+async function detectInstalled(appName) {
+  if (!appName) return { installed: false, info: null };
+  let existing = null;
+  try {
+    existing = findInstalledApp(await acInstalledApps(), appName);
+    // 首次未命中时强制刷新一次，排除 _installedAppsCache 陈旧缓存干扰
+    if (!existing) {
+      existing = findInstalledApp(await acInstalledApps(true), appName);
+    }
+  } catch (_e) {}
+  if (!existing) return { installed: false, info: null };
+  return {
+    installed: true,
+    info: {
+      name: String(
+        existing.appName ??
+          existing.app_name ??
+          existing.name ??
+          existing.appKey ??
+          existing.displayName ??
+          appName,
+      ),
+      version: String(existing.version ?? existing.installedVersion ?? ""),
+      volumeID: String(existing.installedVolumeID ?? ""),
+    },
+  };
+}
+
+// 版本比较：a > b 返回 1，a < b 返回 -1，相等返回 0。兼容数字段与点分/横杠版本。
+function compareVersions(a, b) {
+  const pa = String(a ?? "")
+    .trim()
+    .toLowerCase();
+  const pb = String(b ?? "")
+    .trim()
+    .toLowerCase();
+  if (pa === pb) return 0;
+  const normalize = (s) =>
+    (s || "").split(/[.\-_+]/).map((p) => (/^\d+$/.test(p) ? Number(p) : p));
+  const na = normalize(pa);
+  const nb = normalize(pb);
+  const len = Math.max(na.length, nb.length);
+  for (let i = 0; i < len; i += 1) {
+    const x = na[i];
+    const y = nb[i];
+    if (x === undefined) return -1;
+    if (y === undefined) return 1;
+    if (typeof x === "number" && typeof y === "number") {
+      if (x !== y) return x > y ? 1 : -1;
+    } else if (String(x) !== String(y)) {
+      return String(x) > String(y) ? 1 : -1;
+    }
+  }
+  return 0;
+}
+
+// 解析本次安装动作：install(未安装) / update(已装低于新包) / overwrite(已装≥新包)。
+// newVersion 为空或无法比较时，视为全新安装走 install。
+function resolveInstallAction(instVer, newVer) {
+  const iv = String(instVer ?? "").trim();
+  const nv = String(newVer ?? "").trim();
+  if (!iv) return "install";
+  if (!nv) return "overwrite";
+  const cmp = compareVersions(nv, iv);
+  if (cmp > 0) return "update";
+  return "overwrite";
+}
+
+async function acDownloadTask(payload) {
+  return appCenter("download/task", { method: "POST", body: payload });
+}
+async function acDownloadStatus(taskId) {
+  return appCenter(
+    `download/status?downloadTaskId=${encodeURIComponent(taskId)}&language=${state.language}`,
+  );
+}
+async function acInstallInfo(appName, version, packageType, isUpdate) {
+  // 后端 install/info 解码进 InstallWizardRequest，要求必填 version 字段。
+  // 更新场景除 updateVersion 外同时携带 version（新包版本），避免 10030(Version required)。
+  const base = `appName=${encodeURIComponent(appName)}&packageType=${encodeURIComponent(packageType)}&language=${state.language}`;
+  const url = isUpdate
+    ? `install/info?version=${encodeURIComponent(version)}&updateVersion=${encodeURIComponent(version)}&${base}`
+    : `install/info?version=${encodeURIComponent(version)}&${base}`;
+  return appCenter(url);
+}
+async function acInstallTask(payload) {
+  return appCenter("install/task", { method: "POST", body: payload });
+}
+async function acUpdateTask(payload) {
+  return appCenter("update/task", { method: "POST", body: payload });
+}
+async function acInstallStatus(taskId) {
+  return appCenter("install/status", {
+    method: "POST",
+    body: { taskId, language: state.language },
+  });
+}
+async function acUpdateStatus(taskId) {
+  return appCenter("update/status", {
+    method: "POST",
+    body: { taskId, language: state.language },
+  });
+}
+async function acTaskStatus(taskId) {
+  return appCenter("common/task-status", {
+    method: "POST",
+    body: { taskId, language: state.language },
+  });
+}
+
+// 解析任务响应里的 taskId（兼容多种返回字段）
+function extractTaskId(result) {
+  const data = acData(result);
+  const cands = [];
+  if (data && typeof data === "object") {
+    cands.push(data.installTaskId, data.taskId, data.id, data.downloadTaskId);
+  }
+  cands.push(
+    result.installTaskId,
+    result.taskId,
+    result.id,
+    result.downloadTaskId,
+  );
+  for (const c of cands) {
+    if (c !== undefined && c !== null && String(c) !== "") return String(c);
+  }
+  return "";
+}
+
+// 归一化安装/下载状态
+function normalizeTaskStatus(rawStatus) {
+  if (typeof rawStatus === "number") {
+    const s = Math.floor(rawStatus);
+    if (s === 0) return { value: "pending", done: false };
+    if (s === 1) return { value: "running", done: false };
+    if (s === 2) return { value: "success", done: true };
+    if (s === 3) return { value: "failed", done: true };
+    if (s === 4) return { value: "cancelled", done: true };
+    if (s === 5) return { value: "notfound", done: true };
+    return { value: String(s), done: false };
+  }
+  const lower = String(rawStatus || "").toLowerCase();
+  if (
+    [
+      "done",
+      "success",
+      "succeed",
+      "finished",
+      "completed",
+      "installed",
+      "downloaded",
+    ].includes(lower)
+  ) {
+    return { value: "success", done: true };
+  }
+  if (["fail", "failed", "error"].includes(lower)) {
+    return { value: "failed", done: true };
+  }
+  if (["cancel", "cancelled", "canceled"].includes(lower)) {
+    return { value: "cancelled", done: true };
+  }
+  return { value: lower || "pending", done: false };
+}
+
+// 从 app-center 响应取 message/msg/outputText
+function acMessage(result, data) {
+  const msg =
+    (data && (data.outputText || data.message || data.msg)) ||
+    result.outputText ||
+    result.message ||
+    result.msg ||
+    "";
+  return String(msg || "");
+}
+
+// 判断 app-center 错误码是否命中（兼容 code 在顶层或 data）
+function acCode(result) {
+  if (result && typeof result === "object") {
+    const c = result.code || (result.data && result.data.code) || 0;
+    return Number(c) || 0;
+  }
+  return 0;
+}
+
+// 若 app-center 返回业务错误码（且无 data），则抛出错误
+// 抛出的 Error 挂上 code 属性，供上层 catch 用 acCode 读取真实业务错误码。
+function acThrowIfError(result) {
+  const code = acCode(result);
+  if (code && !(result && result.data)) {
+    const err = new Error(acMessage(result) || `app-center code ${code}`);
+    err.code = code;
+    throw err;
   }
   return result;
 }
@@ -444,7 +642,7 @@ function renderFileList(files) {
     .map(
       (file) => `
     <div class="file-item${state.selectedFile?.path === file.path ? " selected" : ""}"
-         data-path="${escapeHtml(file.path)}" onclick="selectFile(this)">
+         data-path="${escapeHtml(file.path)}" data-action="select">
       <div class="file-icon">📦</div>
       <div class="file-info">
         <div class="file-name">${escapeHtml(file.name)}</div>
@@ -489,19 +687,23 @@ async function loadFiles() {
         <div class="icon">❌</div>
         <p>${escapeHtml(error.message)}</p>
       </div>`;
-    if (
-      error.message.includes("authorization token not found") ||
-      error.message.includes("token not found")
-    ) {
-      showToast(t("errorTokenNotFound"), true);
-    }
   }
 }
 
 async function browsePath() {
-  const customPath = document.getElementById("customPath").value.trim();
-  const dir = customPath || "/vol1";
-  await browseDir(dir);
+  const result = await sdk.pickUserFile({
+    directory: false,
+    multiple: false,
+    accept: [".fpk"],
+    title: t("selectPackage"),
+    okText: t("nextStep"),
+    sidebarGroup: ["myFiles", "otherShare", "favorites"],
+  });
+  const path = result?.data?.[0];
+  if (!path) return;
+  state.selectedFile = { path, name: path.split("/").pop() || path };
+  document.getElementById("btnNext1").disabled = false;
+  renderFileList([state.selectedFile]);
 }
 
 async function browseDir(dir) {
@@ -530,19 +732,13 @@ async function browseDir(dir) {
         <div class="icon">❌</div>
         <p>${escapeHtml(error.message)}</p>
       </div>`;
-    if (
-      error.message.includes("authorization token not found") ||
-      error.message.includes("token not found")
-    ) {
-      showToast(t("errorTokenNotFound"), true);
-    }
   }
 }
 
 function renderBreadcrumb(dir) {
   const breadcrumb = document.getElementById("dirBreadcrumb");
   const parts = dir.split("/").filter(Boolean);
-  let html = `<span class="breadcrumb-item" onclick="browseDir('/')">/</span>`;
+  let html = `<span class="breadcrumb-item" data-action="browse" data-path="/">/</span>`;
   let path = "";
   parts.forEach((part, i) => {
     path += "/" + part;
@@ -551,7 +747,7 @@ function renderBreadcrumb(dir) {
     if (isLast) {
       html += `<span class="breadcrumb-item active">${escapeHtml(part)}</span>`;
     } else {
-      html += `<span class="breadcrumb-item" onclick="browseDir('${escapeHtml(path)}')">${escapeHtml(part)}</span>`;
+      html += `<span class="breadcrumb-item" data-action="browse" data-path="${escapeHtml(path)}">${escapeHtml(part)}</span>`;
     }
   });
   breadcrumb.innerHTML = html;
@@ -567,7 +763,7 @@ function renderDirEntries(entries, currentDir) {
   let html = "";
   if (parentPath) {
     html += `
-      <div class="dir-entry dir-parent" onclick="browseDir('${escapeHtml(parentPath)}')">
+      <div class="dir-entry dir-parent" data-action="browse" data-path="${escapeHtml(parentPath)}">
         <span class="dir-icon">📁</span>
         <span class="dir-name">.. (${t("parentDir")})</span>
       </div>`;
@@ -582,7 +778,7 @@ function renderDirEntries(entries, currentDir) {
 
   dirs.forEach((entry) => {
     html += `
-      <div class="dir-entry" onclick="browseDir('${escapeHtml(entry.path)}')">
+      <div class="dir-entry" data-action="browse" data-path="${escapeHtml(entry.path)}">
         <span class="dir-icon">📁</span>
         <span class="dir-name">${escapeHtml(entry.name)}</span>
       </div>`;
@@ -591,7 +787,7 @@ function renderDirEntries(entries, currentDir) {
   files.forEach((entry) => {
     const isSelected = state.selectedFile?.path === entry.path;
     html += `
-      <div class="dir-entry fpk-entry${isSelected ? " selected" : ""}" onclick="selectFpkFromBrowser(this, '${escapeHtml(entry.path)}')">
+      <div class="dir-entry fpk-entry${isSelected ? " selected" : ""}" data-action="select-fpk" data-path="${escapeHtml(entry.path)}">
         <span class="dir-icon">📦</span>
         <span class="dir-name">${escapeHtml(entry.name)}</span>
         ${entry.version ? `<span class="dir-meta">${escapeHtml(entry.version)} · ${formatSize(entry.size)}</span>` : ""}
@@ -602,7 +798,7 @@ function renderDirEntries(entries, currentDir) {
   if (files.length > 0) {
     html += `
       <div class="dir-actions">
-        <button class="btn btn-primary btn-sm" onclick="scanCurrentDir()" data-i18n="selectFromDir">${t("selectFromDir")}</button>
+        <button class="btn btn-primary btn-sm" data-action="scan-current" data-i18n="selectFromDir">${t("selectFromDir")}</button>
       </div>`;
   }
 
@@ -669,12 +865,32 @@ async function goToStep2() {
   btnInstall.disabled = true;
 
   try {
-    const result = await api("parse-task", {
-      filePath: state.selectedFile.path,
+    const result = await acDownloadTask({
+      packageSourceType: "file",
+      path: state.selectedFile.path,
     });
-    state.downloadTaskId = result.taskId;
-    state.appName = result.appName || "";
-    state.version = result.version || "";
+    state.downloadTaskId = extractTaskId(result);
+    const info = acData(result);
+    state.appName = String(
+      (info && (info.appName || info.app_name)) ||
+        result.appName ||
+        result.app_name ||
+        "",
+    ).trim();
+    state.version = String(
+      (info && (info.version || info.app_version)) ||
+        result.version ||
+        result.app_version ||
+        "",
+    ).trim();
+    // 用下载登记时系统返回的真实 packageType，
+    const pkgType = String(
+      (info && (info.packageType || info.package_type)) ||
+        result.packageType ||
+        result.package_type ||
+        "",
+    ).trim();
+    if (pkgType) state.packageType = pkgType;
     if (state.appName) {
       const downloadStatusText = document.getElementById("downloadStatusText");
       downloadStatusText.textContent = `${t("parsingPackage")} ${state.appName}`;
@@ -684,14 +900,7 @@ async function goToStep2() {
     downloadStatusText.textContent = error.message;
     downloadProgressBar.classList.add("error");
     downloadProgressBar.style.width = "100%";
-    if (
-      error.message.includes("authorization token not found") ||
-      error.message.includes("token not found")
-    ) {
-      showToast(t("errorTokenNotFound"), true);
-    } else {
-      showToast(error.message, true);
-    }
+    showToast(error.message, true);
   }
 }
 
@@ -706,67 +915,97 @@ function pollDownloadStatus() {
 
   const checkStatus = async () => {
     try {
-      const result = await api("parse-status", {
-        taskId: state.downloadTaskId,
-      });
-      const progress = result.progress || 0;
+      const result = await acDownloadStatus(state.downloadTaskId);
+      const data = acData(result);
+      const info = data && typeof data === "object" ? data : result;
+      const progress = Number(info && info.progress) || 0;
       const downloadProgressBar = document.getElementById(
         "downloadProgressBar",
       );
       const downloadStatusText = document.getElementById("downloadStatusText");
 
-      if (result.appName) {
-        state.appName = result.appName;
+      if (info.appName || info.app_name) {
+        state.appName = String(info.appName || info.app_name).trim();
       }
-      if (result.version) {
-        state.version = result.version;
+      if (info.version || info.app_version) {
+        state.version = String(info.version || info.app_version).trim();
+      }
+      if (info.packageType || info.package_type) {
+        state.packageType = String(
+          info.packageType || info.package_type,
+        ).trim();
+      }
+      if (info.installType || info.install_type) {
+        state.installType = String(
+          info.installType || info.install_type,
+        ).trim();
       }
 
       downloadProgressBar.style.width = `${progress}%`;
       downloadStatusText.textContent = t("parseProgress", { progress });
 
-      if (result.installed) {
-        state.installedInfo = result.installedInfo || {};
-        if (result.canUpdate) {
-          state.canUpdate = true;
-          state.isUpdate = true;
-        } else {
-          clearInterval(state.polling);
-          state.polling = null;
-          downloadProgressBar.classList.add("success");
-          downloadProgressBar.style.width = "100%";
-          const info = result.installedInfo || {};
-          downloadStatusText.textContent = `${info.name || state.appName} ${t("sameVersion")}`;
-          showToast(t("sameVersion"), false);
-          document.getElementById("btnInstall").disabled = true;
-          return;
+      // 已安装/可更新检测：只读 app/installed，按名字匹配即视为已安装
+      if (state.appName) {
+        try {
+          const det = await detectInstalled(state.appName);
+          const existing = det.installed ? det.info : null;
+          state.installed = !!existing;
+          state.installedInfo = existing
+            ? {
+                name: String(existing.name || state.appName),
+                version: String(existing.version || ""),
+                volumeID: String(existing.volumeID || ""),
+              }
+            : null;
+          const action = resolveInstallAction(
+            state.installedInfo?.version,
+            state.version,
+          );
+          state.installAction = action;
+          state.canUpdate = action === "update";
+          state.canOverwrite = action === "overwrite";
+          state.isUpdate = action === "update";
+        } catch (_e) {
+          state.installed = false;
+          state.installedInfo = null;
+          state.canUpdate = false;
+          state.canOverwrite = false;
+          state.installAction = "install";
+          state.isUpdate = false;
         }
       }
 
-      if (result.isDone) {
+      const status = normalizeTaskStatus(
+        info.status || info.downloadStatus || result.status,
+      );
+
+      if (status.done) {
         clearInterval(state.polling);
         state.polling = null;
 
-        if (result.status === "success") {
+        if (status.value === "success") {
           downloadProgressBar.classList.add("success");
           downloadProgressBar.style.width = "100%";
           downloadStatusText.textContent = t("parseProgress", {
             progress: 100,
           });
 
-          if (state.isUpdate && state.installedInfo) {
+          if (state.installedInfo) {
             if (state.installedInfo.volumeID) {
-              state.volumeID = state.installedInfo.volumeID;
+              state.volumeID = Number(state.installedInfo.volumeID) || 1;
             }
-            downloadStatusText.textContent = `${t("updateAvailable")} (${state.installedInfo.version} → ${state.version})`;
-            showUpdateConfirm();
-          } else {
-            loadInstallInfo();
+            if (state.canUpdate) {
+              downloadStatusText.textContent = `${t("updateAvailable")} (${state.installedInfo.version} → ${state.version})`;
+            } else if (state.canOverwrite) {
+              downloadStatusText.textContent = `${t("overwriteAvailable")} (${state.installedInfo.version} → ${state.version})`;
+            }
           }
+          // 更新/覆盖也走 loadInstallInfo 展示包信息，但安装向导会被跳过
+          loadInstallInfo();
         } else {
           downloadProgressBar.classList.add("error");
-          downloadStatusText.textContent = result.status;
-          showToast(`${t("installFailed")}: ${result.status}`, true);
+          downloadStatusText.textContent = status.value;
+          showToast(`${t("installFailed")}: ${status.value}`, true);
         }
         return;
       }
@@ -805,22 +1044,55 @@ async function loadInstallInfo() {
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const result = await api("install-info", {
-        appName: state.appName,
-        version: state.version,
-        downloadTaskId: state.downloadTaskId,
-      });
-      state.installInfo = result.info;
-
-      if (result.installed) {
-        state.installedInfo = result.installedInfo || {};
-        if (result.canUpdate) {
-          state.canUpdate = true;
-          state.isUpdate = true;
+      // 已安装/可更新检测：只读 app/installed，按名字匹配即视为已安装
+      let installed = false;
+      let canUpdate = false;
+      let canOverwrite = false;
+      let installedInfo = {};
+      try {
+        const det = await detectInstalled(state.appName);
+        if (det.installed) {
+          installed = true;
+          installedInfo = {
+            name: String(det.info.name || state.appName),
+            // 已安装版本：app/installed 的 version 字段
+            version: String(det.info.version || ""),
+            volumeID: String(det.info.volumeID || ""),
+          };
+          const action = resolveInstallAction(
+            installedInfo.version,
+            state.version,
+          );
+          canUpdate = action === "update";
+          canOverwrite = action === "overwrite";
+          state.isUpdate = action === "update";
         }
-      }
+      } catch (_e) {}
 
-      const info = result.info;
+      state.installed = installed;
+      state.installedInfo = installed ? installedInfo : null;
+      state.canUpdate = canUpdate;
+      state.canOverwrite = canOverwrite;
+      state.installAction = canUpdate
+        ? "update"
+        : canOverwrite
+          ? "overwrite"
+          : "install";
+
+      // 本地 fpk 安装，packageType 用下载登记返回的真实值（root 应用非 file）。
+      // 用 acThrowIfError 把 10100 等业务错误码抛成异常，走下方 retry 重试。
+      const packageType = state.packageType || "file";
+      const result = acThrowIfError(
+        await acInstallInfo(
+          state.appName,
+          state.version,
+          packageType,
+          state.isUpdate,
+        ),
+      );
+      state.installInfo = result;
+
+      const info = result;
       const data = info.data || info;
       const wizardInfo = data.wizardInfo || data;
       const rows = [];
@@ -859,18 +1131,11 @@ async function loadInstallInfo() {
         rows.push(infoRow(t("appVersion"), appVersion));
       }
 
-      if (state.isUpdate && state.installedInfo) {
-        rows.push(
-          infoRow(t("installedVersion"), state.installedInfo.version || ""),
-        );
-        rows.push(infoRow(t("newVersion"), appVersion));
-      }
-
       if (maintainer) {
         rows.push(infoRow(t("appMaintainer"), maintainer));
       }
       if (desc) {
-        rows.push(infoRow(t("appDesc"), desc));
+        rows.push(infoRowHtml(t("appDesc"), desc));
       }
       if (data.source) {
         rows.push(infoRow(t("appSource"), data.source));
@@ -883,12 +1148,20 @@ async function loadInstallInfo() {
 
       const updateBanner = document.getElementById("updateBanner");
       if (updateBanner) {
-        if (state.isUpdate) {
+        if (state.canUpdate) {
           updateBanner.className = "update-banner update-available";
           updateBanner.innerHTML = `
             <div class="update-confirm">
               <div class="update-confirm-title">${t("updateConfirmTitle")}</div>
               <div class="update-confirm-desc">${t("updateConfirmDesc", { installedVersion: escapeHtml(state.installedInfo?.version || ""), newVersion: escapeHtml(state.version || "") })}</div>
+            </div>`;
+          updateBanner.classList.remove("hidden");
+        } else if (state.canOverwrite) {
+          updateBanner.className = "update-banner overwrite-available";
+          updateBanner.innerHTML = `
+            <div class="update-confirm">
+              <div class="update-confirm-title">${t("overwriteConfirmTitle")}</div>
+              <div class="update-confirm-desc">${t("overwriteConfirmDesc", { installedVersion: escapeHtml(state.installedInfo?.version || ""), newVersion: escapeHtml(state.version || "") })}</div>
             </div>`;
           updateBanner.classList.remove("hidden");
         } else {
@@ -903,27 +1176,46 @@ async function loadInstallInfo() {
         data.wizard ||
         data.wizardData ||
         [];
-      const hasWizard =
-        wizardInfo.hasWizard ||
-        (Array.isArray(wizardItems) && wizardItems.length > 0);
 
-      if (hasWizard && Array.isArray(wizardItems) && wizardItems.length > 0) {
-        state._wizardInfo = wizardInfo;
-        renderWizard(wizardItems, wizardSection);
-        wizardSection.classList.remove("hidden");
-      } else {
+      // 更新/覆盖场景只展示包信息，跳过安装向导与安装卷选择
+      const isReinstall = state.canUpdate || state.canOverwrite;
+      if (isReinstall) {
         state._wizardInfo = null;
-        wizardSection.classList.add("hidden");
+        if (wizardSection) wizardSection.classList.add("hidden");
+      } else {
+        const hasWizard =
+          wizardInfo.hasWizard ||
+          (Array.isArray(wizardItems) && wizardItems.length > 0);
+        if (hasWizard && Array.isArray(wizardItems) && wizardItems.length > 0) {
+          state._wizardInfo = wizardInfo;
+          renderWizard(wizardItems, wizardSection);
+          wizardSection.classList.remove("hidden");
+        } else {
+          state._wizardInfo = null;
+          wizardSection.classList.add("hidden");
+        }
       }
 
-      await loadVolumes(volumeID || 0, installType);
+      const volumeSection = document.getElementById("volumeSection");
+      if (isReinstall) {
+        // 更新/覆盖沿用安装信息里的卷，不展示卷选择
+        if (volumeSection) volumeSection.classList.add("hidden");
+        state.volumeID = Number(volumeID) || 1;
+      } else {
+        await loadVolumes(volumeID || 0, installType);
+      }
 
       installInfoSection.classList.remove("hidden");
-      if (state.isUpdate) {
+      if (state.canUpdate) {
         state._updateConfirmed = true;
         btnInstall.disabled = false;
         btnInstall.textContent = t("updateApp");
         btnInstall.dataset.i18n = "updateApp";
+      } else if (state.canOverwrite) {
+        state._updateConfirmed = true;
+        btnInstall.disabled = false;
+        btnInstall.textContent = t("overwriteApp");
+        btnInstall.dataset.i18n = "overwriteApp";
       } else {
         btnInstall.disabled = false;
         btnInstall.textContent = t("install");
@@ -947,13 +1239,6 @@ async function loadInstallInfo() {
   installInfo.innerHTML = `<div class="info-row"><span class="info-value error">${escapeHtml(lastError ? lastError.message : t("errorUnknown"))}</span></div>`;
   installInfoSection.classList.remove("hidden");
   btnInstall.disabled = true;
-  if (
-    lastError &&
-    (lastError.message.includes("authorization token not found") ||
-      lastError.message.includes("token not found"))
-  ) {
-    showToast(t("errorTokenNotFound"), true);
-  }
 }
 
 async function loadVolumes(defaultVolumeID, installType) {
@@ -967,15 +1252,9 @@ async function loadVolumes(defaultVolumeID, installType) {
     return;
   }
 
-  let sysDefaultVolume = defaultVolumeID;
-  if (!sysDefaultVolume) {
-    try {
-      const dv = await api("default-volume");
-      sysDefaultVolume = dv.volumeID || 1;
-    } catch (_e) {
-      sysDefaultVolume = 1;
-    }
-  }
+  // 默认安装卷优先取安装信息中的 volumeID；未提供时回退到 1。
+  // 注意：不调用 app-center 的 common/remember-volume/config（该端点在当前 fnOS 版本不存在，会 404）。
+  let sysDefaultVolume = defaultVolumeID || 1;
 
   try {
     const result = await api("volumes");
@@ -1009,6 +1288,15 @@ function infoRow(label, value) {
     <div class="info-row">
       <span class="info-label">${escapeHtml(label)}</span>
       <span class="info-value">${escapeHtml(String(value ?? ""))}</span>
+    </div>`;
+}
+
+// 描述行：以 HTML 展示（来自安装包自身，受信内容），支持富文本/换行。
+function infoRowHtml(label, value) {
+  return `
+    <div class="info-row">
+      <span class="info-label">${escapeHtml(label)}</span>
+      <span class="info-value desc-html">${String(value ?? "")}</span>
     </div>`;
 }
 
@@ -1158,6 +1446,8 @@ function goToStep1() {
   state.isUpdate = false;
   state.installedInfo = null;
   state.canUpdate = false;
+  state.canOverwrite = false;
+  state.installAction = "install";
   state._updateConfirmed = false;
   const updateBanner = document.getElementById("updateBanner");
   if (updateBanner) updateBanner.classList.add("hidden");
@@ -1165,35 +1455,12 @@ function goToStep1() {
   loadFiles();
 }
 
-function showUpdateConfirm() {
-  const installInfoSection = document.getElementById("installInfoSection");
-  const btnInstall = document.getElementById("btnInstall");
-  const updateBanner = document.getElementById("updateBanner");
-
-  installInfoSection.classList.remove("hidden");
-
-  if (updateBanner) {
-    updateBanner.className = "update-banner update-available";
-    updateBanner.innerHTML = `
-      <div class="update-confirm">
-        <div class="update-confirm-title">${t("updateConfirmTitle")}</div>
-        <div class="update-confirm-desc">${t("updateConfirmDesc", { installedVersion: escapeHtml(state.installedInfo?.version || ""), newVersion: escapeHtml(state.version || "") })}</div>
-      </div>`;
-    updateBanner.classList.remove("hidden");
-  }
-
-  state._updateConfirmed = true;
-  btnInstall.disabled = false;
-  btnInstall.textContent = t("updateApp");
-  btnInstall.dataset.i18n = "updateApp";
-}
-
 async function goToStep3() {
-  if (state.isUpdate && !state._updateConfirmed) {
+  if ((state.isUpdate || state.canOverwrite) && !state._updateConfirmed) {
     return;
   }
 
-  if (!state.isUpdate) {
+  if (!state.isUpdate && !state.canOverwrite) {
     const invalidWizardField = document.querySelector(
       "[data-wizard-key]:invalid",
     );
@@ -1203,7 +1470,7 @@ async function goToStep3() {
     }
   }
 
-  if (!state.isUpdate) {
+  if (!state.isUpdate && !state.canOverwrite) {
     state.wizardData = collectWizardData();
     const volumeSelect = document.getElementById("volumeSelect");
     if (volumeSelect) {
@@ -1217,44 +1484,102 @@ async function goToStep3() {
 
   installStatusText.textContent = state.isUpdate
     ? t("updatingApp")
-    : t("installingApp");
+    : state.canOverwrite
+      ? t("overwritingApp")
+      : t("installingApp");
   installProgressBar.style.width = "0%";
   installProgressBar.classList.remove("success", "error");
 
   try {
+    const language = state.language;
+    // 系统空间(root)应用安装到系统分区，installVolumeID 必须为 0（对齐 fnOS 官方前端）。
+    const isRoot = (state.installType || "").toLowerCase() === "root";
+    const installVolume = isRoot ? 0 : state.volumeID;
+    const commonSysParams = {
+      installVolumeID: installVolume,
+      dataVolumeID: state.volumeID,
+    };
+
+    const makeCustom = () => {
+      if (state.wizardData && Object.keys(state.wizardData).length > 0) {
+        return Object.entries(state.wizardData).map(([key, value]) => ({
+          key,
+          value: String(value ?? ""),
+        }));
+      }
+      return undefined;
+    };
+
+    // 本地 fpk 安装，packageType 用下载登记返回的真实值（非固定 file）
     const installPayload = {
       appName: state.appName,
       version: state.version,
+      packageType: state.packageType || "file",
       volumeID: state.volumeID,
-      installVolumeID: state.volumeID,
+      installVolumeID: installVolume,
       dataVolumeID: state.volumeID,
-      isUpdate: state.isUpdate,
+      language,
+      immediateStart: true,
       systemParameters: {
-        installVolumeID: state.volumeID,
-        dataVolumeID: state.volumeID,
-        INSTALL_VOLUME_ID: String(state.volumeID),
+        ...commonSysParams,
+        INSTALL_VOLUME_ID: String(installVolume),
       },
     };
-    if (state.wizardData && Object.keys(state.wizardData).length > 0) {
+    const custom = makeCustom();
+    if (custom) {
       installPayload.wizardData = state.wizardData;
-      installPayload.customParameters = Object.entries(state.wizardData).map(
-        ([key, value]) => ({
-          key,
-          value: String(value ?? ""),
-        }),
-      );
+      installPayload.customParameters = custom;
     }
-    const result = await api("install-task", installPayload);
-    state.installTaskId = result.taskId;
-    pollInstallStatus();
-  } catch (error) {
-    const msg = error.message || "";
-    if (
-      msg.includes("10236") ||
-      msg.includes("already installed") ||
-      msg.includes("已安装")
-    ) {
-      if (!state.isUpdate) {
+
+    const updatePayload = {
+      appName: state.appName,
+      packageType: state.packageType || "file",
+      version: state.version,
+      updateVersion: state.version,
+      language,
+      immediateStart: true,
+      systemParameters: commonSysParams,
+    };
+    if (custom) updatePayload.customParameters = custom;
+
+    // 统一提交安装/更新任务，双向容错：
+    // 1) isUpdate=true：优先 update/task，任何业务错误回退 install/task(upgrade)。
+    // 2) isUpdate=false（app/installed 未匹配到等）：先 install/task；
+    //    若报"已安装"(10236) 说明应用已存在，只要有待安装版本就回退 update/task 尝试更新，
+    //    避免把"安装新版本"误判为"无需重复安装"。
+    const doInstall = async (upgrade) =>
+      acThrowIfError(await acInstallTask({ ...installPayload, upgrade }));
+    const doUpdate = async () =>
+      acThrowIfError(await acUpdateTask(updatePayload));
+
+    let result = null;
+    try {
+      if (state.isUpdate) {
+        try {
+          result = await doUpdate();
+        } catch (_updateErr) {
+          result = await doInstall(true);
+        }
+      } else {
+        try {
+          result = await doInstall(false);
+        } catch (installErr) {
+          const code = acCode(installErr);
+          if (
+            code === 10236 ||
+            /already installed|已安装/.test(installErr.message || "")
+          ) {
+            result = await doUpdate();
+          } else {
+            throw installErr;
+          }
+        }
+      }
+    } catch (error) {
+      const code = acCode(error);
+      const msg = error.message || "";
+      // 只有 update/task 与 install/task(upgrade) 都报"已安装"，才确为同版本无需重复安装。
+      if (code === 10236 || /already installed|已安装/.test(msg)) {
         installProgressBar.classList.add("success");
         installProgressBar.style.width = "100%";
         installStatusText.textContent = t("alreadyInstalled");
@@ -1263,29 +1588,22 @@ async function goToStep3() {
         document.getElementById("resultError").classList.add("hidden");
         document.getElementById("resultSuccessDesc").textContent =
           t("alreadyInstalled");
-      } else {
-        installProgressBar.classList.add("error");
-        installProgressBar.style.width = "100%";
-        installStatusText.textContent = msg;
-        showToast(msg, true);
-        showStep(4);
-        document.getElementById("resultSuccess").classList.add("hidden");
-        document.getElementById("resultError").classList.remove("hidden");
-        document.getElementById("resultErrorDesc").textContent = msg;
+        return;
       }
-    } else {
       installStatusText.textContent = msg;
       installProgressBar.classList.add("error");
       installProgressBar.style.width = "100%";
-      if (
-        msg.includes("authorization token not found") ||
-        msg.includes("token not found")
-      ) {
-        showToast(t("errorTokenNotFound"), true);
-      } else {
-        showToast(msg, true);
-      }
+      showToast(msg, true);
+      return;
     }
+
+    state.installTaskId = extractTaskId(result);
+    pollInstallStatus();
+  } catch (outerError) {
+    installStatusText.textContent = outerError.message || String(outerError);
+    installProgressBar.classList.add("error");
+    installProgressBar.style.width = "100%";
+    showToast(outerError.message || String(outerError), true);
   }
 }
 
@@ -1300,28 +1618,51 @@ function pollInstallStatus() {
 
   const checkStatus = async () => {
     try {
-      const result = await api("install-status", {
-        appName: state.appName,
-        taskId: state.installTaskId,
-        isUpdate: state.isUpdate,
-      });
-      const progress = result.progress || 0;
+      const queryStatus = async (useUpdate) => {
+        if (useUpdate) return acUpdateStatus(state.installTaskId);
+        return acTaskStatus(state.installTaskId);
+      };
+
+      let result = await queryStatus(state.isUpdate);
+      let data = acData(result);
+      let st = normalizeTaskStatus(
+        data.status || data.installStatus || result.status,
+      );
+
+      // 接口返回 notfound（状态 5）：尝试另一接口
+      if (st.value === "notfound") {
+        const alt = await queryStatus(!state.isUpdate);
+        const altData = acData(alt);
+        const altSt = normalizeTaskStatus(
+          altData.status || altData.installStatus || alt.status,
+        );
+        if (altSt.value !== "notfound") {
+          result = alt;
+          data = altData;
+          st = altSt;
+        }
+      }
+
+      const progress = Number(data && data.progress) || 0;
       const installProgressBar = document.getElementById("installProgressBar");
       const installStatusText = document.getElementById("installStatusText");
 
       installProgressBar.style.width = `${progress}%`;
       installStatusText.textContent = t("installProgress", { progress });
 
-      if (result.isDone) {
+      if (st.done) {
         clearInterval(state.polling);
         state.polling = null;
 
-        if (result.status === "success") {
+        if (st.value === "success") {
+          clearInstalledAppsCache();
           installProgressBar.classList.add("success");
           installProgressBar.style.width = "100%";
-          installStatusText.textContent = state.isUpdate
-            ? t("updateSuccess")
-            : t("installSuccess");
+          installStatusText.textContent = state.canOverwrite
+            ? t("overwriteSuccess")
+            : state.isUpdate
+              ? t("updateSuccess")
+              : t("installSuccess");
           showStep(4);
           document.getElementById("resultSuccess").classList.remove("hidden");
           document.getElementById("resultError").classList.add("hidden");
@@ -1330,10 +1671,12 @@ function pollInstallStatus() {
         } else {
           installProgressBar.classList.add("error");
           installProgressBar.style.width = "100%";
-          const message = result.message || result.status;
-          installStatusText.textContent = state.isUpdate
-            ? t("updateFailed")
-            : t("installFailed");
+          const message = acMessage(result) || st.value;
+          installStatusText.textContent = state.canOverwrite
+            ? t("overwriteFailed")
+            : state.isUpdate
+              ? t("updateFailed")
+              : t("installFailed");
           showStep(4);
           document.getElementById("resultSuccess").classList.add("hidden");
           document.getElementById("resultError").classList.remove("hidden");
@@ -1389,6 +1732,8 @@ function resetWizard() {
   state.isUpdate = false;
   state.installedInfo = null;
   state.canUpdate = false;
+  state.canOverwrite = false;
+  state.installAction = "install";
   state._updateConfirmed = false;
   state._files = [];
   state._dirEntries = [];
@@ -1467,8 +1812,21 @@ document.addEventListener("click", function (e) {
   }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  platformConfig = await sdk.getPlatformConfig();
   applyPreferences();
+
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
   claimPrimary();
 
   const customPath = document.getElementById("customPath");
@@ -1510,5 +1868,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-themeMedia()?.addEventListener?.("change", () => applyPreferences());
-window.addEventListener("storage", () => applyPreferences());
+// 事件绑定（ES Module 作用域内函数不暴露到 window，故用 addEventListener 代替内联 onclick）
+document.getElementById("btnAbout").addEventListener("click", openAbout);
+document.getElementById("btnScanAll").addEventListener("click", loadFiles);
+document.getElementById("btnBrowse").addEventListener("click", browsePath);
+document.getElementById("btnNext1").addEventListener("click", goToStep2);
+document.getElementById("btnBack2").addEventListener("click", goToStep1);
+document.getElementById("btnInstall").addEventListener("click", goToStep3);
+document.getElementById("btnReset").addEventListener("click", resetWizard);
+document.getElementById("btnCloseAbout").addEventListener("click", closeAbout);
+document.getElementById("volumeSelect").addEventListener("change", (e) => {
+  state.volumeID = parseInt(e.target.value, 10) || 1;
+});
+
+// 事件委托：动态生成的列表项/面包屑等通过 data-action 分发（ES Module 作用域内函数不暴露到 window，不能使用内联 onclick）
+document.addEventListener("click", (event) => {
+  const actionEl = event.target.closest("[data-action]");
+  if (!actionEl) return;
+  const action = actionEl.dataset.action;
+  const path = actionEl.dataset.path;
+  if (action === "select") {
+    selectFile(actionEl);
+  } else if (action === "browse") {
+    browseDir(path);
+  } else if (action === "select-fpk") {
+    selectFpkFromBrowser(actionEl, path);
+  } else if (action === "scan-current") {
+    scanCurrentDir();
+  }
+});

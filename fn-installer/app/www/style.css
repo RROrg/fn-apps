@@ -17,6 +17,8 @@
   --blue-soft: rgba(26, 115, 255, 0.16);
   --green-bg: rgba(35, 134, 85, 0.2);
   --green: #238655;
+  --yellow-bg: rgba(200, 160, 20, 0.22);
+  --yellow: #b8860b;
   --red-bg: rgba(212, 72, 66, 0.14);
   --red: #b82d28;
   --sidebar-item: #30343a;
@@ -60,6 +62,8 @@ html[data-theme="10"] {
   --blue-soft: rgba(26, 115, 255, 0.16);
   --green-bg: rgba(35, 134, 85, 0.2);
   --green: #238655;
+  --yellow-bg: rgba(200, 160, 20, 0.22);
+  --yellow: #b8860b;
   --red-bg: rgba(212, 72, 66, 0.14);
   --red: #b82d28;
   --sidebar-item: #30343a;
@@ -100,6 +104,8 @@ html[data-theme="dark"] {
   --blue-soft: rgba(26, 115, 255, 0.16);
   --green-bg: rgba(35, 134, 85, 0.2);
   --green: #4fdd8f;
+  --yellow-bg: rgba(220, 180, 60, 0.22);
+  --yellow: #f0c64f;
   --red-bg: rgba(212, 72, 66, 0.22);
   --red: #ff8b85;
   --sidebar-item: #d5d9df;
@@ -496,6 +502,22 @@ html[data-theme="dark"] .card {
   font-weight: 700;
 }
 
+.info-value.desc-html {
+  word-break: normal;
+  white-space: normal;
+  line-height: 1.6;
+}
+
+.info-value.desc-html p {
+  margin: 0 0 8px;
+}
+
+.info-value.desc-html ul,
+.info-value.desc-html ol {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
 .wizard-section {
   margin-top: 16px;
   padding: 16px;
@@ -863,6 +885,11 @@ html[data-theme="dark"] .card {
 .update-banner.update-available {
   background: var(--green-bg);
   color: var(--green);
+}
+
+.update-banner.overwrite-available {
+  background: var(--yellow-bg);
+  color: var(--yellow);
 }
 
 .update-banner .update-icon {
