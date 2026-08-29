@@ -447,13 +447,11 @@ body {
 }
 
 .partition-bar.free-space {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--part-free) 0px,
-    var(--part-free) 6px,
-    var(--part-free-stripe) 6px,
-    var(--part-free-stripe) 12px
-  ) !important;
+  background: repeating-linear-gradient(45deg,
+      var(--part-free) 0px,
+      var(--part-free) 6px,
+      var(--part-free-stripe) 6px,
+      var(--part-free-stripe) 12px) !important;
   color: var(--muted);
   text-shadow: none;
   font-style: italic;
@@ -481,13 +479,11 @@ body {
 }
 
 .legend-dot.free {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--part-free) 0px,
-    var(--part-free) 3px,
-    var(--part-free-stripe) 3px,
-    var(--part-free-stripe) 6px
-  );
+  background: repeating-linear-gradient(45deg,
+      var(--part-free) 0px,
+      var(--part-free) 3px,
+      var(--part-free-stripe) 3px,
+      var(--part-free-stripe) 6px);
 }
 
 .table-section {
@@ -628,6 +624,56 @@ body {
 .detail-item .detail-value {
   font-weight: 500;
   word-break: break-all;
+}
+
+.pool-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.pool-list {
+  padding: 0;
+}
+
+.pool-empty {
+  padding: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.pool-table {
+  width: 100%;
+}
+
+.pool-table td,
+.pool-table th {
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.pool-table .pool-name {
+  font-weight: 600;
+}
+
+.pool-table .pool-type {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.pool-table .pool-members {
+  color: var(--muted);
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pool-table .topo-node {
+  white-space: nowrap;
+  line-height: 1.5;
 }
 
 .modal {

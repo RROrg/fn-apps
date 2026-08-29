@@ -1,6 +1,14 @@
-const API = location.pathname.includes("/app/fn-WParted")
-  ? "/app/fn-WParted/api"
-  : "./api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+// fnOS 网关注入鉴权；统一走后端相对路径，不再做路径探测兜底。
+const API_ENDPOINT = "./api";
+
+const state = {
+  language: "zh-CN",
+  theme: "light",
+};
 
 let currentDevice = "";
 let devices = [];
@@ -30,137 +38,50 @@ function preventDblClick(fn) {
   };
 }
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
+}
+
+function t(key, params = {}) {
+  const messages = I18N[state.language] || I18N["zh-CN"];
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
   );
-}
-
-function safeDecode(value) {
-  try {
-    return decodeURIComponent(value || "");
-  } catch (_error) {
-    return value || "";
-  }
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage.getItem(name) ||
-      window.parent.sessionStorage.getItem(name) ||
-      ""
-    );
-  } catch (_error) {
-    return "";
-  }
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (theme === "system" || theme === "auto" || theme === "os") {
-    return prefersDarkTheme() ? "dark" : "light";
-  }
-  return "";
-}
-
-function themeMedia() {
-  return typeof window.matchMedia === "function"
-    ? window.matchMedia("(prefers-color-scheme: dark)")
-    : null;
-}
-
-function prefersDarkTheme() {
-  return Boolean(themeMedia()?.matches);
-}
-
-function currentTheme() {
-  const fromSystem = [
-    queryValue("theme"),
-    cookieValue("fnos-theme-mode"),
-    cookieValue("os-theme-mode"),
-    storedValue("fnos-theme-mode"),
-    storedValue("os-theme-mode"),
-    parentStoredValue("fnos-theme-mode"),
-    parentStoredValue("os-theme-mode"),
-    documentThemeValue(document),
-    parentDocumentThemeValue(),
-    queryValue("fnos-theme-mode"),
-  ]
-    .map(normalizeTheme)
-    .find(Boolean);
-  if (fromSystem) return fromSystem;
-  return prefersDarkTheme() ? "dark" : "light";
 }
 
 function applyTheme() {
-  const theme = currentTheme();
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化。
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
   document.documentElement.dataset.theme = theme;
   document.body.dataset.theme = theme;
 }
 
-function watchThemeChange() {
-  const media = themeMedia();
-  if (media) {
-    try {
-      media.addEventListener("change", () => applyTheme());
-    } catch (_error) {
-      try {
-        media.addListener(() => applyTheme());
-      } catch (_error2) {}
-    }
+function applyPreferences({ rerender = false } = {}) {
+  const languageChanged = applyLanguage();
+  applyTheme();
+  const title = t("appTitle");
+  document.title = title;
+  if (sdk.setTitle) {
+    sdk.setTitle(title).catch(() => {});
   }
-  window.addEventListener("storage", (e) => {
-    if (e.key === "fnos-theme-mode" || e.key === "os-theme-mode") {
-      applyTheme();
-    }
-  });
+  applyI18n();
+  if (rerender && languageChanged) {
+    // 语言变化后重渲染动态生成的内容
+    if (currentDevice) loadDeviceDetail();
+  }
+  return languageChanged;
 }
 
 const FS_COLORS = {
@@ -195,6 +116,8 @@ function fsColor(fs) {
 
 const I18N = {
   "zh-CN": {
+    appTitle: "WParted",
+    selectDevice: "选择设备",
     refresh: "刷新",
     newPartition: "新建分区",
     deletePartition: "删除分区",
@@ -233,6 +156,7 @@ const I18N = {
     resize: "调整",
     mountPartition: "挂载分区",
     mountPoint: "挂载点",
+
     wipeDiskTitle: "擦除磁盘",
     wipeWarning: "警告：擦除磁盘将删除所有分区和数据！此操作不可恢复！",
     device: "设备",
@@ -282,8 +206,19 @@ const I18N = {
     communitySupport: "社区支持",
     sponsorSupport: "赞助支持",
     join: "点击加入",
+    storagePools: "存储池 / RAID",
+    poolName: "名称",
+    poolType: "类型",
+    poolMembers: "成员",
+    poolHealth: "状态",
+    poolSize: "容量",
+    noPools: "未检测到存储池",
+    poolMemberGuard:
+      "该磁盘属于存储池/RAID 成员，破坏性操作已被阻止，请先销毁存储池。",
   },
   en: {
+    appTitle: "WParted",
+    selectDevice: "Select Device",
     refresh: "Refresh",
     newPartition: "New Partition",
     deletePartition: "Delete Partition",
@@ -323,6 +258,7 @@ const I18N = {
     resize: "Resize",
     mountPartition: "Mount Partition",
     mountPoint: "Mount Point",
+
     wipeDiskTitle: "Wipe Disk",
     wipeWarning:
       "Warning: Wiping the disk will delete all partitions and data! This cannot be undone!",
@@ -378,13 +314,17 @@ const I18N = {
     communitySupport: "Community Support",
     sponsorSupport: "Sponsor Support",
     join: "Join",
+    storagePools: "Storage Pools / RAID",
+    poolName: "Name",
+    poolType: "Type",
+    poolMembers: "Members",
+    poolHealth: "State",
+    poolSize: "Size",
+    noPools: "No storage pool detected",
+    poolMemberGuard:
+      "This disk is a member of a storage pool/RAID. Destructive operations are blocked; remove the pool first.",
   },
 };
-
-function t(key) {
-  const lang = navigator.language.startsWith("zh") ? "zh-CN" : "en";
-  return (I18N[lang] && I18N[lang][key]) || I18N["en"][key] || key;
-}
 
 function applyI18n() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
@@ -397,17 +337,25 @@ function applyI18n() {
     const text = t(key);
     if (text) el.placeholder = text;
   });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-title");
+    const text = t(key);
+    if (text) el.title = text;
+  });
+  const title = t("appTitle");
+  if (title) document.title = title;
 }
 
-async function api(action, body = null) {
-  const url = `${API}?${action}`;
-  const options = { method: body ? "POST" : "GET" };
-  if (body) {
-    options.headers = { "Content-Type": "application/json" };
-    options.body = JSON.stringify(body);
-  }
-  const resp = await fetch(url, options);
-  return resp.json();
+async function api(action, data = null) {
+  const payload = { action, ...(data || {}) };
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  return response.json();
 }
 
 function showToast(message, type = "") {
@@ -485,6 +433,11 @@ function formatSize(bytes) {
   return `${val.toFixed(1)} EiB`;
 }
 
+// 把 MiB 数值自动换算成易读的单位（B/KiB/MiB/GiB/TiB...）
+function formatMiB(mib) {
+  return formatSize((Number(mib) || 0) * 1024 * 1024);
+}
+
 async function loadDevices() {
   document.getElementById("loadingState").classList.remove("hidden");
   document.getElementById("errorState").classList.add("hidden");
@@ -504,6 +457,7 @@ async function loadDevices() {
       document.getElementById("deviceSelect").value = currentDevice;
       await loadDeviceDetail();
     }
+    await loadStoragePools();
     document.getElementById("loadingState").classList.add("hidden");
   } catch (err) {
     document.getElementById("loadingState").classList.add("hidden");
@@ -560,6 +514,93 @@ function renderDiskInfo(device) {
     <div class="info-item"><span class="info-label">${t("ptType")}:</span><span class="info-value">${device.pttype || "-".toUpperCase()}</span></div>
     ${rotaLabel ? `<div class="info-item"><span class="info-label">${t("rota")}:</span><span class="info-value">${rotaLabel}</span></div>` : ""}
   `;
+}
+
+async function loadStoragePools() {
+  const section = document.getElementById("poolSection");
+  const list = document.getElementById("poolList");
+  try {
+    const data = await api("storage-pools");
+    if (!data.ok) throw new Error(data.message || "Failed to load pools");
+    renderStoragePools(data.pools || []);
+    section.classList.remove("hidden");
+  } catch (err) {
+    section.classList.add("hidden");
+  }
+}
+
+function renderStoragePools(pools) {
+  const list = document.getElementById("poolList");
+  if (!pools || pools.length === 0) {
+    list.innerHTML = `<div class="pool-empty">${t("noPools")}</div>`;
+    return;
+  }
+  // 排序：存储空间(带挂载点 /volX)在前按数字升序，裸RAID次之，其它(zfs)殿后。
+  const ordered = [...pools].sort((a, b) => {
+    const rank = (p) =>
+      p.source === "btrfs"
+        ? 0
+        : p.source === "md"
+          ? 1
+          : p.source === "zfs"
+            ? 2
+            : 3;
+    const num = (p) => {
+      const m = String(p.name).match(/(\d+)\s*$/);
+      return m ? Number(m[1]) : 0;
+    };
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return num(a) - num(b);
+  });
+  const rows = ordered
+    .map((p) => {
+      const raid = p.raid;
+      // 存储空间条目：优先显示其底层的 md/RAID 结构名
+      const type = raid
+        ? `${raid.name} · ${raid.level || p.type || p.source}`
+        : p.type || p.source;
+      const health = raid
+        ? raid.health || p.health || p.state || "-"
+        : p.health || p.state || "-";
+      const topoText = p.topo && p.topo.length ? p.topo.join(" → ") : "";
+      const members =
+        p.topo && p.topo.length
+          ? p.topo
+              .map(
+                (n, i) =>
+                  `<div class="topo-node" style="padding-left:${i * 14}px" title="${n}">${i ? "└─ " : "◉ "}${n}</div>`,
+              )
+              .join("")
+          : p.members && p.members.length
+            ? p.members.join(", ")
+            : "-";
+      return `
+        <tr>
+          <td class="pool-name" title="${p.source}">${p.name}</td>
+          <td class="pool-type">${type}</td>
+          <td class="pool-size">${formatSize(p.size)}</td>
+          <td class="pool-health">${health}</td>
+          <td class="pool-members" ${topoText ? `title="${topoText}"` : ""}>${members}</td>
+        </tr>`;
+    })
+    .join("");
+  list.innerHTML = `
+    <div class="table-wrap">
+      <table class="data-table pool-table">
+        <thead>
+          <tr>
+            <th>${t("poolName")}</th>
+            <th>${t("poolType")}</th>
+            <th>${t("poolSize")}</th>
+            <th>${t("poolHealth")}</th>
+            <th>${t("poolMembers")}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function renderPartitionCanvas(device, parted) {
@@ -732,7 +773,7 @@ function renderPartitionTable(device, parted) {
         <td>${fsBadge}</td>
         <td>${mountBadge || "-"}</td>
         <td>${label || "-"}</td>
-        <td>${p.sizeMiB} MiB</td>
+        <td title="${p.sizeMiB} MiB">${formatMiB(p.sizeMiB)}</td>
         <td>${usedCell}</td>
         <td>${p.flags || "-"}</td>
       `;
@@ -755,7 +796,7 @@ function renderPartitionTable(device, parted) {
         <td>-</td>
         <td>-</td>
         <td>-</td>
-        <td>${f.sizeMiB} MiB</td>
+        <td title="${f.sizeMiB} MiB">${formatMiB(f.sizeMiB)}</td>
         <td>-</td>
         <td>-</td>
       `;
@@ -852,7 +893,7 @@ function showPartitionDetail(partInfo) {
     <div class="detail-item"><span class="detail-label">${t("fstype")}</span><span class="detail-value">${partInfo.fstype || "-"}</span></div>
     <div class="detail-item"><span class="detail-label">${t("startMiBLabel")}</span><span class="detail-value">${partInfo.startMiB} MiB</span></div>
     <div class="detail-item"><span class="detail-label">${t("endMiBLabel")}</span><span class="detail-value">${partInfo.endMiB} MiB</span></div>
-    <div class="detail-item"><span class="detail-label">${t("sizeMiB")}</span><span class="detail-value">${partInfo.sizeMiB} MiB</span></div>
+    <div class="detail-item"><span class="detail-label">${t("sizeMiB")}</span><span class="detail-value">${formatMiB(partInfo.sizeMiB)}</span></div>
     <div class="detail-item"><span class="detail-label">${t("flags")}</span><span class="detail-value">${partInfo.flags || "-"}</span></div>
     <div class="detail-item"><span class="detail-label">${t("label")}</span><span class="detail-value">${lsblkPart ? lsblkPart.label || "-" : "-"}</span></div>
     <div class="detail-item"><span class="detail-label">${t("uuid")}</span><span class="detail-value">${lsblkPart ? lsblkPart.uuid || "-" : "-"}</span></div>
@@ -871,7 +912,7 @@ function showFreeSpaceDetail(item) {
     <div class="detail-item"><span class="detail-label">${t("fstype")}</span><span class="detail-value">${t("freeSpace")}</span></div>
     <div class="detail-item"><span class="detail-label">${t("startMiBLabel")}</span><span class="detail-value">${item.startMiB} MiB</span></div>
     <div class="detail-item"><span class="detail-label">${t("endMiBLabel")}</span><span class="detail-value">${item.endMiB} MiB</span></div>
-    <div class="detail-item"><span class="detail-label">${t("sizeMiB")}</span><span class="detail-value">${item.sizeMiB} MiB</span></div>
+    <div class="detail-item"><span class="detail-label">${t("sizeMiB")}</span><span class="detail-value">${formatMiB(item.sizeMiB)}</span></div>
   `;
 
   section.classList.remove("hidden");
@@ -1270,10 +1311,25 @@ function initEventListeners() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  applyTheme();
-  watchThemeChange();
-  applyI18n();
+window.addEventListener("load", async () => {
+  try {
+    platformConfig = await sdk.getPlatformConfig();
+  } catch (_error) {
+    // 独立浏览器/非宿主环境读取失败时保持默认（zh-CN / light）
+  }
+  applyPreferences();
+
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
   initEventListeners();
   checkMissingTools();
   loadDevices();

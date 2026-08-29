@@ -5,6 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 SOCKET_PATH="${TRIM_APPDEST}/fn-WParted.sock"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+# write the command to start your program here
 CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/wparted.py\" --unix-socket \"${SOCKET_PATH}\" --base-path \"/app/fn-WParted\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {
@@ -47,10 +48,10 @@ stop_process() {
     kill -TERM ${pid} >>${LOG_FILE} 2>&1
 
     local count=0
-    while check_process "${pid}" && [ $count -lt 15 ]; do
+    while check_process "${pid}" && [ $count -lt 10 ]; do
       sleep 1
       count=$((count + 1))
-      log_msg "waiting process terminal... (${count}s/15s)"
+      log_msg "waiting process terminal... (${count}s/10s)"
     done
 
     if check_process "${pid}"; then
@@ -64,8 +65,6 @@ stop_process() {
       rm -f "${PID_FILE}"
       rm -f "${SOCKET_PATH}"
     fi
-  else
-    rm -f "${SOCKET_PATH}"
   fi
 
   return 0

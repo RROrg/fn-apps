@@ -20,15 +20,23 @@ import subprocess
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-APP_NAME = "fn-WParted"
-STATE_DIR = Path("/var/lib/fn-WParted")
-STATE_DIR.mkdir(parents=True, exist_ok=True)
-OPERATIONS_FILE = STATE_DIR / "operations.json"
+
+def _env(name, default=""):
+    return os.environ.get(name, "").strip() or default
+
+
+APP_NAME = _env("TRIM_APPNAME", "fn-WParted")
+# 运行时数据目录：优先用 TRIM_PKGVAR，回退到 /var/apps/<app>/var
+_pkgvar = _env("TRIM_PKGVAR")
+VAR_DIR = Path(_pkgvar) if _pkgvar else Path(f"/var/apps/{APP_NAME}/var")
+VAR_DIR.mkdir(parents=True, exist_ok=True)
+OPERATIONS_FILE = VAR_DIR / "operations.json"
 REQUEST_CONTEXT = threading.local()
 _lock = threading.Lock()
 
@@ -167,22 +175,16 @@ class Handler(BaseHTTPRequestHandler):
     def serve_api(self, query):
         length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length) if length else b""
-        previous = getattr(REQUEST_CONTEXT, "value", None)
-        REQUEST_CONTEXT.value = {
-            "method": self.command,
-            "query": query or "",
-            "body": body,
-            "handler": self,
-        }
-        try:
-            dispatch()
-        except Exception as exc:
-            json_response({"ok": False, "message": str(exc)}, 500)
-        finally:
-            if previous is None:
-                del REQUEST_CONTEXT.value
-            else:
-                REQUEST_CONTEXT.value = previous
+        headers = dict(self.headers.items())
+        with request_context(
+            self.command, query=query, headers=headers, body=body, handler=self
+        ):
+            try:
+                dispatch()
+            except Exception as exc:
+                json_response(
+                    {"ok": False, "message": str(exc)}, "500 Internal Server Error"
+                )
 
 
 def normalize_base_path(path):
@@ -204,20 +206,77 @@ def current_request():
     return getattr(REQUEST_CONTEXT, "value", {})
 
 
-def json_response(payload, status=200):
+@contextmanager
+def request_context(method, query="", headers=None, body=b"", handler=None):
+    previous = getattr(REQUEST_CONTEXT, "value", None)
+    REQUEST_CONTEXT.value = {
+        "method": (method or "GET").upper(),
+        "query": query or "",
+        "headers": headers or {},
+        "body": body or b"",
+        "handler": handler,
+    }
+    try:
+        yield
+    finally:
+        if previous is None:
+            if hasattr(REQUEST_CONTEXT, "value"):
+                del REQUEST_CONTEXT.value
+        else:
+            REQUEST_CONTEXT.value = previous
+
+
+def ensure_dirs():
+    VAR_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def normalize_status(status):
+    if isinstance(status, HTTPStatus):
+        return status.value, f"{status.value} {status.phrase}"
+    if isinstance(status, int):
+        try:
+            phrase = HTTPStatus(status).phrase
+        except Exception:
+            phrase = "OK"
+        return status, f"{status} {phrase}"
+    text = str(status or "200 OK").strip()
+    if not text:
+        return 200, "200 OK"
+    first, _, rest = text.partition(" ")
+    if first.isdigit():
+        code = int(first)
+        if not rest:
+            try:
+                rest = HTTPStatus(code).phrase
+            except Exception:
+                rest = ""
+        return code, f"{code} {rest}".strip()
+    return 200, "200 OK"
+
+
+def json_response(payload, status="200 OK"):
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
         "utf-8"
     )
+    code, status_text = normalize_status(status)
     request = current_request()
     handler = request.get("handler", None)
     if handler is not None:
-        handler.send_response(status)
-        handler.send_header("Content-Type", "application/json; charset=utf-8")
-        handler.send_header("Content-Length", str(len(body)))
-        handler.end_headers()
-        if handler.command != "HEAD":
-            handler.wfile.write(body)
+        try:
+            handler.send_response(code)
+            handler.send_header("Content-Type", "application/json; charset=utf-8")
+            handler.send_header("Content-Length", str(len(body)))
+            handler.end_headers()
+            if handler.command != "HEAD":
+                handler.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            return
         return
+    sys.stdout.write(f"Status: {status_text}\r\n")
+    sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n")
+    sys.stdout.write(f"Content-Length: {len(body)}\r\n\r\n")
+    sys.stdout.flush()
+    sys.stdout.buffer.write(body)
 
 
 def request_body():
@@ -244,7 +303,9 @@ def run(cmd, timeout=30, stdin_data=None):
             "cmd": " ".join(cmd),
             "rc": 124,
             "stdout": (exc.stdout or "").strip(),
-            "stderr": ((exc.stderr or "").strip() or f"Command timed out after {timeout}s"),
+            "stderr": (
+                (exc.stderr or "").strip() or f"Command timed out after {timeout}s"
+            ),
         }
     return {
         "cmd": " ".join(cmd),
@@ -330,12 +391,23 @@ def run_interactive(cmd, timeout=30, confirm="Yes\n"):
     }
 
 
+def _safe_dev_path(name):
+    if not name:
+        return False
+    if not name.startswith("/dev/"):
+        return False
+    if not re.match(r"^/dev/[A-Za-z0-9_./-]+$", name):
+        return False
+    # 拒绝路径穿越（..）与相对段（.），防止 /dev/../../etc 之类的逃逸
+    return all(seg not in (".", "..") for seg in name.split("/"))
+
+
 def safe_dev_name(name):
-    return bool(name and re.match(r"^/dev/[A-Za-z0-9_./-]+$", name))
+    return _safe_dev_path(name)
 
 
 def safe_part_name(name):
-    return bool(name and re.match(r"^/dev/[A-Za-z0-9_./-]+$", name))
+    return _safe_dev_path(name)
 
 
 def safe_fs_type(fs):
@@ -345,19 +417,16 @@ def safe_fs_type(fs):
 def safe_mount_point(mp):
     if not mp:
         return True
-    return bool(re.match(r"^/[A-Za-z0-9_./ -]*$", mp))
+    if not mp.startswith("/") or not re.match(r"^/[A-Za-z0-9_./ -]*$", mp):
+        return False
+    # 拒绝路径穿越（..）与相对段（.）
+    return all(seg not in (".", "..") for seg in mp.split("/"))
 
 
 def safe_label(label):
     if not label:
         return True
     return bool(re.match(r"^[A-Za-z0-9_ .-]{0,128}$", label))
-
-
-def safe_uuid(u):
-    if not u:
-        return True
-    return bool(re.match(r"^[A-Za-z0-9-]+$", u))
 
 
 def human_size(sector_size, sectors):
@@ -676,17 +745,19 @@ def save_operations(data):
     )
 
 
-def api_disks():
+def api_disks(payload):
     lsblk_data = parse_lsblk()
     devices = build_device_tree(lsblk_data)
     json_response({"ok": True, "devices": devices})
 
 
-def api_disk_detail():
-    body = request_body()
+def api_disk_detail(payload):
+    body = payload
     device_path = body.get("device", "")
     if not safe_dev_name(device_path):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
         return
     fdisk_output = get_partition_table(device_path)
     parted_info = get_detailed_partitions(device_path)
@@ -796,7 +867,7 @@ def _do_format(partition: str, fs_type: str, label: str = ""):
         time.sleep(1)
         result = run(cmd, timeout=300)
     if result["rc"] == 0:
-        os.sync() # pyright: ignore[reportAttributeAccessIssue]
+        os.sync()  # pyright: ignore[reportAttributeAccessIssue]
         run(["udevadm", "settle", "--timeout=10"], timeout=15)
     return result
 
@@ -823,9 +894,7 @@ def _unmount_partition(partition):
     swaps = run(["swapon", "--show=NAME", "--noheadings"], timeout=15)
     if swaps["rc"] == 0:
         active_swaps = {
-            line.strip()
-            for line in swaps["stdout"].splitlines()
-            if line.strip()
+            line.strip() for line in swaps["stdout"].splitlines() if line.strip()
         }
         if partition in active_swaps:
             swap_result = run(["swapoff", partition], timeout=30)
@@ -893,8 +962,8 @@ def _count_partitions(device):
     return None
 
 
-def api_partition_create():
-    body = request_body()
+def api_partition_create(payload):
+    body = payload
     device = body.get("device", "")
     start_mib = body.get("startMiB")
     end_mib = body.get("endMiB")
@@ -902,28 +971,35 @@ def api_partition_create():
     part_type = body.get("partType", "primary")
     label = body.get("label", "")
     if not safe_dev_name(device):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
         return
     if start_mib is None or end_mib is None:
         json_response(
-            {"ok": False, "message": "startMiB and endMiB are required"}, 400
+            {"ok": False, "message": "startMiB and endMiB are required"},
+            "400 Bad Request",
         )
         return
     if float(start_mib) < 1:
         start_mib = 1
     if float(end_mib) <= float(start_mib):
         json_response(
-            {"ok": False, "message": "endMiB must be greater than startMiB"}, 400
+            {"ok": False, "message": "endMiB must be greater than startMiB"},
+            "400 Bad Request",
         )
         return
     if not safe_fs_type(fs_type):
-        json_response({"ok": False, "message": "Invalid filesystem type"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid filesystem type"}, "400 Bad Request"
+        )
         return
     # The server is threaded.  Serialize destructive block operations so a
     # refresh or a second browser tab cannot interleave parted/mkfs calls.
     if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": "Another disk operation is in progress"}, 409
+            {"ok": False, "message": "Another disk operation is in progress"},
+            "409 Conflict",
         )
         return
     try:
@@ -956,7 +1032,7 @@ def api_partition_create():
                     "ok": False,
                     "message": f"Failed to create partition: {result['stderr']}",
                 },
-                500,
+                "500 Internal Server Error",
             )
             return
         run(["partprobe", device], timeout=10)
@@ -975,7 +1051,7 @@ def api_partition_create():
                         "ok": False,
                         "message": f"Partition was created but formatting failed: {detail}",
                     },
-                    500,
+                    "500 Internal Server Error",
                 )
                 return
         elif fs_type and fs_type != "unformatted":
@@ -984,7 +1060,7 @@ def api_partition_create():
                     "ok": False,
                     "message": "Partition was created but its device is not ready",
                 },
-                500,
+                "500 Internal Server Error",
             )
             return
         if label:
@@ -1008,19 +1084,29 @@ def api_partition_create():
         _lock.release()
 
 
-def api_partition_delete():
-    body = request_body()
+def api_partition_delete(payload):
+    body = payload
     device = body.get("device", "")
     part_number = body.get("partNumber")
     if not safe_dev_name(device):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
         return
     if part_number is None:
-        json_response({"ok": False, "message": "partNumber is required"}, 400)
+        json_response(
+            {"ok": False, "message": "partNumber is required"}, "400 Bad Request"
+        )
+        return
+    part_path = _partition_path(device, part_number)
+    pool_guard = _pool_guard(part_path)
+    if pool_guard:
+        json_response({"ok": False, "message": pool_guard}, "400 Bad Request")
         return
     if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": "Another disk operation is in progress"}, 409
+            {"ok": False, "message": "Another disk operation is in progress"},
+            "409 Conflict",
         )
         return
     try:
@@ -1031,7 +1117,7 @@ def api_partition_delete():
                     "ok": False,
                     "message": f"Failed to unmount partition: {unmount_error}",
                 },
-                500,
+                "500 Internal Server Error",
             )
             return
         cmd = ["parted", device, "rm", str(part_number)]
@@ -1042,7 +1128,7 @@ def api_partition_delete():
                     "ok": False,
                     "message": f"Failed to delete partition: {result['stderr']}",
                 },
-                500,
+                "500 Internal Server Error",
             )
             return
         run(["partprobe", device], timeout=10)
@@ -1062,18 +1148,21 @@ def api_partition_delete():
         _lock.release()
 
 
-def api_partition_resize():
-    body = request_body()
+def api_partition_resize(payload):
+    body = payload
     device = body.get("device", "")
     part_number = body.get("partNumber")
     start_mib = body.get("startMiB")
     end_mib = body.get("endMiB")
     if not safe_dev_name(device):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
         return
     if part_number is None or end_mib is None:
         json_response(
-            {"ok": False, "message": "partNumber and endMiB are required"}, 400
+            {"ok": False, "message": "partNumber and endMiB are required"},
+            "400 Bad Request",
         )
         return
     # parted resizepart only accepts an END position; it cannot move the
@@ -1082,7 +1171,7 @@ def api_partition_resize():
     if start_mib is not None:
         json_response(
             {"ok": False, "message": "Moving the partition start is not supported"},
-            400,
+            "400 Bad Request",
         )
         return
     cmd = ["parted", device, "resizepart", str(part_number), f"{end_mib}MiB"]
@@ -1090,7 +1179,7 @@ def api_partition_resize():
     if result["rc"] != 0:
         json_response(
             {"ok": False, "message": f"Failed to resize partition: {result['stderr']}"},
-            500,
+            "500 Internal Server Error",
         )
         return
     run(["partprobe", device], timeout=10)
@@ -1137,19 +1226,27 @@ _LABEL_FLAGS = {
 _LABEL_MAX = {"fat16": 11, "fat32": 11}
 
 
-def api_partition_format():
-    body = request_body()
+def api_partition_format(payload):
+    body = payload
     partition = body.get("partition", "")
     fs_type = body.get("fstype", "ext4")
     label = body.get("label", "")
     if not safe_part_name(partition):
-        json_response({"ok": False, "message": "Invalid partition name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid partition name"}, "400 Bad Request"
+        )
         return
     if not safe_fs_type(fs_type):
-        json_response({"ok": False, "message": "Invalid filesystem type"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid filesystem type"}, "400 Bad Request"
+        )
         return
     if not safe_label(label):
-        json_response({"ok": False, "message": "Invalid label"}, 400)
+        json_response({"ok": False, "message": "Invalid label"}, "400 Bad Request")
+        return
+    pool_guard = _pool_guard(partition)
+    if pool_guard:
+        json_response({"ok": False, "message": pool_guard}, "400 Bad Request")
         return
     if not os.path.exists(partition):
         device = partition.rstrip("0123456789")
@@ -1170,7 +1267,8 @@ def api_partition_format():
     # refresh or a second browser tab cannot interleave wipefs/mkfs calls.
     if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": "Another disk operation is in progress"}, 409
+            {"ok": False, "message": "Another disk operation is in progress"},
+            "409 Conflict",
         )
         return
     try:
@@ -1180,7 +1278,8 @@ def api_partition_format():
     if result is None or result["rc"] != 0:
         msg = result["stderr"] if result else "Unknown error"
         json_response(
-            {"ok": False, "message": f"Failed to format partition: {msg}"}, 500
+            {"ok": False, "message": f"Failed to format partition: {msg}"},
+            "500 Internal Server Error",
         )
         return
     ops = load_operations()
@@ -1199,46 +1298,56 @@ def api_partition_format():
     )
 
 
-def api_partition_set_flag():
-    body = request_body()
+def api_partition_set_flag(payload):
+    body = payload
     device = body.get("device", "")
     part_number = body.get("partNumber")
     flag = body.get("flag", "")
     state = body.get("state", True)
     if not safe_dev_name(device):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
         return
     if part_number is None or not flag:
         json_response(
-            {"ok": False, "message": "partNumber and flag are required"}, 400
+            {"ok": False, "message": "partNumber and flag are required"},
+            "400 Bad Request",
         )
         return
     if not re.match(r"^[a-z][a-z0-9-]*$", flag):
-        json_response({"ok": False, "message": "Invalid flag name"}, 400)
+        json_response({"ok": False, "message": "Invalid flag name"}, "400 Bad Request")
         return
     state_str = "on" if state else "off"
     cmd = ["parted", "-s", device, "set", str(part_number), flag, state_str]
     result = run(cmd, timeout=30)
     if result["rc"] != 0:
         json_response(
-            {"ok": False, "message": f"Failed to set flag: {result['stderr']}"}, 500
+            {"ok": False, "message": f"Failed to set flag: {result['stderr']}"},
+            "500 Internal Server Error",
         )
         return
     json_response({"ok": True, "message": f"Flag {flag} set to {state_str}"})
 
 
-def api_partition_mount():
-    body = request_body()
+def api_partition_mount(payload):
+    body = payload
     partition = body.get("partition", "")
     mount_point = body.get("mountPoint", "")
     if not safe_part_name(partition):
-        json_response({"ok": False, "message": "Invalid partition name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid partition name"}, "400 Bad Request"
+        )
         return
     if not safe_mount_point(mount_point):
-        json_response({"ok": False, "message": "Invalid mount point"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid mount point"}, "400 Bad Request"
+        )
         return
     if not mount_point:
-        json_response({"ok": False, "message": "mountPoint is required"}, 400)
+        json_response(
+            {"ok": False, "message": "mountPoint is required"}, "400 Bad Request"
+        )
         return
     mounted = run(["findmnt", "-rn", "-S", partition, "-o", "TARGET"], timeout=15)
     if mounted["rc"] == 0 and mounted["stdout"].strip():
@@ -1247,7 +1356,7 @@ def api_partition_mount():
                 "ok": False,
                 "message": f"Partition is already mounted at {mounted['stdout'].strip().splitlines()[0]}",
             },
-            400,
+            "400 Bad Request",
         )
         return
     Path(mount_point).mkdir(parents=True, exist_ok=True)
@@ -1255,44 +1364,53 @@ def api_partition_mount():
     result = run(cmd, timeout=30)
     if result["rc"] != 0:
         json_response(
-            {"ok": False, "message": f"Failed to mount: {result['stderr']}"}, 500
+            {"ok": False, "message": f"Failed to mount: {result['stderr']}"},
+            "500 Internal Server Error",
         )
         return
     json_response({"ok": True, "message": f"Mounted {partition} at {mount_point}"})
 
 
-def api_partition_umount():
-    body = request_body()
+def api_partition_umount(payload):
+    body = payload
     target = body.get("target", "")
     if not target:
         json_response(
             {"ok": False, "message": "target (partition or mount point) is required"},
-            400,
+            "400 Bad Request",
         )
         return
     if not (safe_part_name(target) or safe_mount_point(target)):
-        json_response({"ok": False, "message": "Invalid target"}, 400)
+        json_response({"ok": False, "message": "Invalid target"}, "400 Bad Request")
         return
     cmd = ["umount", target]
     result = run(cmd, timeout=30)
     if result["rc"] != 0:
         json_response(
-            {"ok": False, "message": f"Failed to unmount: {result['stderr']}"}, 500
+            {"ok": False, "message": f"Failed to unmount: {result['stderr']}"},
+            "500 Internal Server Error",
         )
         return
     json_response({"ok": True, "message": f"Unmounted {target}"})
 
 
-def api_disk_wipe():
-    body = request_body()
+def api_disk_wipe(payload):
+    body = payload
     device = body.get("device", "")
     method = body.get("method", "quick")
     if not safe_dev_name(device):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
+        return
+    pool_guard = _pool_guard(device)
+    if pool_guard:
+        json_response({"ok": False, "message": pool_guard}, "400 Bad Request")
         return
     if not _lock.acquire(blocking=False):
         json_response(
-            {"ok": False, "message": "Another disk operation is in progress"}, 409
+            {"ok": False, "message": "Another disk operation is in progress"},
+            "409 Conflict",
         )
         return
     try:
@@ -1300,7 +1418,7 @@ def api_disk_wipe():
         if unmount_error:
             json_response(
                 {"ok": False, "message": f"Failed to unmount device: {unmount_error}"},
-                500,
+                "500 Internal Server Error",
             )
             return
         if method == "zero":
@@ -1308,7 +1426,8 @@ def api_disk_wipe():
             result = run(cmd, timeout=60)
             if result["rc"] != 0:
                 json_response(
-                    {"ok": False, "message": f"Failed to wipe: {result['stderr']}"}, 500
+                    {"ok": False, "message": f"Failed to wipe: {result['stderr']}"},
+                    "500 Internal Server Error",
                 )
                 return
         cmd = ["wipefs", "-a", device]
@@ -1319,7 +1438,7 @@ def api_disk_wipe():
                     "ok": False,
                     "message": f"Failed to wipe signatures: {result['stderr']}",
                 },
-                500,
+                "500 Internal Server Error",
             )
             return
         json_response({"ok": True, "message": f"Device {device} wiped successfully"})
@@ -1327,21 +1446,27 @@ def api_disk_wipe():
         _lock.release()
 
 
-def api_disk_label():
-    body = request_body()
+def api_disk_label(payload):
+    body = payload
     device = body.get("device", "")
     label_type = body.get("labelType", "gpt")
     if not safe_dev_name(device):
-        json_response({"ok": False, "message": "Invalid device name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid device name"}, "400 Bad Request"
+        )
         return
     if label_type not in ("gpt", "msdos", "mbr"):
-        json_response({"ok": False, "message": "Invalid label type"}, 400)
+        json_response({"ok": False, "message": "Invalid label type"}, "400 Bad Request")
+        return
+    pool_guard = _pool_guard(device)
+    if pool_guard:
+        json_response({"ok": False, "message": pool_guard}, "400 Bad Request")
         return
     unmount_error = _unmount_device(device)
     if unmount_error:
         json_response(
             {"ok": False, "message": f"Failed to unmount device: {unmount_error}"},
-            500,
+            "500 Internal Server Error",
         )
         return
     cmd = ["parted", device, "mklabel", label_type]
@@ -1352,7 +1477,7 @@ def api_disk_label():
                 "ok": False,
                 "message": f"Failed to create partition table: {result['stderr']}",
             },
-            500,
+            "500 Internal Server Error",
         )
         return
     json_response(
@@ -1360,11 +1485,13 @@ def api_disk_label():
     )
 
 
-def api_partition_check():
-    body = request_body()
+def api_partition_check(payload):
+    body = payload
     partition = body.get("partition", "")
     if not safe_part_name(partition):
-        json_response({"ok": False, "message": "Invalid partition name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid partition name"}, "400 Bad Request"
+        )
         return
     fstype = body.get("fstype", "")
     if not fstype:
@@ -1404,11 +1531,13 @@ def api_partition_check():
     )
 
 
-def api_partition_info():
-    body = request_body()
+def api_partition_info(payload):
+    body = payload
     partition = body.get("partition", "")
     if not safe_part_name(partition):
-        json_response({"ok": False, "message": "Invalid partition name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid partition name"}, "400 Bad Request"
+        )
         return
     blkid_result = run(["blkid", "-o", "export", partition], timeout=10)
     df_result = run(["df", "-h", partition], timeout=10)
@@ -1422,30 +1551,36 @@ def api_partition_info():
     )
 
 
-def api_fs_resize():
-    body = request_body()
+def api_fs_resize(payload):
+    body = payload
     partition = body.get("partition", "")
     fstype = body.get("fstype", "")
     mount_point = body.get("mountPoint", "")
     if not safe_part_name(partition):
-        json_response({"ok": False, "message": "Invalid partition name"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid partition name"}, "400 Bad Request"
+        )
         return
     if not safe_fs_type(fstype):
-        json_response({"ok": False, "message": "Invalid filesystem type"}, 400)
+        json_response(
+            {"ok": False, "message": "Invalid filesystem type"}, "400 Bad Request"
+        )
         return
     if fstype in ("ext2", "ext3", "ext4"):
         cmd = ["resize2fs", partition]
     elif fstype == "xfs":
         if not mount_point:
             json_response(
-                {"ok": False, "message": "XFS resize requires mount point"}, 400
+                {"ok": False, "message": "XFS resize requires mount point"},
+                "400 Bad Request",
             )
             return
         cmd = ["xfs_growfs", mount_point]
     elif fstype == "btrfs":
         if not mount_point:
             json_response(
-                {"ok": False, "message": "Btrfs resize requires mount point"}, 400
+                {"ok": False, "message": "Btrfs resize requires mount point"},
+                "400 Bad Request",
             )
             return
         cmd = ["btrfs", "filesystem", "resize", "max", mount_point]
@@ -1454,7 +1589,7 @@ def api_fs_resize():
     else:
         json_response(
             {"ok": False, "message": f"Unsupported filesystem for resize: {fstype}"},
-            400,
+            "400 Bad Request",
         )
         return
     result = run(cmd, timeout=120)
@@ -1464,62 +1599,384 @@ def api_fs_resize():
                 "ok": False,
                 "message": f"Failed to resize filesystem: {result['stderr']}",
             },
-            500,
+            "500 Internal Server Error",
         )
         return
     json_response({"ok": True, "message": f"Filesystem {fstype} resized successfully"})
 
 
-def api_operations():
+def api_operations(payload):
     ops = load_operations()
     json_response({"ok": True, "operations": ops})
 
 
-def api_operations_clear():
+def api_operations_clear(payload):
     save_operations({"pending": [], "applied": []})
     json_response({"ok": True, "message": "Operations cleared"})
 
 
-def api_check_tools():
+def api_check_tools(payload):
     available, missing = check_tools()
     json_response({"ok": True, "available": available, "missing": missing})
 
 
-ROUTES = {
-    "disks": api_disks,
-    "disk-detail": api_disk_detail,
-    "partition-create": api_partition_create,
-    "partition-delete": api_partition_delete,
-    "partition-resize": api_partition_resize,
-    "partition-format": api_partition_format,
-    "partition-set-flag": api_partition_set_flag,
-    "partition-mount": api_partition_mount,
-    "partition-umount": api_partition_umount,
-    "disk-wipe": api_disk_wipe,
-    "disk-label": api_disk_label,
-    "partition-check": api_partition_check,
-    "partition-info": api_partition_info,
-    "fs-resize": api_fs_resize,
-    "operations": api_operations,
-    "operations-clear": api_operations_clear,
-    "check-tools": api_check_tools,
-}
+def _zfs_pools():
+    """盘点 ZFS 存储池（支持跨盘/RAID 拓扑）。"""
+    result = run(
+        ["zpool", "list", "-Hp", "-o", "name,size,allocated,free,health"], timeout=20
+    )
+    if result["rc"] != 0:
+        return []
+    pools = {}
+    for line in result["stdout"].splitlines():
+        fields = line.split()
+        if len(fields) < 5:
+            continue
+        pools[fields[0]] = {
+            "name": fields[0],
+            "source": "zfs",
+            "type": "zpool",
+            "size": int(fields[1]),
+            "allocated": int(fields[2]),
+            "free": int(fields[3]),
+            "health": fields[4],
+            "members": [],
+        }
+    status = run(["zpool", "status", "-P"], timeout=25)
+    if status["rc"] == 0:
+        cur_name = None
+        vdev_type = ""
+        in_config = False
+        for line in status["stdout"].splitlines():
+            stripped = line.strip()
+            if stripped.startswith("pool:"):
+                cur_name = (
+                    stripped.split(None, 1)[1]
+                    if len(stripped.split(None, 1)) > 1
+                    else ""
+                )
+                in_config = False
+                vdev_type = ""
+                continue
+            if stripped == "config:":
+                in_config = True
+                continue
+            if not in_config or not cur_name:
+                continue
+            indent = len(line) - len(line.lstrip())
+            if indent == 0:
+                continue
+            if indent <= 2:
+                # 顶层 vdev：可能为 raidz1-0 / mirror-0 等
+                if "raidz" in stripped or "mirror" in stripped:
+                    vdev_type = stripped.split()[0]
+                elif cur_name in pools and not vdev_type:
+                    vdev_type = stripped.split()[0]
+                continue
+            # 成员盘（多为缩进 4 或更深）
+            toks = stripped.split()
+            member = toks[0] if toks else ""
+            if member.startswith("/dev/") and cur_name in pools:
+                pools[cur_name]["members"].append(member)
+                if vdev_type and pools[cur_name]["type"] == "zpool":
+                    pools[cur_name]["type"] = vdev_type
+    return list(pools.values())
+
+
+def _md_pools():
+    """盘点 Linux MD RAID 阵列（/proc/mdstat）。"""
+    result = run(["cat", "/proc/mdstat"], timeout=5)
+    if result["rc"] != 0:
+        return []
+    pools = []
+    lines = result["stdout"].splitlines()
+    for i, line in enumerate(lines):
+        line = line.strip()
+        m = re.match(r"^(md\d+)\s*:\s*(\S+)\s+(\S+)\s+(.*)$", line)
+        if not m:
+            continue
+        name, state, level, rest = m.group(1), m.group(2), m.group(3), m.group(4)
+        members = []
+        for tok in rest.split():
+            dm = re.match(r"^([A-Za-z0-9_./-]+)\[(\d+)\](?:\((\w+)\))?$", tok)
+            if dm:
+                members.append(dm.group(1))
+        size = 0
+        health = ""
+        for j in range(i + 1, min(i + 4, len(lines))):
+            blk = lines[j].strip()
+            sm = re.search(r"^(\d+)\s+blocks", blk)
+            if sm:
+                size = int(sm.group(1)) * 1024
+            sm2 = re.search(r"\[(\d+)/(\d+)\]", blk)
+            if sm2:
+                health = f"{sm2.group(1)}/{sm2.group(2)} disks active"
+            if not blk:
+                break
+        pools.append(
+            {
+                "name": name,
+                "source": "md",
+                "type": level,
+                "state": state,
+                "size": size,
+                "health": health,
+                "members": members,
+            }
+        )
+    return pools
+
+
+def _btrfs_pools():
+    """盘点 Btrfs 文件系统（可能含多盘/raid）。
+
+    挂载中的 btrfs 会用挂载点（如 /vol1、/vol2）作为友好名称，并解析真实
+    容量（df）。未挂载的池退回 uuid 作为名称。
+    """
+    result = run(["btrfs", "filesystem", "show"], timeout=25)
+    if result["rc"] != 0:
+        return []
+    # uuid -> 挂载点（仅当前已挂载的 btrfs）
+    mounts = {}
+    mres = run(["findmnt", "-t", "btrfs", "-o", "TARGET,UUID", "-rn"], timeout=10)
+    if mres["rc"] == 0:
+        for line in mres["stdout"].splitlines():
+            parts = line.split(None, 1)
+            if len(parts) == 2:
+                mounts[parts[1]] = parts[0]
+    pools = []
+    cur = None
+    for line in result["stdout"].splitlines():
+        s = line.rstrip()
+        if s.startswith("Label:") or s.startswith("label:"):
+            if cur is not None:
+                pools.append(cur)
+            tok = s.split("uuid:")
+            uuid = tok[1].split()[0] if len(tok) > 1 else ""
+            multi = "multiple devices" in s
+            cur = {
+                "name": uuid,
+                "source": "btrfs",
+                "type": "multi-device" if multi else "single",
+                "uuid": uuid,
+                "members": [],
+                "size": 0,
+                "allocated": None,
+                "free": None,
+                "health": "",
+            }
+        elif cur is not None and (" path " in s or s.strip().startswith("/dev/")):
+            toks = s.strip().split()
+            if "path" in toks:
+                idx = toks.index("path")
+                if idx + 1 < len(toks):
+                    cur["members"].append(toks[idx + 1])
+            else:
+                cur["members"].append(toks[0])
+    if cur is not None:
+        pools.append(cur)
+    # 用挂载点名称 + df 容量丰富每个池
+    for pool in pools:
+        mp = mounts.get(pool["uuid"])
+        if mp:
+            pool["mountpoint"] = mp
+            pool["name"] = mp  # 显示 /vol1、/vol2，而非字符串 UUID
+        df_target = mp if mp else (pool["members"][0] if pool["members"] else "")
+        if not df_target:
+            continue
+        dres = run(["df", "-B1", "-P", df_target], timeout=20)
+        lines = dres["stdout"].splitlines() if dres["rc"] == 0 else []
+        for ln in lines[1:]:
+            fields = ln.split()
+            if len(fields) >= 4 and fields[1].isdigit():
+                pool["size"] = int(fields[1])
+                pool["allocated"] = int(fields[2])
+                pool["free"] = int(fields[3])
+                break
+    return pools
+
+
+def storage_pools():
+    """返回全部存储池/RAID 盘点结果。"""
+    return _zfs_pools() + _md_pools() + _btrfs_pools()
+
+
+def _lsblk_tree():
+    """返回 lsblk 树（含 children），供构造池的顶层链路。"""
+    result = run(["lsblk", "-J", "-o", "NAME"], timeout=15)
+    if result["rc"] != 0:
+        return []
+    try:
+        data = json.loads(result["stdout"] or "{}")
+    except json.JSONDecodeError:
+        return []
+    return data.get("blockdevices", [])
+
+
+def _name_chain_map():
+    """lsblk 节点名 -> 从根到该节点的完整链路（示例：['nvme0n1','nvme0n1p3','md0']）。"""
+    mapping = {}
+
+    def walk(nodes, parents):
+        for node in nodes:
+            name = node.get("name")
+            if not name:
+                continue
+            chain = parents + [name]
+            mapping[name] = chain
+            walk(node.get("children") or [], chain)
+
+    walk(_lsblk_tree(), [])
+    return mapping
+
+
+def _attach_pool_topo(pools):
+    """给存储池附加 topo 字段（物理分区 → RAID/LVM → 文件系统 → 挂载点）。
+
+    仅用于 API 展示,不参与危险操作保护（pool_membership_lookup 不走这里）。
+    """
+    chains = _name_chain_map()
+    for pool in pools:
+        source = pool.get("source")
+        if source == "md":
+            chain = chains.get(pool.get("name"))
+            if chain:
+                pool["topo"] = list(chain)
+        elif source == "btrfs":
+            base = ""
+            for member in pool.get("members", []):
+                if member.startswith("/dev/mapper/"):
+                    base = member.split("/")[-1]
+                    break
+            chain = list(chains.get(base, [])) if base else []
+            if pool.get("mountpoint"):
+                chain.append(pool["mountpoint"])
+            pool["topo"] = chain
+    return pools
+
+
+def _merge_pools(pools):
+    """把承载了 Btrfs 的 md 阵列并入对应存储空间，避免 md 与 /vol 重复成行。
+
+    合并后仅显示存储空间条目（如 /vol1 或 /vol2），其 RAID/md 结构作为
+    `raid` 字段内嵌在条目的链路中。没有任何上层文件系统的裸 md 阵列仍保留。
+    """
+    md_by_name = {}
+    for pool in pools:
+        if pool.get("source") == "md":
+            md_by_name[pool["name"]] = pool
+    absorbed = set()
+    for pool in pools:
+        if pool.get("source") != "btrfs":
+            continue
+        for node in pool.get("topo", []):
+            if isinstance(node, str) and node in md_by_name:
+                md = md_by_name[node]
+                pool["raid"] = {
+                    "name": md["name"],
+                    "level": md["type"],
+                    "health": md["health"],
+                }
+                absorbed.add(node)
+                break
+    return [p for p in pools if not (p.get("source") == "md" and p["name"] in absorbed)]
+
+
+def _pool_member_dev_base(name):
+    """返回设备名去掉分区后缀后的盘基名（sda1->sda, nvme0n1p3->nvme0n1）。"""
+    # 带 p+数字 结尾（nvme/mmcblk/loop 分区）或裸数字结尾（sdX1）视作分区
+    if re.search(r"p\d+$", name):
+        return name[: name.rfind("p")]
+    if re.match(r"^(nvme|mmcblk|loop|dm-)", name):
+        return name  # 盘名自带数字，非分区
+    return name.rstrip("0123456789") if name[-1:].isdigit() else name
+
+
+def pool_membership_lookup(device):
+    """返回某 /dev/ 设备（整盘或分区）所属的池名列表，用于危险操作保护。"""
+    membership = {}
+    for pool in storage_pools():
+        for member in pool.get("members", []):
+            key = member.split("/")[-1].lower()
+            membership.setdefault(key, []).append(pool["name"])
+    basename = device.split("/")[-1].lower()
+    base = _pool_member_dev_base(basename)
+    hit = set()
+    for key, names in membership.items():
+        key_l = key.lower()
+        if key_l == basename or _pool_member_dev_base(key_l) == base:
+            # 整盘查询会命中其分区成员；分区查询命中自身/同盘成员
+            hit.update(names)
+    return sorted(hit)
+
+
+def api_storage_pools(payload):
+    pools = storage_pools()
+    _attach_pool_topo(pools)
+    pools = _merge_pools(pools)
+    json_response({"ok": True, "pools": pools})
+
+
+def _pool_guard(device):
+    """若 device 属于存储池/RAID 成员，返回禁止信息；否则返回 ''。"""
+    pools = pool_membership_lookup(device)
+    if not pools:
+        return ""
+    return (
+        f"{device} is a member of storage pool/RAID ({', '.join(pools)}). "
+        f"Modifying it will break the array. Destroy the pool first."
+    )
 
 
 def dispatch():
+    ensure_dirs()
     request = current_request()
     if request == {}:
         raise RuntimeError("no request context")
-    path = request.get("query", "")
-    parts = path.split("&", 1)
-    action = parts[0].strip()
-    if not action:
-        action = "disks"
-    handler = ROUTES.get(action)
-    if not handler:
-        json_response({"ok": False, "message": f"Unknown action: {action}"}, 404)
-        return
-    handler()
+    # ★ 与前端共用同一 {action, ...data} 契约：action 一律从 body 读取（对齐 appdownload）。
+    payload = request_body()
+    action = str(payload.get("action") or "disks").strip()
+
+    if action == "disks":
+        api_disks(payload)
+    elif action == "disk-detail":
+        api_disk_detail(payload)
+    elif action == "partition-create":
+        api_partition_create(payload)
+    elif action == "partition-delete":
+        api_partition_delete(payload)
+    elif action == "partition-resize":
+        api_partition_resize(payload)
+    elif action == "partition-format":
+        api_partition_format(payload)
+    elif action == "partition-set-flag":
+        api_partition_set_flag(payload)
+    elif action == "partition-mount":
+        api_partition_mount(payload)
+    elif action == "partition-umount":
+        api_partition_umount(payload)
+    elif action == "disk-wipe":
+        api_disk_wipe(payload)
+    elif action == "disk-label":
+        api_disk_label(payload)
+    elif action == "partition-check":
+        api_partition_check(payload)
+    elif action == "partition-info":
+        api_partition_info(payload)
+    elif action == "fs-resize":
+        api_fs_resize(payload)
+    elif action == "operations":
+        api_operations(payload)
+    elif action == "operations-clear":
+        api_operations_clear(payload)
+    elif action == "check-tools":
+        api_check_tools(payload)
+    elif action == "storage-pools":
+        api_storage_pools(payload)
+    else:
+        json_response(
+            {"ok": False, "message": f"Unknown action: {action}"}, "404 Not Found"
+        )
 
 
 def main():
@@ -1529,27 +1986,33 @@ def main():
     parser.add_argument("--www-root", required=True, help="Static files directory")
     args = parser.parse_args()
 
-    socket_path = args.unix_socket
-    base_path = args.base_path
-    www_root = args.www_root
-
-    if os.path.exists(socket_path):
-        os.unlink(socket_path)
+    if os.path.exists(args.unix_socket):
+        os.unlink(args.unix_socket)
 
     server = ThreadingUnixHTTPServer(
-        socket_path, Handler, base_path=base_path, www_root=www_root
+        args.unix_socket,
+        Handler,
+        base_path=args.base_path,
+        www_root=args.www_root,
     )
-    os.chmod(socket_path, 0o666)
+    os.chmod(args.unix_socket, 0o666)
 
-    def shutdown(signum, frame):
-        threading.Thread(target=server.shutdown, daemon=True).start()
+    def shutdown(_signum, _frame):
+        server.server_close()
+        if os.path.exists(args.unix_socket):
+            os.unlink(args.unix_socket)
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
-    print(f"WParted backend listening on {socket_path}", flush=True)
-    server.serve_forever()
+    print(f"WParted backend listening on {args.unix_socket}", flush=True)
+    try:
+        server.serve_forever()
+    finally:
+        server.server_close()
+        if os.path.exists(args.unix_socket):
+            os.unlink(args.unix_socket)
 
 
 if __name__ == "__main__":
