@@ -3,28 +3,10 @@
 LOG_FILE="${TRIM_PKGVAR}/info.log"
 PID_FILE="${TRIM_PKGVAR}/app.pid"
 SOCKET_PATH="${TRIM_APPDEST}/fn-scheduler.sock"
-
-# write the command to start your program here
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-# if [ ! -d ${TRIM_APPDEST}/server/.venv ]; then
-#   echo "Creating virtual environment..."
-#   ${PYTHON_BIN} -m venv ${TRIM_APPDEST}/server/.venv
-#   source ${TRIM_APPDEST}/server/.venv/bin/activate
-#   ${PYTHON_BIN} -m pip install -r ${TRIM_APPDEST}/server/requirements.txt
-#   # source ${TRIM_APPDEST}/server/.venv/bin/activate # activate virtual environment
-#   # deactivate                                       # deactivate virtual environment
-# fi
-
-CMD=(
-  "${PYTHON_BIN}"
-  "${TRIM_APPDEST}/server/scheduler.py"
-  --unix-socket "${SOCKET_PATH}"
-  --base-path "/app/fn-scheduler"
-  --www-root "${TRIM_APPDEST}/www"
-  --db "${TRIM_PKGVAR}/scheduler.db"
-  --settings "${TRIM_PKGVAR}/scheduler.settings.json"
-)
+# write the command to start your program here
+CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/scheduler.py\" --unix-socket \"${SOCKET_PATH}\" --base-path \"/app/fn-scheduler\" --www-root \"${TRIM_APPDEST}/www\" --db \"${TRIM_PKGVAR}/scheduler.db\" --settings \"${TRIM_PKGVAR}/scheduler.settings.json\""
 
 log_msg() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
@@ -35,16 +17,11 @@ start_process() {
     return 0
   fi
 
-  mkdir -p "${TRIM_PKGVAR}"
-  rm -f "${SOCKET_PATH}"
-
   log_msg "Starting process ..."
   # run cmd to start process
-  if command -v setsid >/dev/null 2>&1; then
-    setsid "${CMD[@]}" >>${LOG_FILE} 2>&1 &
-  else
-    nohup "${CMD[@]}" >>${LOG_FILE} 2>&1 &
-  fi
+  mkdir -p "${TRIM_PKGVAR}" >/dev/null 2>&1 || true
+  rm -f "${SOCKET_PATH}"
+  setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile
   printf "%s" "$!" >${PID_FILE}
   # log_msg "CMD = ${CMD}"

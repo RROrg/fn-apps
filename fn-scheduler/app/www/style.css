@@ -1234,71 +1234,8 @@ small {
   padding: 1rem;
 }
 
-.row-gap-bottom {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.server-path-input {
-  flex: 1;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-
 .hidden-file-input {
   display: none;
-}
-
-.server-file-list {
-  max-height: 40vh;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px;
-  background: var(--surface);
-}
-
-/* server file rows */
-.server-file-list .srv-file {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 6px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.server-file-list .srv-file .srv-icon {
-  width: 28px;
-  text-align: center;
-  flex: 0 0 28px;
-}
-
-.server-file-list .srv-file .srv-name {
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.server-file-list .srv-file:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.server-file-list .srv-file.selected {
-  background: var(--selected-bg);
-  border: 1px solid var(--selected-border);
-}
-
-.row-end {
-  margin-top: 0.75rem;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
 }
 
 .cron-preview-row {

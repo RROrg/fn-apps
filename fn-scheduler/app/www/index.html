@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title data-i18n="app.title">任务计划</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/app/fn-scheduler/style.css">
 </head>
 
 <body>
@@ -286,37 +286,12 @@
           <button id="btnDeleteTemplate" class="danger" data-i18n="btn.delete">删除</button>
           <button id="btnPreviewTemplate" class="ghost" data-i18n="btn.preview">预览</button>
           <input id="templateImportFile" class="hidden-file-input" type="file" accept=".json" placeholder="/" />
-          <button id="btnImportTemplates" class="ghost" data-i18n="btn.import">导入 JSON</button>
-          <button id="btnExportTemplates" class="ghost" data-i18n="btn.export">导出 JSON</button>
+          <button id="btnImportLocalTemplate" class="ghost" data-i18n="btn.import_local">从电脑导入</button>
+          <button id="btnImportNasTemplate" class="ghost" data-i18n="btn.import_nas">从 NAS 导入</button>
+          <button id="btnExportLocalTemplate" class="ghost" data-i18n="btn.export_local">导出到电脑</button>
+          <button id="btnExportNasTemplate" class="ghost" data-i18n="btn.export_nas">导出到 NAS</button>
         </div>
 
-        <!-- 服务器文件选择模态（允许浏览服务器端文件系统并导入） -->
-        <div id="serverFilePickerModal" class="modal hidden" role="dialog" aria-modal="true">
-          <div class="modal-content">
-            <div class="modal-header">
-              <div>
-                <h2 data-i18n="file.import_to_server_title">从服务器导入</h2>
-                <p class="subtitle" data-i18n="file.import_to_server_subtitle">浏览服务器上的文件并导入</p>
-              </div>
-              <div class="modal-header-actions">
-                <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-attr="aria-label"
-                  data-i18n="close">&times;</button>
-              </div>
-            </div>
-            <div class="pad-1">
-              <div class="row-gap-bottom">
-                <input id="serverPathInput" class="server-path-input" type="text" placeholder="/" />
-                <button id="btnServerRefresh" class="ghost" data-i18n="btn.refresh">刷新</button>
-              </div>
-              <div id="serverFileList" class="server-file-list"></div>
-              <div class="row-end">
-                <button id="btnUseLocalFile" class="ghost" data-i18n="filepicker.import_to_local">从本地导入</button>
-                <button id="btnSelectServerFile" class="primary" data-i18n="filepicker.import_selected">导入选中文件</button>
-                <button class="ghost" data-close data-i18n="btn.cancel">取消</button>
-              </div>
-            </div>
-          </div>
-        </div>
         <div class="templates-table-wrapper">
           <table id="templatesTable" class="simple-table">
             <thead>
@@ -513,7 +488,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
 
         <div class="about-copyright">
@@ -525,160 +500,7 @@
     </div>
   </div>
 
-  <script type="module">
-    import translations from './i18n.js';
-
-    function safeDecode(value) {
-      try {
-        return decodeURIComponent(value || '');
-      } catch (e) {
-        return value || '';
-      }
-    }
-
-    function getCookie(name) {
-      const prefix = `${name}=`;
-      return document.cookie
-        .split(';')
-        .map(item => item.trim())
-        .find(item => item.startsWith(prefix))
-        ?.slice(prefix.length) || '';
-    }
-
-    function storedValue(name) {
-      try {
-        return localStorage.getItem(name) || sessionStorage.getItem(name) || '';
-      } catch (e) {
-        return '';
-      }
-    }
-
-    function parentStoredValue(name) {
-      try {
-        if (!window.parent || window.parent === window) return '';
-        return window.parent.localStorage.getItem(name) || window.parent.sessionStorage.getItem(name) || '';
-      } catch (e) {
-        return '';
-      }
-    }
-
-    function queryValue(name) {
-      return new URLSearchParams(location.search).get(name) || '';
-    }
-
-    function documentThemeValue(doc) {
-      if (!doc) return '';
-      const root = doc.documentElement;
-      const body = doc.body;
-      return [
-        body?.getAttribute('theme-mode'),
-        body?.dataset?.theme,
-        root?.dataset?.theme,
-        root?.classList?.contains('dark') ? 'dark' : '',
-        root?.classList?.contains('light') ? 'light' : '',
-      ].find(Boolean) || '';
-    }
-
-    function parentDocumentThemeValue() {
-      try {
-        if (!window.parent || window.parent === window) return '';
-        return documentThemeValue(window.parent.document);
-      } catch (e) {
-        return '';
-      }
-    }
-
-    function normalizeLanguage(value) {
-      const lang = safeDecode(String(value || '')).replace('_', '-').toLowerCase();
-      if (lang.startsWith('en')) return 'en';
-      return 'zh-CN';
-    }
-
-    function detectLanguage() {
-      return normalizeLanguage(getCookie('language') || queryValue('language') || navigator.language || 'zh-CN');
-    }
-
-    function normalizeTheme(value) {
-      const theme = safeDecode(value).toLowerCase();
-      if (theme.includes('dark') || theme === 'night') return 'dark';
-      if (theme.includes('light') || theme === 'day') return 'light';
-      if (theme === '10') return 'light';
-      if (theme === '20') return 'dark';
-      if (theme === 'system' || theme === 'auto' || theme === 'os') {
-        return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
-      return '';
-    }
-
-    function currentTheme() {
-      const fromSystem = [
-        queryValue('theme'),
-        getCookie('fnos-theme-mode'),
-        getCookie('os-theme-mode'),
-        storedValue('fnos-theme-mode'),
-        storedValue('os-theme-mode'),
-        parentStoredValue('fnos-theme-mode'),
-        parentStoredValue('os-theme-mode'),
-        documentThemeValue(document),
-        parentDocumentThemeValue(),
-        queryValue('fnos-theme-mode'),
-      ].map(normalizeTheme).find(Boolean);
-      if (fromSystem) return fromSystem;
-      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
-    function t(key, lang = detectLanguage()) {
-      const L = translations[lang] || translations['zh-CN'];
-      return L[key] ?? key;
-    }
-
-    function applyTranslations(lang = detectLanguage()) {
-      const normalized = normalizeLanguage(lang);
-      const previousLang = window.__i18n?.lang;
-      document.documentElement.lang = normalized === 'en' ? 'en-US' : 'zh-CN';
-
-      const docTitle = document.querySelector('title[data-i18n]');
-      if (docTitle) {
-        docTitle.textContent = t(docTitle.getAttribute('data-i18n'), normalized);
-      }
-
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (!key) return;
-        const attr = el.getAttribute('data-i18n-attr');
-        if (attr) {
-          el.setAttribute(attr, t(key, normalized));
-        } else {
-          el.textContent = t(key, normalized);
-        }
-      });
-
-      window.__i18n = window.__i18n || {};
-      window.__i18n.lang = normalized;
-      window.__i18n.translate = (k) => t(k, window.__i18n.lang);
-      window.__i18n.setLang = (nextLang) => {
-        applyTranslations(nextLang);
-        window.dispatchEvent(new CustomEvent('scheduler:i18nchange'));
-      };
-
-      if (previousLang && previousLang !== normalized) {
-        window.dispatchEvent(new CustomEvent('scheduler:i18nchange'));
-      }
-    }
-
-    function applyPreferences() {
-      const nextTheme = currentTheme();
-      document.documentElement.dataset.theme = nextTheme;
-      document.body.dataset.theme = nextTheme;
-      applyTranslations();
-    }
-
-    applyPreferences();
-    window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => applyPreferences());
-    window.addEventListener('storage', applyPreferences);
-
-    import('./app.js').catch(err => { console.error('Failed to load app.js', err) });
-  </script>
+  <script type="module" src="/app/fn-scheduler/app.js"></script>
 </body>
 
 </html>

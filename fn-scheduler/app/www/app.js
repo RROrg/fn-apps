@@ -1,3 +1,10 @@
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+window.__APP_SDK__ = sdk;
+const API_ENDPOINT = "./api";
+
 const state = {
   tasks: [],
   selectedIds: new Set(),
@@ -12,22 +19,573 @@ const state = {
   accountLoading: false,
   posixSupported: true,
   defaultAccount: "",
+  language: "zh-CN",
+  theme: "light",
 };
 
-// 依赖 index.html 中暴露的 window.__i18n
-function _t(key, vars) {
-  try {
-    const fn = window.__i18n && window.__i18n.translate;
-    let msg = typeof fn === "function" ? fn(key) : key;
-    if (vars && typeof vars === "object") {
-      Object.keys(vars).forEach((k) => {
-        msg = msg.replace(new RegExp(`\\{${k}\\}`, "g"), String(vars[k]));
-      });
+const I18N = {
+  "zh-CN": {
+    "app.title": "任务计划",
+    "app.subtitle": "管理定时与条件触发的脚本任务",
+    about: "关于",
+    close: "关闭",
+    aboutDeclaration:
+      "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
+    communitySupport: "社区支持",
+    sponsorSupport: "赞助支持",
+    join: "点击加入",
+    "btn.refresh": "刷新",
+    "btn.settings": "设置",
+    "btn.create": "新建",
+    "btn.edit": "编辑",
+    "btn.delete": "删除",
+    "btn.run": "立即运行",
+    "btn.stop": "终止",
+    "btn.toggle": "启用/停用",
+    "btn.results": "查看结果",
+    "btn.manage_templates": "模板管理",
+    "table.enabled": "是否启动",
+    "table.name": "任务名称",
+    "table.next_run": "下次运行时间",
+    "table.trigger": "触发类型",
+    "table.latest_status": "最新状态",
+    "table.account": "账号",
+    "empty.no_tasks": "暂无任务，点击“新建”开始配置。",
+    "empty.no_files": "目录为空",
+    "modal.task.new": "新建任务",
+    "field.name": "任务名称",
+    "field.account": "用户账号",
+    "field.trigger": "触发方式",
+    "trigger.schedule": "定时",
+    "trigger.event": "事件",
+    "trigger.condition": "条件",
+    "trigger.manual": "手动",
+    "field.cron": "Cron 表达式",
+    "field.cron_hint": "标准 5 字段 Cron，分钟 小时 日 月 周（周字段 0=周一）",
+    "btn.cron_generator": "生成器",
+    "field.event_type": "事件类型",
+    "field.event_hint": "系统开/关机事件在服务启动或停止时各触发一次",
+    "field.keep_success_log": "保留成功日志",
+    "field.keep_failure_log": "保留失败日志",
+    "event.script_note": "条件脚本（返回 0 触发）",
+    "event.interval_label": "检测间隔（秒）",
+    "btn.apply_cron": "填入 Cron",
+    "cron.current_expression": "当前表达式：",
+    "cron.hint":
+      "顺序：分钟 小时 日 月 周；自定义字段可使用数字、*、/、,、-，为空时默认 *",
+    "cron.placeholder": "例如：*/5 * * * *",
+    "cron.generator_subtitle": "通过选择常见规则快速生成 Cron 表达式",
+    "cron.field.minute": "分钟",
+    "cron.field.hour": "小时",
+    "cron.field.day": "日期（天）",
+    "cron.field.month": "月份",
+    "cron.field.weekday": "星期（0=周一）",
+    "cron.opt.minute.every": "每分钟 *",
+    "cron.opt.minute.zero": "整点 0",
+    "cron.opt.minute.5": "每 5 分钟 */5",
+    "cron.opt.minute.10": "每 10 分钟 */10",
+    "cron.opt.minute.15": "每 15 分钟 */15",
+    "cron.opt.hour.every": "每小时 *",
+    "cron.opt.hour.2": "每 2 小时 */2",
+    "cron.opt.hour.6": "每 6 小时 */6",
+    "cron.opt.hour.12": "每 12 小时 */12",
+    "cron.opt.hour.midnight": "每天 0 点",
+    "cron.opt.hour.noon": "每天 12 点",
+    "cron.opt.day.every": "每天 *",
+    "cron.opt.day.1": "每月 1 日",
+    "cron.opt.day.15": "每月 15 日",
+    "cron.opt.day.1_5": "每月 1-5 日",
+    "cron.opt.month.every": "每月 *",
+    "cron.opt.month.quarter": "每季度 */3",
+    "cron.opt.month.jan": "1 月",
+    "cron.opt.month.jun": "6 月",
+    "cron.opt.month.dec": "12 月",
+    "cron.opt.weekday.every": "每周 *",
+    "cron.opt.weekday.workdays": "工作日 0-4",
+    "cron.opt.weekday.mon": "周一 0",
+    "cron.opt.weekday.fri": "周五 4",
+    "cron.opt.weekday.sat": "周六 5",
+    "cron.opt.weekday.sun": "周日 6",
+    "cron.opt.custom": "自定义",
+    "cron.placeholder_list": "例如 0,15,30,45",
+    "cron.placeholder_hour_list": "例如 0,6,12,18",
+    "cron.placeholder_day_list": "例如 1-5 或 1,15",
+    "cron.placeholder_month_list": "例如 3,6,9,12",
+    "cron.placeholder_weekday_list": "例如 0,2,4",
+    "template.preview_title": "模板预览",
+    "template.col.key": "Key",
+    "template.col.name": "名称",
+    "template.col.preview": "预览（首行）",
+    "template.key_hint": "Key（可选，留空自动生成）",
+    "template.name_label": "名称",
+    "template.script_label": "脚本内容",
+    "validation.required_fields": "请完整填写必填字段",
+    "validation.accounts_loading": "账号列表加载中，请稍后重试",
+    "validation.no_accounts_posix":
+      "未找到可用账号，请确认系统组 0 / 1000 / 1001 中存在账号",
+    "validation.no_default_account": "未能检测到默认账号，请重新登录或刷新页面",
+    "validation.account_not_in_group":
+      "请选择属于系统组 0 / 1000 / 1001 的账号",
+    "validation.cron_required": "Cron 表达式不能为空",
+    "validation.script_required": "请填写条件脚本",
+    "msg.task_updated": "任务已更新",
+    "msg.task_created": "任务已创建",
+    "error.load_templates": "加载模板失败：{status}",
+    "file.invalid_format": "文件格式不正确",
+    loading: "加载中...",
+    loading_accounts: "正在获取可用账号...",
+    no_accounts: "无可用账号",
+    not_available: "暂不可用",
+    "account.not_found_posix": "未找到属于系统组 0 / 1000 / 1001 的账号",
+    "account.windows_not_detected":
+      "Windows 环境未能检测到当前用户，请重新登录后再试",
+    "label.current_logged_in_account": "当前登录账号",
+    "label.trigger": "触发：",
+    "placeholder.needs_reselect": "（需重新选择）",
+    "error.task_account_not_allowed":
+      "当前任务账号 {acc} 不在允许范围，请重新选择",
+    "error.load_accounts": "加载账号失败：{err}",
+    "cron.invalid": "表达式无效",
+    "cron.preview": "执行时间预览：",
+    "cron.search_exceeded":
+      "已超出搜索范围（{months} 个月），可能在更远时间触发",
+    "list.sep": "；",
+    "error.load_tasks": "加载任务失败：{err}",
+    "field.pre_tasks": "前置任务",
+    "btn.clear_pre_tasks": "全取消",
+    "field.pre_tasks_hint": "仅当所选任务最近一次成功后才执行",
+    "field.template": "任务模板",
+    "field.template_hint": "选择模板会自动填充任务内容",
+    "template.edit_title": "新增模板",
+    "template.placeholder": "无模板（自定义）",
+    "field.script": "任务内容",
+    "field.immediate": "立即启动",
+    "btn.cancel": "取消",
+    "btn.ok": "确定",
+    "btn.save": "保存",
+    "modal.results.title": "执行结果",
+    "modal.settings.title": "运行设置",
+    "modal.settings.subtitle": "调整结果保留与执行超时等全局参数",
+    "settings.group.results.title": "结果与日志",
+    "settings.group.results.subtitle":
+      "控制执行记录保留数量，以及结果列表默认显示多少日志内容。",
+    "settings.group.execution.title": "执行与超时",
+    "settings.group.execution.subtitle":
+      "控制任务脚本和条件脚本的最长执行时间，避免任务长时间卡住。",
+    "btn.clear": "清空",
+    "modal.templates.title": "模板管理",
+    "modal.templates.subtitle": "增加、编辑、删除模板，或导入/导出为 JSON",
+    "btn.add": "新增",
+    "btn.preview": "预览",
+    "btn.import": "导入 JSON",
+    "btn.export": "导出 JSON",
+    "btn.import_local": "从电脑导入",
+    "btn.import_nas": "从 NAS 导入",
+    "btn.export_local": "导出到电脑",
+    "btn.export_nas": "导出到 NAS",
+    "cron.generator_title": "Cron 生成器",
+    "status.pretask_failed": "前置·失败",
+    "status.success": "成功",
+    "status.failed": "失败",
+    "status.running": "运行中",
+    "status.condition_failed": "条件·失败",
+    "status.no_record": "无记录",
+    "status.enabled": "已启动",
+    "status.disabled": "已停用",
+    "event.script": "条件脚本",
+    "event.system_boot": "系统开机",
+    "event.system_shutdown": "系统关机",
+    "event.short.script": "脚本",
+    "event.short.system_boot": "开机",
+    "event.short.system_shutdown": "关机",
+    "prompt.select_template": "请先选择模板",
+    "prompt.select_file": "请选择文件",
+    "confirm.delete_template": "确认删除所选模板？",
+    "template.updated": "模板已更新",
+    "template.created": "模板已创建",
+    "template.deleted": "模板已删除",
+    "error.task_name_exists": "任务名已存在，请修改后重试",
+    "error.template_key_exists": "模板 Key 已存在，请修改后重试",
+    "error.database_integrity": "数据库约束错误，请检查输入",
+    "error.save_template": "保存模板失败：{err}",
+    "error.delete_template": "删除失败：{err}",
+    "file.import_result": "导入完成：新增 {inserted}，更新 {updated}",
+    "file.import_failed": "导入失败：{err}",
+    "file.save_result": "已保存到 {path}",
+    "file.save_local_result": "已保存到本地",
+    "file.save_failed": "导出失败：{err}",
+    "file.nas_open_hint": "已在系统文件管理器中打开 NAS，请将文件放到目标位置后复制/移动",
+    "file.open_failed": "打开文件管理器失败：{err}",
+    "file.native_picker_unavailable": "当前环境不支持系统文件管理器",
+    "msg.template_applied": "已应用模板：{name}（仅替换任务内容）",
+    "prompt.select_template_to_edit": "请选择要编辑的模板",
+    "error.template_not_found": "模板未找到",
+    "prompt.select_template_to_preview": "请选择一个模板以预览",
+    "prompt.select_single_task": "请选择单个任务",
+    "prompt.select_task": "请先选择任务",
+    "confirm.delete_selected_tasks": "确认删除选中的 {n} 个任务？",
+    "msg.deleted_n": "已删除 {n} 个任务",
+    "msg.missing_n": "{n} 个任务不存在",
+    "msg.no_tasks_deleted": "未删除任何任务",
+    "prompt.select_task_to_run": "请选择要运行的任务",
+    "prompt.select_task_to_stop": "请选择要终止的任务",
+    "msg.triggered_n": "已触发 {n} 个任务",
+    "msg.stopped_n": "已终止 {n} 个任务",
+    "msg.running_n": "{n} 个任务正在执行",
+    "msg.not_running_n": "{n} 个任务未在运行",
+    "msg.pretask_failed_n": "{n} 个任务前置·失败",
+    "msg.condition_failed_n": "{n} 个任务条件·失败",
+    "msg.no_tasks_triggered": "未触发任何任务",
+    "msg.no_tasks_stopped": "未终止任何任务",
+    "error.task_not_found": "任务不存在",
+    "verb.enable": "启用",
+    "verb.disable": "停用",
+    "msg.action_completed": "已{verb} {n} 个任务",
+    "msg.unchanged_count": "{n} 个任务状态本已满足",
+    "msg.no_tasks_completed": "没有任务完成{verb}",
+    "field.settings.result_retention": "结果保留条数",
+    "field.settings.result_retention_hint":
+      "每个任务最多保留多少条已完成结果，0 表示不限制。",
+    "field.settings.task_timeout": "任务超时时间（秒）",
+    "field.settings.task_timeout_hint":
+      "脚本执行超过该时间会被终止，0 表示不限制。",
+    "field.settings.condition_timeout": "条件脚本超时时间（秒）",
+    "field.settings.condition_timeout_hint":
+      "条件脚本执行超过该时间会被终止，最小 1 秒。",
+    "field.settings.result_preview_limit": "结果预览长度",
+    "field.settings.result_preview_limit_hint":
+      "前端结果列表默认展示的日志摘要长度，最小 256 字符。",
+    "msg.settings_saved": "设置已保存",
+    "msg.settings_saved_pruned": "设置已保存，并清理了 {n} 条旧结果",
+    "confirm.clear_results": "确认清空当前任务的全部执行记录？",
+    "msg.results_cleared": "执行记录已清空",
+    "results.no_records": "暂无执行记录",
+    "results.expand_log": "展开完整日志",
+    "results.collapse_log": "收起完整日志",
+    "results.loading_log": "加载中...",
+    "results.log_truncated": "日志较大，已显示前 {limit} 个字符，总长度 {n}。",
+    "results.log_full": "当前已显示完整日志。",
+  },
+  "en-US": {
+    "app.title": "Scheduler",
+    "app.subtitle": "Manage scheduled and condition-triggered script tasks",
+    about: "About",
+    close: "Close",
+    aboutDeclaration:
+      "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
+    communitySupport: "Community Support",
+    sponsorSupport: "Sponsor Support",
+    join: "Join",
+    "btn.refresh": "Refresh",
+    "btn.settings": "Settings",
+    "btn.create": "Create",
+    "btn.edit": "Edit",
+    "btn.delete": "Delete",
+    "btn.run": "Run now",
+    "btn.stop": "Stop",
+    "btn.toggle": "Enable/Disable",
+    "btn.results": "Results",
+    "btn.manage_templates": "Templates",
+    "table.enabled": "Enabled",
+    "table.name": "Name",
+    "table.next_run": "Next Run",
+    "table.trigger": "Trigger",
+    "table.latest_status": "Latest",
+    "table.account": "Account",
+    "empty.no_tasks": "No tasks yet — click Create to get started.",
+    "empty.no_files": "No files",
+    "modal.task.new": "New Task",
+    "field.name": "Name",
+    "field.account": "Account",
+    "field.trigger": "Trigger Type",
+    "trigger.schedule": "Schedule",
+    "trigger.event": "Event",
+    "trigger.condition": "Condition",
+    "trigger.manual": "Manual",
+    "field.cron": "Cron expression",
+    "field.cron_hint":
+      "Standard 5-field cron: minute hour day month weekday (weekday 0=Mon)",
+    "btn.cron_generator": "Generator",
+    "field.event_type": "Event Type",
+    "field.event_hint": "System boot/shutdown triggers on service start/stop",
+    "field.keep_success_log": "Keep success logs",
+    "field.keep_failure_log": "Keep failure logs",
+    "event.script_note": "Condition script (exit code 0 triggers)",
+    "event.interval_label": "Check interval (seconds)",
+    "btn.apply_cron": "Apply Cron",
+    "cron.current_expression": "Current expression:",
+    "cron.hint":
+      "Order: minute hour day month weekday; use numbers, *, /, , and -; default *",
+    "cron.placeholder": "e.g.: */5 * * * *",
+    "cron.generator_subtitle":
+      "Quickly build cron expressions by selecting common rules",
+    "cron.field.minute": "Minute",
+    "cron.field.hour": "Hour",
+    "cron.field.day": "Day (date)",
+    "cron.field.month": "Month",
+    "cron.field.weekday": "Weekday(0=Mon)",
+    "cron.opt.minute.every": "Every minute *",
+    "cron.opt.minute.zero": "On :00",
+    "cron.opt.minute.5": "Every 5 minutes */5",
+    "cron.opt.minute.10": "Every 10 minutes */10",
+    "cron.opt.minute.15": "Every 15 minutes */15",
+    "cron.opt.hour.every": "Every hour *",
+    "cron.opt.hour.2": "Every 2 hours */2",
+    "cron.opt.hour.6": "Every 6 hours */6",
+    "cron.opt.hour.12": "Every 12 hours */12",
+    "cron.opt.hour.midnight": "Daily 0:00",
+    "cron.opt.hour.noon": "Daily 12:00",
+    "cron.opt.day.every": "Every day *",
+    "cron.opt.day.1": "Day 1",
+    "cron.opt.day.15": "Day 15",
+    "cron.opt.day.1_5": "Days 1-5",
+    "cron.opt.month.every": "Every month *",
+    "cron.opt.month.quarter": "Every quarter */3",
+    "cron.opt.month.jan": "Jan",
+    "cron.opt.month.jun": "Jun",
+    "cron.opt.month.dec": "Dec",
+    "cron.opt.weekday.every": "Every week *",
+    "cron.opt.weekday.workdays": "Workdays 0-4",
+    "cron.opt.weekday.mon": "Mon 0",
+    "cron.opt.weekday.fri": "Fri 4",
+    "cron.opt.weekday.sat": "Sat 5",
+    "cron.opt.weekday.sun": "Sun 6",
+    "cron.opt.custom": "Custom",
+    "cron.placeholder_list": "e.g.: 0,15,30,45",
+    "cron.placeholder_hour_list": "e.g.: 0,6,12,18",
+    "cron.placeholder_day_list": "e.g.: 1-5 or 1,15",
+    "cron.placeholder_month_list": "e.g.: 3,6,9,12",
+    "cron.placeholder_weekday_list": "e.g.: 0,2,4",
+    "template.preview_title": "Template Preview",
+    "template.col.key": "Key",
+    "template.col.name": "Name",
+    "template.col.preview": "Preview (first line)",
+    "template.key_hint": "Key (optional, auto-generated if empty)",
+    "template.name_label": "Name",
+    "template.script_label": "Script",
+    "field.pre_tasks": "Pre-tasks",
+    "btn.clear_pre_tasks": "Clear All",
+    "field.pre_tasks_hint": "Only runs after selected tasks last succeeded",
+    "field.template": "Template",
+    "field.template_hint": "Choose a template to fill task content",
+    "template.edit_title": "New Template",
+    "template.placeholder": "No template (custom)",
+    "field.script": "Script",
+    "field.immediate": "Start immediately",
+    "btn.cancel": "Cancel",
+    "btn.ok": "OK",
+    "btn.save": "Save",
+    "modal.results.title": "Execution Results",
+    "modal.settings.title": "Runtime Settings",
+    "modal.settings.subtitle":
+      "Adjust global limits such as retained results and execution timeouts",
+    "settings.group.results.title": "Results and logs",
+    "settings.group.results.subtitle":
+      "Control how many execution records are kept and how much log content is shown by default.",
+    "settings.group.execution.title": "Execution and timeouts",
+    "settings.group.execution.subtitle":
+      "Control how long task and condition scripts may run before being stopped.",
+    "btn.clear": "Clear",
+    "modal.templates.title": "Template Manager",
+    "modal.templates.subtitle":
+      "Add, edit, delete templates or import/export JSON",
+    "btn.add": "Add",
+    "btn.preview": "Preview",
+    "btn.import": "Import JSON",
+    "btn.export": "Export JSON",
+    "btn.import_local": "Import from computer",
+    "btn.import_nas": "Import from NAS",
+    "btn.export_local": "Export to computer",
+    "btn.export_nas": "Export to NAS",
+    "cron.generator_title": "Cron Generator",
+    "validation.required_fields": "Please fill required fields",
+    "validation.accounts_loading":
+      "Account list is loading, please try again later",
+    "validation.no_accounts_posix":
+      "No available accounts found; ensure system groups 0 / 1000 / 1001 contain accounts",
+    "validation.no_default_account":
+      "Default account not detected, please re-login or refresh the page",
+    "validation.account_not_in_group":
+      "Please select an account in system group 0 / 1000 / 1001",
+    "validation.cron_required": "Cron expression is required",
+    "validation.script_required": "Please provide a condition script",
+    "msg.task_updated": "Task updated",
+    "msg.task_created": "Task created",
+    "error.load_templates": "Failed to load templates: {status}",
+    "file.invalid_format": "Invalid file format",
+    loading: "Loading...",
+    loading_accounts: "Fetching available accounts...",
+    no_accounts: "No accounts available",
+    not_available: "Not available",
+    "account.not_found_posix":
+      "No accounts found in system groups 0 / 1000 / 1001",
+    "account.windows_not_detected":
+      "Windows environment could not detect the current user; please re-login",
+    "label.current_logged_in_account": "Current logged-in account",
+    "label.trigger": "Trigger:",
+    "placeholder.needs_reselect": "(needs reselect)",
+    "error.task_account_not_allowed":
+      "Current task account {acc} is not allowed, please re-select",
+    "error.load_accounts": "Failed to load accounts: {err}",
+    "cron.invalid": "Invalid expression",
+    "cron.preview": "Execution preview:",
+    "cron.search_exceeded":
+      "Search range exceeded ({months} months), next occurrences may be further in time",
+    "list.sep": "; ",
+    "error.load_tasks": "Failed to load tasks: {err}",
+    "status.pretask_failed": "Pretask failed",
+    "status.success": "Success",
+    "status.failed": "Failed",
+    "status.running": "Running",
+    "status.condition_failed": "Condition failed",
+    "status.no_record": "No record",
+    "status.enabled": "Enabled",
+    "status.disabled": "Disabled",
+    "event.script": "Condition script",
+    "event.system_boot": "System boot",
+    "event.system_shutdown": "System shutdown",
+    "event.short.script": "Script",
+    "event.short.system_boot": "Boot",
+    "event.short.system_shutdown": "Shutdown",
+    "prompt.select_template": "Please select a template first",
+    "prompt.select_file": "Please select a file",
+    "confirm.delete_template": "Delete selected template?",
+    "template.updated": "Template updated",
+    "template.created": "Template created",
+    "template.deleted": "Template deleted",
+    "error.task_name_exists": "Task name already exists, please choose another",
+    "error.template_key_exists":
+      "Template key already exists, please choose another",
+    "error.database_integrity":
+      "Database integrity error, please check your input",
+    "error.save_template": "Save template failed: {err}",
+    "error.delete_template": "Delete failed: {err}",
+    "file.import_result":
+      "Import finished: inserted {inserted}, updated {updated}",
+    "file.import_failed": "Import failed: {err}",
+    "file.save_result": "Saved to {path}",
+    "file.save_local_result": "Saved to local",
+    "file.save_failed": "Save failed: {err}",
+    "file.nas_open_hint": "Opened NAS in the system file manager. Move/copy the file to the target location.",
+    "file.open_failed": "Failed to open file manager: {err}",
+    "file.native_picker_unavailable": "System file manager is unavailable in this environment",
+    "msg.template_applied": "Applied template: {name} (content only)",
+    "prompt.select_template_to_edit": "Please select a template to edit",
+    "error.template_not_found": "Template not found",
+    "prompt.select_template_to_preview": "Please select a template to preview",
+    "prompt.select_single_task": "Please select a single task",
+    "prompt.select_task": "Please select a task",
+    "confirm.delete_selected_tasks": "Delete selected {n} tasks?",
+    "msg.deleted_n": "Deleted {n} tasks",
+    "msg.missing_n": "{n} tasks not found",
+    "msg.no_tasks_deleted": "No tasks deleted",
+    "prompt.select_task_to_run": "Please select tasks to run",
+    "prompt.select_task_to_stop": "Please select tasks to stop",
+    "msg.triggered_n": "Triggered {n} tasks",
+    "msg.stopped_n": "Stopped {n} tasks",
+    "msg.running_n": "{n} tasks running",
+    "msg.not_running_n": "{n} tasks are not running",
+    "msg.pretask_failed_n": "{n} tasks pretask failed",
+    "msg.condition_failed_n": "{n} tasks condition failed",
+    "msg.no_tasks_triggered": "No tasks triggered",
+    "msg.no_tasks_stopped": "No tasks stopped",
+    "error.task_not_found": "Task not found",
+    "verb.enable": "enable",
+    "verb.disable": "disable",
+    "msg.action_completed": "{verb} {n} tasks",
+    "msg.unchanged_count": "{n} tasks already satisfied",
+    "msg.no_tasks_completed": "No tasks completed ({verb})",
+    "field.settings.result_retention": "Retained results",
+    "field.settings.result_retention_hint":
+      "Maximum finished results kept per task; 0 means unlimited.",
+    "field.settings.task_timeout": "Task timeout (seconds)",
+    "field.settings.task_timeout_hint":
+      "A script running longer than this will be terminated; 0 means unlimited.",
+    "field.settings.condition_timeout": "Condition script timeout (seconds)",
+    "field.settings.condition_timeout_hint":
+      "A condition script running longer than this will be terminated; minimum 1 second.",
+    "field.settings.result_preview_limit": "Result preview length",
+    "field.settings.result_preview_limit_hint":
+      "Default log preview length shown in the result list; minimum 256 characters.",
+    "msg.settings_saved": "Settings saved",
+    "msg.settings_saved_pruned": "Settings saved and pruned {n} old results",
+    "confirm.clear_results":
+      "Clear all execution records for the current task?",
+    "msg.results_cleared": "Execution records cleared",
+    "results.no_records": "No execution records",
+    "results.expand_log": "Expand full log",
+    "results.collapse_log": "Collapse full log",
+    "results.loading_log": "Loading...",
+    "results.log_truncated":
+      "Large log: showing the first {limit} characters out of {n}.",
+    "results.log_full": "Showing the full log.",
+  },
+};
+
+function t(key, params = {}) {
+  const messages = I18N[state.language] || I18N["zh-CN"];
+  return String(messages[key] || I18N["zh-CN"][key] || key).replace(
+    /\{(\w+)\}/g,
+    (_match, name) => params[name] ?? "",
+  );
+}
+
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
+}
+
+function applyTheme() {
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
+}
+
+function applyPreferences({ rerender = false } = {}) {
+  const languageChanged = applyLanguage();
+  applyTheme();
+
+  const docTitle = document.querySelector("title[data-i18n]");
+  if (docTitle) {
+    docTitle.textContent = t(docTitle.getAttribute("data-i18n"));
+    // 页面交互：宿主环境同步窗口标题（站内 / 标签页标题）
+    if (sdk && typeof sdk.setTitle === "function") {
+      sdk.setTitle(docTitle.textContent).catch(() => {});
     }
-    return msg;
-  } catch (e) {
-    return key;
   }
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (!key) return;
+    const attr = el.getAttribute("data-i18n-attr");
+    if (attr) {
+      el.setAttribute(attr, t(key));
+    } else {
+      el.textContent = t(key);
+    }
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+    el.setAttribute("aria-label", t(el.dataset.i18nTitle));
+  });
+
+  if (rerender && languageChanged) {
+    window.dispatchEvent(new CustomEvent("scheduler:i18nchange"));
+  }
+  return languageChanged;
 }
 
 // Map common backend error messages to localized, user-friendly messages
@@ -35,10 +593,10 @@ function mapApiErrorMessage(raw) {
   if (!raw) return null;
   const s = String(raw).toLowerCase();
   if (s.includes("task name already exists"))
-    return _t("error.task_name_exists");
+    return t("error.task_name_exists");
   if (s.includes("template key already exists"))
-    return _t("error.template_key_exists");
-  if (s.includes("database integrity")) return _t("error.database_integrity");
+    return t("error.template_key_exists");
+  if (s.includes("database integrity")) return t("error.database_integrity");
   return null;
 }
 
@@ -79,10 +637,6 @@ const elements = {
   scheduleInput: document.querySelector('input[name="schedule_expression"]'),
 };
 
-const API_BASE = window.location.pathname.startsWith("/app/fn-scheduler")
-  ? "/app/fn-scheduler/"
-  : "./";
-
 let taskTemplates = {};
 
 function buildTemplateLookup(templates) {
@@ -102,7 +656,7 @@ function buildTemplateLookup(templates) {
 
 async function loadTemplates() {
   try {
-    const payload = await api.listTemplates();
+    const payload = await api("list-templates");
     taskTemplates = buildTemplateLookup(payload?.data);
     renderTemplateOptions();
   } catch (err) {
@@ -119,7 +673,7 @@ function renderTemplateOptions() {
   select.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = _t("template.placeholder");
+  placeholder.textContent = t("template.placeholder");
   select.appendChild(placeholder);
   Object.keys(taskTemplates || {}).forEach((key) => {
     const tpl = taskTemplates[key];
@@ -151,7 +705,7 @@ function updateTemplateActionState() {
 
 async function refreshTemplatesList() {
   try {
-    const resp = await api.listTemplates();
+    const resp = await api("list-templates");
     if (resp && Array.isArray(resp.data)) {
       templatesState.templates = resp.data;
     } else {
@@ -159,7 +713,7 @@ async function refreshTemplatesList() {
     }
     renderTemplatesTable();
   } catch (err) {
-    showToast(_t("file.import_failed", { err: err.message }), true);
+    showToast(t("file.import_failed", { err: err.message }), true);
   }
 }
 
@@ -252,12 +806,12 @@ function openTemplateEditModal(editing = null) {
   if (!form || !modal) return;
   form.reset();
   if (editing) {
-    title.textContent = `${_t("btn.edit")}：${editing.name}`;
+    title.textContent = `${t("btn.edit")}：${editing.name}`;
     form.key.value = editing.key || "";
     form.name.value = editing.name || "";
     form.script_body.value = editing.script_body || "";
   } else {
-    title.textContent = _t("btn.add");
+    title.textContent = t("btn.add");
   }
   openModal(modal);
 }
@@ -283,37 +837,113 @@ async function saveTemplateFromForm(ev) {
   };
   try {
     if (templatesState.editingId) {
-      await api.updateTemplate(templatesState.editingId, data);
-      showToast(_t("template.updated"));
+      await api("update-template", { id: templatesState.editingId, ...data });
+      showToast(t("template.updated"));
     } else {
-      await api.createTemplate(data);
-      showToast(_t("template.created"));
+      await api("create-template", data);
+      showToast(t("template.created"));
     }
     closeModal(document.getElementById("templateEditModal"));
     refreshTemplatesList();
     await loadTemplates();
   } catch (err) {
-    showToast(_t("error.save_template", { err: err.message }), true);
+    showToast(t("error.save_template", { err: err.message }), true);
   }
 }
 
 async function deleteSelectedTemplate() {
   const id = templatesState.selectedId;
   if (!id) {
-    showToast(_t("prompt.select_template"));
+    showToast(t("prompt.select_template"));
     return;
   }
-  if (!(await showConfirm(_t("confirm.delete_template")))) {
+  if (!(await showConfirm(t("confirm.delete_template")))) {
     return;
   }
   try {
-    await api.deleteTemplate(id);
+    await api("delete-template", { id });
     templatesState.selectedId = null;
     refreshTemplatesList();
     await loadTemplates();
-    showToast(_t("template.deleted"));
+    showToast(t("template.deleted"));
   } catch (err) {
-    showToast(_t("error.delete_template", { err: err.message }), true);
+    showToast(t("error.delete_template", { err: err.message }), true);
+  }
+}
+
+// 归一化 SDK 文件选择返回值：可能是 string / [obj] / { path } / { paths }。
+function _normalizePicked(picked) {
+  if (!picked) return null;
+  if (Array.isArray(picked)) {
+    const first = picked[0];
+    if (!first) return null;
+    return typeof first === "object" ? first.path || first.value || "" : first;
+  }
+  if (typeof picked === "object") {
+    const p = picked.path || picked.value || picked.filePath;
+    if (p) return p;
+    const arr = picked.paths || picked.values || picked.files;
+    if (Array.isArray(arr) && arr.length) {
+      const first = arr[0];
+      return typeof first === "object" ? first.path || "" : first;
+    }
+    return "";
+  }
+  return typeof picked === "string" ? picked : "";
+}
+
+// 同时支持 host 型（pickUserFile/pickSharedFile/pickFile）与独立网页（openAppAuth 授权）。
+// 通过 SDK pickFile（即系统文件管理器）选取路径；用户取消或环境不支持时返回 null。
+async function pickSystemPath(options) {
+  const sdk = window.__APP_SDK__;
+  if (!sdk) return null;
+
+  const opts = options || {};
+
+  // 独立网页：无宿主桥接，走 openAppAuth 路由授权（适配 pickFile 类方法）。
+  if (sdk.isStandaloneWeb) {
+    if (typeof sdk.openAppAuth === "function") {
+      try {
+        await sdk.openAppAuth(
+          "pickFile",
+          {
+            appName: "fn-scheduler",
+            directory: Boolean(opts.directory),
+            accept: opts.accept,
+            redirectUri: "/app/fn-scheduler/callback.html",
+          },
+          { target: "_blank", features: "width=750,height=630" },
+        );
+      } catch (_err) {
+        // 授权页被浏览器拦截或环境不支持，交由调用方兜底
+      }
+    }
+    return null;
+  }
+
+  // 宿主环境：优先 hosted pickFile，退化到 openFileManager。
+  if (typeof sdk.pickFile === "function") {
+    try {
+      const picked = await sdk.pickFile(opts);
+      return _normalizePicked(picked);
+    } catch (_err) {
+      // 用户取消或平台不支持，返回 null
+    }
+  }
+  return null;
+}
+
+// 打开系统文件管理器到指定目录。
+async function openSystemFileManager(path) {
+  const sdk = window.__APP_SDK__;
+  if (sdk && typeof sdk.openFileManager === "function") {
+    try {
+      await sdk.openFileManager(path || "/");
+    } catch (_err) {
+      showToast(t("file.open_failed"), true);
+    }
+  } else {
+    showToast(t("file.native_picker_unavailable"), true);
   }
 }
 
@@ -326,10 +956,10 @@ function bindTemplateImportFile() {
     try {
       const text = await f.text();
       const obj = JSON.parse(text);
-      if (typeof obj !== "object") throw new Error(_t("file.invalid_format"));
-      const resp = await api.importTemplates(obj);
+      if (typeof obj !== "object") throw new Error(t("file.invalid_format"));
+      const resp = await api("import-templates", { mapping: obj });
       showToast(
-        _t("file.import_result", {
+        t("file.import_result", {
           inserted: resp.imported.inserted,
           updated: resp.imported.updated,
         }),
@@ -337,7 +967,7 @@ function bindTemplateImportFile() {
       refreshTemplatesList();
       await loadTemplates();
     } catch (err) {
-      showToast(_t("file.import_failed", { err: err.message }), true);
+      showToast(t("file.import_failed", { err: err.message }), true);
     } finally {
       fileInput.value = "";
     }
@@ -355,7 +985,7 @@ function bindTaskTemplateSelection() {
     if (templateKey && taskTemplates[templateKey]) {
       const template = taskTemplates[templateKey];
       elements.taskForm.script_body.value = template.script_body;
-      showToast(_t("msg.template_applied", { name: template.name }));
+      showToast(t("msg.template_applied", { name: template.name }));
     }
   });
 }
@@ -378,14 +1008,14 @@ function bindTemplateManagementEventListeners() {
     editTemplateButton.addEventListener("click", () => {
       const id = templatesState.selectedId;
       if (!id) {
-        showToast(_t("prompt.select_template_to_edit"));
+        showToast(t("prompt.select_template_to_edit"));
         return;
       }
       const template = templatesState.templates.find(
         (item) => Number(item.id) === Number(id),
       );
       if (!template) {
-        showToast(_t("error.template_not_found"));
+        showToast(t("error.template_not_found"));
         return;
       }
       openTemplateEditModal(template);
@@ -397,19 +1027,93 @@ function bindTemplateManagementEventListeners() {
     deleteTemplateButton.addEventListener("click", deleteSelectedTemplate);
   }
 
-  const exportTemplatesButton = document.getElementById("btnExportTemplates");
-  if (exportTemplatesButton) {
-    exportTemplatesButton.addEventListener("click", async () => {
-      const mapping = await api.exportTemplates();
-      const content = JSON.stringify(mapping, null, 2);
-      openServerFilePicker("/", { mode: "save", content });
+  // 导出到 NAS：直接调用系统文件管理器/系统选择器选取目标目录并写入
+  const exportNasButton = document.getElementById("btnExportNasTemplate");
+  if (exportNasButton) {
+    exportNasButton.addEventListener("click", async () => {
+      try {
+        const mapping = await api("export-templates");
+        const content = JSON.stringify(mapping, null, 2);
+        const targetDir = await pickSystemPath({ directory: true });
+        if (!targetDir) {
+          // 用户取消或环境不支持选择器时，退化为打开系统文件管理器
+          await openSystemFileManager("/");
+          showToast(t("file.nas_open_hint"), true);
+          return;
+        }
+        const filename = "templates-export.json";
+        const path =
+          targetDir.replace(/\/+$/, "") + "/" + filename;
+        await api("fs-write", { path, content });
+        showToast(t("file.save_result", { path }));
+      } catch (err) {
+        showToast(t("file.save_failed", { err: err.message }), true);
+      }
     });
   }
 
-  const importTemplatesButton = document.getElementById("btnImportTemplates");
-  if (importTemplatesButton) {
-    importTemplatesButton.addEventListener("click", () => {
-      openServerFilePicker("/");
+  // 从 NAS 导入：直接调用系统文件管理器/系统选择器选取文件并导入
+  const importNasButton = document.getElementById("btnImportNasTemplate");
+  if (importNasButton) {
+    importNasButton.addEventListener("click", async () => {
+      try {
+        const path = await pickSystemPath({});
+        if (!path) {
+          // 用户取消选择
+          return;
+        }
+        showToast(t("loading"));
+        const resp = await api("fs-read", { path });
+        const mapping =
+          resp && resp._raw ? JSON.parse(resp._raw) : resp;
+        if (typeof mapping !== "object" || Array.isArray(mapping) || !mapping) {
+          throw new Error(t("file.invalid_format"));
+        }
+        const imp = await api("import-templates", { mapping });
+        showToast(
+          t("file.import_result", {
+            inserted: imp.imported ? imp.imported.inserted : 0,
+            updated: imp.imported ? imp.imported.updated : 0,
+          }),
+        );
+        refreshTemplatesList();
+        await loadTemplates();
+      } catch (err) {
+        showToast(t("file.import_failed", { err: err.message }), true);
+      }
+    });
+  }
+
+  // 导出到电脑：直接下载 JSON 到本地浏览器
+  const exportLocalButton = document.getElementById("btnExportLocalTemplate");
+  if (exportLocalButton) {
+    exportLocalButton.addEventListener("click", async () => {
+      try {
+        showToast(t("loading"));
+        const mapping = await api("export-templates");
+        const content = JSON.stringify(mapping, null, 2);
+        const filename = "templates-export.json";
+        const blob = new Blob([content], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast(t("file.save_local_result"));
+      } catch (err) {
+        showToast(t("file.save_failed", { err: err.message }), true);
+      }
+    });
+  }
+
+  // 从电脑导入：触发隐藏的本地文件选择
+  const importLocalButton = document.getElementById("btnImportLocalTemplate");
+  if (importLocalButton) {
+    importLocalButton.addEventListener("click", () => {
+      document.getElementById("templateImportFile")?.click();
     });
   }
 
@@ -418,14 +1122,14 @@ function bindTemplateManagementEventListeners() {
     previewTemplateButton.addEventListener("click", () => {
       const id = templatesState.selectedId;
       if (!id) {
-        showToast(_t("prompt.select_template_to_preview"));
+        showToast(t("prompt.select_template_to_preview"));
         return;
       }
       const template = templatesState.templates.find(
         (item) => Number(item.id) === Number(id),
       );
       if (!template) {
-        showToast(_t("error.template_not_found"));
+        showToast(t("error.template_not_found"));
         return;
       }
       openTemplatePreview(template);
@@ -502,11 +1206,11 @@ function getTaskSortPriority(task) {
 }
 
 function getTaskTriggerLabel(task) {
-  let triggerLabel = _t(
+  let triggerLabel = t(
     triggerMap[task.trigger_type] || task.trigger_type || "",
   );
   if (task.trigger_type === "event") {
-    const subtype = getEventLabel(task.event_type) || _t("trigger.event");
+    const subtype = getEventLabel(task.event_type) || t("trigger.event");
     triggerLabel = `${triggerLabel} · ${subtype}`;
   }
   return triggerLabel;
@@ -630,8 +1334,8 @@ function isNarrow() {
 }
 
 function getEventLabel(key) {
-  if (isNarrow()) return _t(eventTypeShortMap[key] || eventTypeMap[key] || key);
-  return _t(eventTypeMap[key] || key);
+  if (isNarrow()) return t(eventTypeShortMap[key] || eventTypeMap[key] || key);
+  return t(eventTypeMap[key] || key);
 }
 
 function updateEventTypeOptionLabels() {
@@ -648,8 +1352,8 @@ function updateEventTypeOptionLabels() {
       value === "system_shutdown"
     ) {
       option.textContent = useShortLabel
-        ? _t(eventTypeShortMap[value] || eventTypeMap[value] || value)
-        : _t(eventTypeMap[value] || eventTypeShortMap[value] || value);
+        ? t(eventTypeShortMap[value] || eventTypeMap[value] || value)
+        : t(eventTypeMap[value] || eventTypeShortMap[value] || value);
     }
   }
 }
@@ -688,7 +1392,7 @@ function applyModalI18n(modal) {
     if (!key) return;
     const attr = el.getAttribute("data-i18n-attr");
     try {
-      const v = _t(key);
+      const v = t(key);
       if (attr) el.setAttribute(attr, v);
       else el.textContent = v;
     } catch (e) {
@@ -697,131 +1401,35 @@ function applyModalI18n(modal) {
   });
 }
 
-const api = {
-  async request(url, options = {}) {
-    // Resolve relative urls like "api/tasks" against API_BASE
-    const resolved =
-      /^(https?:)?\/\//.test(url) || url.startsWith("/")
-        ? url
-        : API_BASE + url.replace(/^\/+/, "");
-    // merge headers, but allow caller to override
-    const headers = Object.assign(
-      { "Content-Type": "application/json" },
-      options.headers || {},
-    );
-    const response = await fetch(resolved, {
-      ...options,
-      headers,
-    });
-    const text = await response.text();
-    let payload = null;
-    if (text) {
-      try {
-        payload = JSON.parse(text);
-      } catch (err) {
-        // keep raw text in payload for better diagnostics
-        payload = { _raw: text };
-      }
+async function api(action, data = {}) {
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    credentials: "include",
+    body: JSON.stringify({ action, ...data }),
+  });
+  const text = await response.text();
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch (err) {
+      // keep raw text in payload for better diagnostics
+      payload = { _raw: text };
     }
-    if (!response.ok) {
-      const rawMessage =
-        (payload && (payload.error || payload._raw)) ||
-        response.statusText ||
-        `HTTP ${response.status}`;
-      const friendly = mapApiErrorMessage(rawMessage) || rawMessage;
-      console.error("API error", {
-        url: resolved,
-        status: response.status,
-        payload,
-      });
-      throw new Error(friendly);
-    }
-    return payload || {};
-  },
-  listTasks() {
-    return this.request("api/tasks");
-  },
-  listAccounts() {
-    return this.request("api/accounts");
-  },
-  createTask(data) {
-    return this.request("api/tasks", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-  listTemplates() {
-    return this.request("api/templates");
-  },
-  createTemplate(data) {
-    return this.request("api/templates", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-  updateTemplate(id, data) {
-    return this.request(`api/templates/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-  deleteTemplate(id) {
-    return this.request(`api/templates/${id}`, { method: "DELETE" });
-  },
-  importTemplates(mapping) {
-    return this.request("api/templates/import", {
-      method: "POST",
-      body: JSON.stringify(mapping),
-    });
-  },
-  exportTemplates() {
-    return this.request("api/templates/export").then((p) => p);
-  },
-  updateTask(id, data) {
-    return this.request(`api/tasks/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-  deleteTask(id) {
-    return this.request(`api/tasks/${id}`, { method: "DELETE" });
-  },
-  runTask(id) {
-    return this.request(`api/tasks/${id}/run`, { method: "POST" });
-  },
-  stopTask(id) {
-    return this.request(`api/tasks/${id}/stop`, { method: "POST" });
-  },
-  fetchSettings() {
-    return this.request("api/settings");
-  },
-  updateSettings(data) {
-    return this.request("api/settings", {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-  fetchResults(id) {
-    return this.request(`api/tasks/${id}/results?limit=50&summary=1`);
-  },
-  fetchResult(id, resultId) {
-    return this.request(`api/tasks/${id}/results/${resultId}`);
-  },
-  deleteResult(id, resultId) {
-    return this.request(`api/tasks/${id}/results/${resultId}`, {
-      method: "DELETE",
-    });
-  },
-  clearResults(id) {
-    return this.request(`api/tasks/${id}/results`, { method: "DELETE" });
-  },
-  batchTasks(action, taskIds, extra = {}) {
-    return this.request("api/tasks/batch", {
-      method: "POST",
-      body: JSON.stringify({ action, task_ids: taskIds, ...extra }),
-    });
-  },
-};
+  }
+  if (!response.ok) {
+    const rawMessage =
+      (payload && (payload.error || payload._raw)) ||
+      response.statusText ||
+      `HTTP ${response.status}`;
+    const friendly = mapApiErrorMessage(rawMessage) || rawMessage;
+    console.error("API error", { action, status: response.status, payload });
+    throw new Error(friendly);
+  }
+  return payload || {};
+}
 
 function formatDate(value) {
   if (!value) {
@@ -859,18 +1467,18 @@ function renderTasks() {
       label: "status.no_record",
       className: "status-unknown",
     };
-    const statusLabel = _t(status.label);
+    const statusLabel = t(status.label);
     const safeName = escapeHtml(task.name);
     const safeAccount = escapeHtml(task.account);
     let triggerLabel = getTaskTriggerLabel(task);
     if (task.trigger_type === "event") {
       if (isNarrow()) {
-        triggerLabel = getEventLabel(task.event_type) || _t("trigger.event");
+        triggerLabel = getEventLabel(task.event_type) || t("trigger.event");
       }
     }
 
     tr.innerHTML = `
-            <td><span class="badge ${task.is_active ? "badge-active" : "badge-paused"}">${task.is_active ? _t("status.enabled") : _t("status.disabled")}</span></td>
+            <td><span class="badge ${task.is_active ? "badge-active" : "badge-paused"}">${task.is_active ? t("status.enabled") : t("status.disabled")}</span></td>
             <td>
                 <div class="task-name">${safeName}</div>
             </td>
@@ -908,7 +1516,7 @@ function showToast(message, isError = false) {
 
 function showConfirm(
   message,
-  { okText = _t("btn.ok"), cancelText = _t("btn.cancel") } = {},
+  { okText = t("btn.ok"), cancelText = t("btn.cancel") } = {},
 ) {
   return new Promise((resolve) => {
     let modal = document.getElementById("__confirmModal");
@@ -922,7 +1530,7 @@ function showConfirm(
         <div class="modal-content">
           <div class="modal-header">
             <div><h2></h2></div>
-            <div class="modal-header-actions"><button class="icon-btn" data-close type="button" aria-label="${_t("close")}">&times;</button></div>
+            <div class="modal-header-actions"><button class="icon-btn" data-close type="button" aria-label="${t("close")}">&times;</button></div>
           </div>
           <div class="modal-body confirm-modal-body"></div>
           <div class="modal-actions confirm-modal-actions">
@@ -1021,11 +1629,8 @@ function closeModal(modal) {
     modal.querySelectorAll("[data-i18n-attr]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const attr = el.getAttribute("data-i18n-attr");
-      if (key && attr) el.setAttribute(attr, _t(key));
+      if (key && attr) el.setAttribute(attr, t(key));
     });
-    // ensure use-local button visible by default
-    const btnUseLocalEl = modal.querySelector("#btnUseLocalFile");
-    if (btnUseLocalEl) btnUseLocalEl.classList.remove("hidden");
   } catch (e) {
     // ignore i18n restore errors
   }
@@ -1071,7 +1676,7 @@ function renderAccountOptions(selectedAccount = "") {
   if (state.accountLoading) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = _t("loading");
+    option.textContent = t("loading");
     option.disabled = true;
     option.selected = true;
     select.appendChild(option);
@@ -1083,8 +1688,8 @@ function renderAccountOptions(selectedAccount = "") {
     const option = document.createElement("option");
     option.value = "";
     option.textContent = state.posixSupported
-      ? _t("no_accounts")
-      : _t("not_available");
+      ? t("no_accounts")
+      : t("not_available");
     option.disabled = true;
     option.selected = true;
     select.appendChild(option);
@@ -1097,7 +1702,7 @@ function renderAccountOptions(selectedAccount = "") {
     const option = document.createElement("option");
     option.value = defaultAccount;
     option.textContent =
-      defaultAccount || _t("label.current_logged_in_account");
+      defaultAccount || t("label.current_logged_in_account");
     option.selected = true;
     select.appendChild(option);
     select.disabled = true;
@@ -1113,7 +1718,7 @@ function renderAccountOptions(selectedAccount = "") {
   if (unavailableSelectedAccount) {
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = `${unavailableSelectedAccount} ${_t("placeholder.needs_reselect")}`;
+    placeholder.textContent = `${unavailableSelectedAccount} ${t("placeholder.needs_reselect")}`;
     placeholder.disabled = true;
     placeholder.selected = true;
     select.appendChild(placeholder);
@@ -1144,7 +1749,7 @@ async function loadAccounts({ showError = true, preferredAccount = "" } = {}) {
   state.accountLoading = true;
   renderAccountOptions(previousValue);
   try {
-    const response = await api.listAccounts();
+    const response = await api("list-accounts");
     state.accounts = response.data || [];
     if (response.meta) {
       if (
@@ -1167,7 +1772,7 @@ async function loadAccounts({ showError = true, preferredAccount = "" } = {}) {
     }
   } catch (error) {
     if (showError) {
-      showToast(_t("error.load_accounts", { err: error.message }), true);
+      showToast(t("error.load_accounts", { err: error.message }), true);
     }
   } finally {
     state.accountLoading = false;
@@ -1198,7 +1803,7 @@ function renderPreTaskChecklist() {
 
   const options = Array.from(elements.preTaskSelect.options);
   if (!options.length) {
-    elements.preTaskChecklist.innerHTML = `<div class="pretask-empty">${escapeHtml(_t("empty.no_tasks"))}</div>`;
+    elements.preTaskChecklist.innerHTML = `<div class="pretask-empty">${escapeHtml(t("empty.no_tasks"))}</div>`;
     return;
   }
 
@@ -1229,7 +1834,7 @@ function openTaskModal(task = null) {
   }
   populatePreTaskOptions(state.editingTaskId, task?.pre_task_ids || []);
   if (task) {
-    elements.taskModalTitle.textContent = `${_t("btn.edit")}：${task.name}`;
+    elements.taskModalTitle.textContent = `${t("btn.edit")}：${task.name}`;
     elements.taskForm.name.value = task.name;
     elements.triggerTypeSelect.value = task.trigger_type;
     elements.eventTypeSelect.value = task.event_type || "system_shutdown";
@@ -1245,7 +1850,7 @@ function openTaskModal(task = null) {
     elements.taskForm.condition_interval.value = task.condition_interval || 60;
     elements.taskForm.script_body.value = task.script_body || "";
   } else {
-    elements.taskModalTitle.textContent = _t("modal.task.new");
+    elements.taskModalTitle.textContent = t("modal.task.new");
     elements.eventTypeSelect.value = "system_shutdown";
     elements.taskForm.condition_interval.value = 60;
     elements.taskForm.keep_success_log.checked = true;
@@ -1313,7 +1918,7 @@ function updateCronPreview() {
   if (elements.cronNextTimes) {
     const result = getNextCronTimes(expression, 2);
     if (!result.valid) {
-      elements.cronNextTimes.textContent = _t("cron.invalid");
+      elements.cronNextTimes.textContent = t("cron.invalid");
       elements.cronNextTimes.classList.add("cron-invalid");
       if (elements.cronPreview) {
         elements.cronPreview.classList.add("cron-invalid");
@@ -1331,7 +1936,7 @@ function updateCronPreview() {
       }
       if (result.times.length) {
         elements.cronNextTimes.innerHTML =
-          _t("cron.preview") +
+          t("cron.preview") +
           result.times.map((t) => `<div>${t}</div>`).join("");
       } else {
         elements.cronNextTimes.textContent = "";
@@ -1340,7 +1945,7 @@ function updateCronPreview() {
         const hint = document.createElement("div");
         hint.className = "muted";
         hint.style.marginTop = "6px";
-        hint.textContent = _t("cron.search_exceeded", {
+        hint.textContent = t("cron.search_exceeded", {
           months: result.maxMonths,
         });
         elements.cronNextTimes.appendChild(hint);
@@ -1543,40 +2148,40 @@ async function handleFormSubmit(event) {
   try {
     const payload = collectFormData();
     if (!payload.name || !payload.account || !payload.script_body) {
-      throw new Error(_t("validation.required_fields"));
+      throw new Error(t("validation.required_fields"));
     }
     if (state.accountLoading) {
-      throw new Error(_t("validation.accounts_loading"));
+      throw new Error(t("validation.accounts_loading"));
     }
     if (!state.accounts.length) {
       if (state.posixSupported) {
-        throw new Error(_t("validation.no_accounts_posix"));
+        throw new Error(t("validation.no_accounts_posix"));
       }
-      throw new Error(_t("validation.no_default_account"));
+      throw new Error(t("validation.no_default_account"));
     }
     if (!state.posixSupported) {
       payload.account =
         state.accounts[0] || state.defaultAccount || payload.account;
     } else if (!state.accounts.includes(payload.account)) {
-      throw new Error(_t("validation.account_not_in_group"));
+      throw new Error(t("validation.account_not_in_group"));
     }
     if (payload.trigger_type === "schedule" && !payload.schedule_expression) {
-      throw new Error(_t("validation.cron_required"));
+      throw new Error(t("validation.cron_required"));
     }
     if (payload.trigger_type === "event") {
       if (!payload.event_type) {
         payload.event_type = "script";
       }
       if (payload.event_type === "script" && !payload.condition_script) {
-        throw new Error(_t("validation.script_required"));
+        throw new Error(t("validation.script_required"));
       }
     }
     if (state.editingTaskId) {
-      await api.updateTask(state.editingTaskId, payload);
-      showToast(_t("msg.task_updated"));
+      await api("update-task", { id: state.editingTaskId, ...payload });
+      showToast(t("msg.task_updated"));
     } else {
-      await api.createTask(payload);
-      showToast(_t("msg.task_created"));
+      await api("create-task", payload);
+      showToast(t("msg.task_created"));
     }
     closeModal(elements.taskModal);
     state.selectedIds.clear();
@@ -1592,7 +2197,7 @@ async function loadTasks({ silent = false } = {}) {
   }
   loadTasksPromise = (async () => {
     try {
-      const { data } = await api.listTasks();
+      const { data } = await api("list-tasks");
       state.tasks = data || [];
       sortTasks();
       state.selectedIds.forEach((id) => {
@@ -1603,7 +2208,7 @@ async function loadTasks({ silent = false } = {}) {
       renderTasks();
     } catch (error) {
       if (!silent) {
-        showToast(_t("error.load_tasks", { err: error.message }), true);
+        showToast(t("error.load_tasks", { err: error.message }), true);
       } else {
         console.error("自动刷新任务失败", error);
       }
@@ -1628,18 +2233,18 @@ function startAutoRefresh() {
 async function deleteSelectedTasks() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t("prompt.select_task"));
+    showToast(t("prompt.select_task"));
     return;
   }
   if (
     !(await showConfirm(
-      _t("confirm.delete_selected_tasks", { n: selected.length }),
+      t("confirm.delete_selected_tasks", { n: selected.length }),
     ))
   ) {
     return;
   }
   try {
-    const response = await api.batchTasks("delete", selected);
+    const response = await api("batch-tasks", { batch_action: "delete", task_ids: selected });
     const result = response.result || {};
     const { deleted = [], missing = [] } = result;
     const deletedCount = deleted.length;
@@ -1647,9 +2252,9 @@ async function deleteSelectedTasks() {
     state.selectedIds.clear();
     await loadTasks();
     let parts = [];
-    if (deletedCount) parts.push(_t("msg.deleted_n", { n: deletedCount }));
-    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
-    showToast(parts.join(_t("list.sep")) || _t("msg.no_tasks_deleted"));
+    if (deletedCount) parts.push(t("msg.deleted_n", { n: deletedCount }));
+    if (missingCount) parts.push(t("msg.missing_n", { n: missingCount }));
+    showToast(parts.join(t("list.sep")) || t("msg.no_tasks_deleted"));
   } catch (error) {
     showToast(error.message, true);
   }
@@ -1658,11 +2263,11 @@ async function deleteSelectedTasks() {
 async function runSelectedTasks() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t("prompt.select_task_to_run"));
+    showToast(t("prompt.select_task_to_run"));
     return;
   }
   try {
-    const response = await api.batchTasks("run", selected);
+    const response = await api("batch-tasks", { batch_action: "run", task_ids: selected });
     const result = response.result || {};
     const {
       queued = [],
@@ -1677,14 +2282,14 @@ async function runSelectedTasks() {
     const conditionFailedCount = condition_failed.length;
     const missingCount = missing.length;
     const parts = [];
-    if (queuedCount) parts.push(_t("msg.triggered_n", { n: queuedCount }));
-    if (runningCount) parts.push(_t("msg.running_n", { n: runningCount }));
+    if (queuedCount) parts.push(t("msg.triggered_n", { n: queuedCount }));
+    if (runningCount) parts.push(t("msg.running_n", { n: runningCount }));
     if (pretaskFailedCount)
-      parts.push(_t("msg.pretask_failed_n", { n: pretaskFailedCount }));
+      parts.push(t("msg.pretask_failed_n", { n: pretaskFailedCount }));
     if (conditionFailedCount)
-      parts.push(_t("msg.condition_failed_n", { n: conditionFailedCount }));
-    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
-    showToast(parts.join(_t("list.sep")) || _t("msg.no_tasks_triggered"));
+      parts.push(t("msg.condition_failed_n", { n: conditionFailedCount }));
+    if (missingCount) parts.push(t("msg.missing_n", { n: missingCount }));
+    showToast(parts.join(t("list.sep")) || t("msg.no_tasks_triggered"));
   } catch (error) {
     showToast(error.message, true);
   }
@@ -1693,22 +2298,22 @@ async function runSelectedTasks() {
 async function stopSelectedTasks() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t("prompt.select_task_to_stop"));
+    showToast(t("prompt.select_task_to_stop"));
     return;
   }
   try {
-    const response = await api.batchTasks("stop", selected);
+    const response = await api("batch-tasks", { batch_action: "stop", task_ids: selected });
     const result = response.result || {};
     const { stopped = [], not_running = [], missing = [] } = result;
     const stoppedCount = stopped.length;
     const notRunningCount = not_running.length;
     const missingCount = missing.length;
     const parts = [];
-    if (stoppedCount) parts.push(_t("msg.stopped_n", { n: stoppedCount }));
+    if (stoppedCount) parts.push(t("msg.stopped_n", { n: stoppedCount }));
     if (notRunningCount)
-      parts.push(_t("msg.not_running_n", { n: notRunningCount }));
-    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
-    showToast(parts.join(_t("list.sep")) || _t("msg.no_tasks_stopped"));
+      parts.push(t("msg.not_running_n", { n: notRunningCount }));
+    if (missingCount) parts.push(t("msg.missing_n", { n: missingCount }));
+    showToast(parts.join(t("list.sep")) || t("msg.no_tasks_stopped"));
     await loadTasks({ silent: true });
   } catch (error) {
     showToast(error.message, true);
@@ -1718,7 +2323,7 @@ async function stopSelectedTasks() {
 async function toggleSelectedTask() {
   const selected = Array.from(state.selectedIds);
   if (!selected.length) {
-    showToast(_t("prompt.select_task"));
+    showToast(t("prompt.select_task"));
     return;
   }
   try {
@@ -1726,26 +2331,26 @@ async function toggleSelectedTask() {
       selected.includes(task.id),
     );
     if (!selectedTasks.length) {
-      throw new Error(_t("error.task_not_found"));
+      throw new Error(t("error.task_not_found"));
     }
     const shouldEnable = selectedTasks.some((task) => !task.is_active);
     const action = shouldEnable ? "enable" : "disable";
-    const response = await api.batchTasks(action, selected);
+    const response = await api("batch-tasks", { batch_action: action, task_ids: selected });
     const result = response.result || {};
     const { updated = [], unchanged = [], missing = [] } = result;
     const updatedCount = updated.length;
     const unchangedCount = unchanged.length;
     const missingCount = missing.length;
     await loadTasks();
-    const verb = shouldEnable ? _t("verb.enable") : _t("verb.disable");
+    const verb = shouldEnable ? t("verb.enable") : t("verb.disable");
     const parts = [];
     if (updatedCount)
-      parts.push(_t("msg.action_completed", { verb, n: updatedCount }));
+      parts.push(t("msg.action_completed", { verb, n: updatedCount }));
     if (unchangedCount)
-      parts.push(_t("msg.unchanged_count", { n: unchangedCount }));
-    if (missingCount) parts.push(_t("msg.missing_n", { n: missingCount }));
+      parts.push(t("msg.unchanged_count", { n: unchangedCount }));
+    if (missingCount) parts.push(t("msg.missing_n", { n: missingCount }));
     showToast(
-      parts.join(_t("list.sep")) || _t("msg.no_tasks_completed", { verb }),
+      parts.join(t("list.sep")) || t("msg.no_tasks_completed", { verb }),
     );
   } catch (error) {
     showToast(error.message, true);
@@ -1755,13 +2360,13 @@ async function toggleSelectedTask() {
 async function openResultModal() {
   const selected = Array.from(state.selectedIds);
   if (selected.length !== 1) {
-    showToast(_t("prompt.select_single_task"));
+    showToast(t("prompt.select_single_task"));
     return;
   }
   const taskId = selected[0];
   const task = state.tasks.find((item) => item.id === taskId);
   if (!task) {
-    showToast(_t("error.task_not_found"), true);
+    showToast(t("error.task_not_found"), true);
     return;
   }
   state.currentResultTaskId = taskId;
@@ -1777,7 +2382,7 @@ async function openSettingsModal() {
   }
   openModal(elements.settingsModal);
   try {
-    const payload = await api.fetchSettings();
+    const payload = await api("get-settings");
     const settings = payload?.data || {};
     Object.entries(settings).forEach(([key, value]) => {
       const field = elements.settingsForm.elements.namedItem(key);
@@ -1805,13 +2410,13 @@ async function saveSettings(event) {
     result_log_preview_limit: Number(formData.get("result_log_preview_limit")),
   };
   try {
-    const response = await api.updateSettings(payload);
+    const response = await api("update-settings", payload);
     const pruned = Number(response?.pruned || 0);
     closeModal(elements.settingsModal);
     if (pruned > 0) {
-      showToast(_t("msg.settings_saved_pruned", { n: pruned }));
+      showToast(t("msg.settings_saved_pruned", { n: pruned }));
     } else {
-      showToast(_t("msg.settings_saved"));
+      showToast(t("msg.settings_saved"));
     }
   } catch (error) {
     showToast(error.message, true);
@@ -1823,7 +2428,7 @@ async function refreshResults() {
     return;
   }
   try {
-    const { data } = await api.fetchResults(state.currentResultTaskId);
+    const { data } = await api("list-results", { id: state.currentResultTaskId, limit: 50, offset: 0, summary: 1 });
     renderResults(data || []);
   } catch (error) {
     showToast(error.message, true);
@@ -1833,7 +2438,7 @@ async function refreshResults() {
 function renderResults(results) {
   elements.resultList.innerHTML = "";
   if (!results.length) {
-    elements.resultList.innerHTML = `<p class="empty">${_t("results.no_records")}</p>`;
+    elements.resultList.innerHTML = `<p class="empty">${t("results.no_records")}</p>`;
     return;
   }
   const fragment = document.createDocumentFragment();
@@ -1844,9 +2449,9 @@ function renderResults(results) {
     };
     const card = document.createElement("article");
     card.className = "result-card";
-    const statusText = _t(status.label);
+    const statusText = t(status.label);
     let reasonKey = `trigger.${result.trigger_reason}`;
-    let reasonText = _t(reasonKey);
+    let reasonText = t(reasonKey);
     if (reasonText === reasonKey) {
       reasonText = result.trigger_reason || "";
     }
@@ -1857,7 +2462,7 @@ function renderResults(results) {
     statusEl.textContent = statusText;
     const reasonEl = document.createElement("span");
     reasonEl.className = "muted";
-    reasonEl.textContent = `${_t("label.trigger")}${reasonText}`;
+    reasonEl.textContent = `${t("label.trigger")}${reasonText}`;
     metaGroup.appendChild(statusEl);
     metaGroup.appendChild(reasonEl);
 
@@ -1869,10 +2474,10 @@ function renderResults(results) {
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "ghost";
     deleteBtn.type = "button";
-    deleteBtn.textContent = _t("btn.delete");
+    deleteBtn.textContent = t("btn.delete");
     deleteBtn.addEventListener("click", async () => {
       try {
-        await api.deleteResult(state.currentResultTaskId, result.id);
+        await api("delete-results", { id: state.currentResultTaskId, result_id: result.id });
         state.resultLogCache.delete(result.id);
         await refreshResults();
       } catch (error) {
@@ -1905,12 +2510,12 @@ function renderResults(results) {
           typeof result.log_preview === "string"
             ? result.log_preview.length
             : 0;
-        hint.textContent = _t("results.log_truncated", {
+        hint.textContent = t("results.log_truncated", {
           n: result.log_size || 0,
           limit: previewLimit,
         });
       } else {
-        hint.textContent = _t("results.log_full");
+        hint.textContent = t("results.log_full");
       }
       logMeta.appendChild(hint);
 
@@ -1918,8 +2523,8 @@ function renderResults(results) {
       toggleBtn.className = "ghost small";
       toggleBtn.type = "button";
       toggleBtn.textContent = isExpanded
-        ? _t("results.collapse_log")
-        : _t("results.expand_log");
+        ? t("results.collapse_log")
+        : t("results.expand_log");
       toggleBtn.addEventListener("click", async () => {
         if (state.resultLogCache.has(result.id)) {
           state.resultLogCache.delete(result.id);
@@ -1927,19 +2532,19 @@ function renderResults(results) {
           return;
         }
         toggleBtn.disabled = true;
-        toggleBtn.textContent = _t("results.loading_log");
+        toggleBtn.textContent = t("results.loading_log");
         try {
-          const payload = await api.fetchResult(
-            state.currentResultTaskId,
-            result.id,
-          );
+          const payload = await api("get-result", {
+            id: state.currentResultTaskId,
+            result_id: result.id,
+          });
           const fullLog = payload?.data?.log || "";
           state.resultLogCache.set(result.id, fullLog);
           renderResults(results);
         } catch (error) {
           showToast(error.message, true);
           toggleBtn.disabled = false;
-          toggleBtn.textContent = _t("results.expand_log");
+          toggleBtn.textContent = t("results.expand_log");
         }
       });
       logMeta.appendChild(toggleBtn);
@@ -1962,14 +2567,14 @@ async function clearResultHistory() {
   if (!state.currentResultTaskId) {
     return;
   }
-  if (!(await showConfirm(_t("confirm.clear_results")))) {
+  if (!(await showConfirm(t("confirm.clear_results")))) {
     return;
   }
   try {
-    await api.clearResults(state.currentResultTaskId);
+    await api("clear-results", { id: state.currentResultTaskId });
     state.resultLogCache.clear();
     await refreshResults();
-    showToast(_t("msg.results_cleared"));
+    showToast(t("msg.results_cleared"));
   } catch (error) {
     showToast(error.message, true);
   }
@@ -2032,7 +2637,7 @@ function bindTaskActionEventListeners() {
   buttons.edit.addEventListener("click", () => {
     const selected = getSelectedTasks();
     if (selected.length !== 1) {
-      showToast(_t("prompt.select_single_task"));
+      showToast(t("prompt.select_single_task"));
       return;
     }
     openTaskModal(selected[0]);
@@ -2160,264 +2765,24 @@ function attachEventListeners() {
     openModal(document.getElementById("aboutModal"));
   });
 }
-// 服务器文件选择：浏览并读取服务器端文件（依赖后端 api/fs 列表与读取接口）
-function openServerFilePicker(defaultPath = "/", options = {}) {
-  const mode = options.mode || "open"; // 'open' or 'save'
-  const saveContent = options.content || null;
-  const modal = document.getElementById("serverFilePickerModal");
-  const pathInput = document.getElementById("serverPathInput");
-  const listEl = document.getElementById("serverFileList");
-  if (!modal || !pathInput || !listEl) {
-    // fallback to local file input
-    document.getElementById("templateImportFile")?.click();
-    return;
-  }
-
-  // ensure i18n baseline
-  applyModalI18n(modal);
-
-  // prepare UI for mode
-  const headerTitleEl = modal.querySelector("h2");
-  const subtitleEl = modal.querySelector(".subtitle");
-  const btnSelectEl = modal.querySelector("#btnSelectServerFile");
-  const btnUseLocalEl = modal.querySelector("#btnUseLocalFile");
-
-  if (mode === "save") {
-    if (headerTitleEl)
-      headerTitleEl.textContent = _t("file.export_to_server_title");
-    if (subtitleEl)
-      subtitleEl.textContent = _t("file.export_to_server_subtitle");
-    if (btnSelectEl) btnSelectEl.textContent = _t("filepicker.export_selected");
-    if (btnUseLocalEl)
-      btnUseLocalEl.textContent = _t("filepicker.export_to_local");
-  }
-
-  // normalize path helper
-  const normalizePath = (p) => {
-    let s = String(p || "/")
-      .replace(/\\/g, "/")
-      .trim();
-    if (!s) s = "/";
-    if (s.length > 1) s = s.replace(/\/\/+$/g, "");
-    return s;
-  };
-
-  pathInput.value = normalizePath(defaultPath);
-  listEl.innerHTML = '<div class="muted">' + _t("loading") + "</div>";
-
-  const btnRefresh = modal.querySelector("#btnServerRefresh");
-  if (btnRefresh)
-    btnRefresh.onclick = () => fetchServerFiles(normalizePath(pathInput.value));
-
-  if (btnUseLocalEl) {
-    btnUseLocalEl.onclick = () => {
-      if (mode === "save") {
-        try {
-          const filename = "templates-export.json";
-          const blob = new Blob([saveContent || ""], {
-            type: "application/json",
-          });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-          showToast(_t("file.save_local_result"));
-          closeModal(modal);
-        } catch (e) {
-          showToast(_t("file.save_failed", { err: e && e.message }), true);
-        }
-      } else {
-        document.getElementById("templateImportFile")?.click();
-      }
-    };
-  }
-
-  if (btnSelectEl) {
-    btnSelectEl.onclick = async () => {
-      const sel = listEl.querySelector(".selected");
-      let fp = sel?.dataset?.path || "";
-      if (!fp && mode === "save") {
-        fp = normalizePath(pathInput.value);
-      }
-      if (!fp) {
-        showToast(_t("prompt.select_file"));
-        return;
-      }
-      try {
-        showToast(_t("loading"));
-        if (mode === "save") {
-          const isDir = sel ? sel.dataset.isdir === "true" : true;
-          let targetPath = fp;
-          if (isDir) {
-            const defaultName = "templates-export.json";
-            targetPath =
-              fp === "/"
-                ? "/" + defaultName
-                : fp.replace(/\/\/+$/g, "") + "/" + defaultName;
-          }
-          const resp = await api.request(
-            "api/fs/write/" + encodeURIComponent(targetPath),
-            {
-              method: "POST",
-              body: JSON.stringify({ content: saveContent }),
-              headers: {
-                "Content-Type": "application/json",
-                "X-FS-Path": targetPath,
-              },
-            },
-          );
-          showToast(_t("file.save_result", { path: resp.path || targetPath }));
-          closeModal(modal);
-          return;
-        }
-        // read and import
-        const payload = await api.request(
-          "api/fs/read/" + encodeURIComponent(fp),
-          { headers: { "X-FS-Path": fp } },
-        );
-        let obj = null;
-        if (payload && Object.prototype.hasOwnProperty.call(payload, "_raw")) {
-          try {
-            obj = JSON.parse(payload._raw);
-          } catch (e) {
-            throw new Error(_t("file.invalid_format"));
-          }
-        } else if (payload && typeof payload === "object") {
-          obj = payload;
-        } else {
-          throw new Error(_t("file.invalid_format"));
-        }
-        const result = await api.importTemplates(obj);
-        showToast(
-          _t("file.import_result", {
-            inserted: result?.imported?.inserted || 0,
-            updated: result?.imported?.updated || 0,
-          }),
-        );
-        closeModal(modal);
-        refreshTemplatesList();
-        await loadTemplates();
-      } catch (err) {
-        showToast(_t("file.import_failed", { err: err.message }), true);
-      }
-    };
-  }
-
-  // file list click handling (delegated)
-  listEl.onclick = (ev) => {
-    const row = ev.target.closest(".srv-file");
-    if (!row) return;
-    const isDir = row.dataset.isdir === "true";
-    const path = row.dataset.path;
-    if (isDir) {
-      pathInput.value = normalizePath(path);
-      fetchServerFiles(pathInput.value);
-      return;
-    }
-    listEl
-      .querySelectorAll(".srv-file")
-      .forEach((r) => r.classList.remove("selected"));
-    row.classList.add("selected");
-  };
-
-  // double click behavior
-  listEl.ondblclick = (ev) => {
-    const row = ev.target.closest(".srv-file");
-    if (!row) return;
-    const isDir = row.dataset.isdir === "true";
-    if (isDir) {
-      const newPath = normalizePath(row.dataset.path);
-      pathInput.value = newPath;
-      fetchServerFiles(newPath);
-    } else {
-      modal.querySelector("#btnSelectServerFile")?.click();
-    }
-  };
-
-  openModal(modal);
-  fetchServerFiles(pathInput.value);
-}
-
-async function fetchServerFiles(path) {
-  const listEl = document.getElementById("serverFileList");
-  if (!listEl) return;
-  const normalizePath = (p) => {
-    let s = String(p || "/")
-      .replace(/\\/g, "/")
-      .trim();
-    if (!s) s = "/";
-    if (s.length > 1) s = s.replace(/\/\/+$/g, "");
-    return s;
-  };
-  const p = normalizePath(path);
-  listEl.innerHTML = '<div class="muted">' + _t("loading") + "</div>";
-  try {
-    const payload = await api.request("api/fs/list/" + encodeURIComponent(p), {
-      headers: { "X-FS-Path": p },
-    });
-    const files = payload && Array.isArray(payload.files) ? payload.files : [];
-    renderServerFileList(files, p);
-  } catch (err) {
-    listEl.innerHTML =
-      '<div class="muted">' +
-      escapeHtml(err && err.message ? err.message : String(err)) +
-      "</div>";
-  }
-}
-
-function renderServerFileList(files, parentPath) {
-  const listEl = document.getElementById("serverFileList");
-  if (!listEl) return;
-  listEl.innerHTML = "";
-  if (!files || !files.length) {
-    listEl.innerHTML = '<div class="muted">' + _t("empty.no_files") + "</div>";
-    return;
-  }
-  try {
-    const normalize = (p) =>
-      String(p || "/")
-        .replace(/\\/g, "/")
-        .replace(/\/\/+$/g, "") || "/";
-    const base = normalize(parentPath);
-    const frag = document.createDocumentFragment();
-    if (base !== "/") {
-      const up = document.createElement("div");
-      up.className = "srv-file srv-dir";
-      up.dataset.path = (function () {
-        const p = base.replace(/\/\/+$/g, "");
-        const idx = p.lastIndexOf("/");
-        if (idx <= 0) return "/";
-        return p.slice(0, idx) || "/";
-      })();
-      up.dataset.isdir = "true";
-      up.innerHTML = `<span class="srv-icon">⬆️</span><span class="srv-name">..</span>`;
-      frag.appendChild(up);
-    }
-    files.forEach((f) => {
-      const row = document.createElement("div");
-      row.className = "srv-file" + (f.isdir ? " srv-dir" : " srv-file-item");
-      const path =
-        f.path ||
-        (base === "/" ? "/" + (f.name || "") : base + "/" + (f.name || ""));
-      row.dataset.path = path;
-      row.dataset.isdir = f.isdir ? "true" : "false";
-      const icon = f.isdir ? "📁" : "📄";
-      row.innerHTML = `<span class="srv-icon">${icon}</span><span class="srv-name">${escapeHtml(f.name || "")}</span>`;
-      frag.appendChild(row);
-    });
-    listEl.appendChild(frag);
-  } catch (e) {
-    listEl.innerHTML =
-      '<div class="muted">' +
-      escapeHtml(e && e.message ? e.message : String(e)) +
-      "</div>";
-  }
-}
 (async function init() {
+  try {
+    platformConfig = await sdk.getPlatformConfig();
+  } catch (e) {
+    // fall back to defaults
+  }
+  applyPreferences();
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
   document.querySelectorAll(".modal").forEach((modal) => {
     if (modal.classList.contains("hidden")) {
       modal.inert = true;
