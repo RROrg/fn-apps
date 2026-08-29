@@ -5,7 +5,7 @@
 apt-get update -qq
 
 PKGS=""
-for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils obexftp python3-dbus python3-gi; do
+for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils pulseaudio-module-bluetooth obexftp python3-dbus python3-gi; do
   if apt-cache show "$pkg" >/dev/null 2>&1 && ! apt list --installed "$pkg" 2>/dev/null | grep -qw 'installed'; then
     PKGS="$PKGS $pkg"
   fi

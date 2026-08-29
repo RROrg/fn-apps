@@ -8,6 +8,7 @@ PYTHON_BIN="${PYTHON_BIN:-python3}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
 
+# write the command to start your program here
 CMD="\"${PYTHON_BIN}\" \"${TRIM_APPDEST}/server/bluetooth.py\" --unix-socket \"${SOCKET_PATH}\" --base-path \"/app/fn-bluetooth\" --www-root \"${TRIM_APPDEST}/www\""
 
 log_msg() {
@@ -80,7 +81,7 @@ cleanup_processes() {
   pkill -f "bluetoothctl" 2>/dev/null || true
   pkill -f "bt_agent.py" 2>/dev/null || true
 
-  local agent_pid_file="${TRIM_APPDEST}/server/agent.pid"
+  local agent_pid_file="${TRIM_PKGVAR}/agent.pid"
   if [ -f "${agent_pid_file}" ]; then
     rm -f "${agent_pid_file}"
   fi
@@ -97,11 +98,9 @@ start_process() {
   fi
 
   log_msg "Starting process ..."
-
   # run cmd to start process
   mkdir -p "${TRIM_PKGVAR}" >/dev/null 2>&1 || true
   rm -f "${SOCKET_PATH}"
-
   start_services
   setsid bash -c "${CMD}" >>${LOG_FILE} 2>&1 &
   # write pid to pidfile

@@ -1,17 +1,17 @@
 {
-    ".url": {
-        "fn-bluetooth.Application": {
-            "title": "蓝牙",
-            "icon": "images/icon_{0}.png",
-            "type": "iframe",
-            "url": "/app/fn-bluetooth",
-            "gatewaySocket": "fn-bluetooth.sock",
-            "gatewayPrefix": "/app/fn-bluetooth",
-            "allUsers": false,
-            "control": {
-                "accessPerm": "readonly",
-                "fullUrlPerm":"readonly"
-            }
-        }
+  ".url": {
+    "fn-bluetooth.Application": {
+      "title": "${entry.title}",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "url": "/app/fn-bluetooth",
+      "gatewaySocket": "fn-bluetooth.sock",
+      "gatewayPrefix": "/app/fn-bluetooth",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly",
+        "fullUrlPerm": "readonly"
+      }
     }
+  }
 }

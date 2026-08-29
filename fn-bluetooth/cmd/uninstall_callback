@@ -2,17 +2,52 @@
 
 ### This script is called after the user uninstalls the application.
 
-OBEX_OVERRIDE_DIR="$(eval echo ~root)/.config/systemd/user/obex.service.d"
+# 卸载时移除本应用为 obex 服务注入的 systemd user override（自定义接收目录）
+ROOT_HOME="$(getent passwd root | cut -d: -f6)"
+OBEX_OVERRIDE_DIR="${ROOT_HOME:-/root}/.config/systemd/user/obex.service.d"
 if [ -d "${OBEX_OVERRIDE_DIR}" ]; then
-  rm -rf "${OBEX_OVERRIDE_DIR}" 2>/dev/null || true
+  # 只删除本应用写入的 override.conf，避免误删同目录其它配置
+  rm -f "${OBEX_OVERRIDE_DIR}/override.conf" 2>/dev/null || true
+  # 目录空则一并移除
+  if ! ls -A "${OBEX_OVERRIDE_DIR}" >/dev/null 2>&1; then
+    rmdir "${OBEX_OVERRIDE_DIR}" 2>/dev/null || true
+  fi
   if command -v systemctl >/dev/null 2>&1; then
     XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}" systemctl --user daemon-reload 2>/dev/null || true
+    # 让 obex 以默认配置重启，撤回自定义接收目录
+    XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}" systemctl --user try-restart obex 2>/dev/null || true
   fi
+fi
+
+# 卸载时清理残留的蓝牙音频（PulseAudio bluez sink/card -> 恢复默认输出）
+if command -v pactl >/dev/null 2>&1; then
+  PULSE_CMD="XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/0} pactl"
+  eval $PULSE_CMD list cards short 2>/dev/null \
+    | grep -i bluez_card | awk '{print $2}' \
+    | while read -r card; do
+      eval "$PULSE_CMD set-card-profile \"$card\" off" 2>/dev/null || true
+    done
+fi
+
+# 卸载时清理蓝牙网络共享（tethering）残留：bridge、iptables 规则
+if command -v ip >/dev/null 2>&1 && ip link show br-bt0 >/dev/null 2>&1; then
+  ip link set br-bt0 down 2>/dev/null || true
+  ip addr flush dev br-bt0 2>/dev/null || true
+  ip link delete br-bt0 2>/dev/null || true
+  if command -v pkill >/dev/null 2>&1; then
+    pkill -f "dnsmasq.*br-bt0" 2>/dev/null || true
+  fi
+fi
+if command -v iptables >/dev/null 2>&1; then
+  iptables -D FORWARD -i br-bt0 -o eth0 -j ACCEPT 2>/dev/null || true
+  iptables -D FORWARD -i eth0 -o br-bt0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+  iptables -D FORWARD -i br-bt0 -j ACCEPT 2>/dev/null || true
+  iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
 fi
 
 [ "${wizard_data_action:-}" == "delete" ] && {
   REMOVE_PKGS=""
-  for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils obexftp python3-dbus python3-gi; do
+  for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils pulseaudio-module-bluetooth obexftp python3-dbus python3-gi; do
     if dpkg -s "$pkg" >/dev/null 2>&1; then
       REMOVE_PKGS="$REMOVE_PKGS $pkg"
     fi

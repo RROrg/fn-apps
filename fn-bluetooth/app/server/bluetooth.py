@@ -20,17 +20,34 @@ import subprocess
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit, parse_qs
 
+
+def _env(name, default=""):
+    return os.environ.get(name, "").strip() or default
+
+
+def _share_dir():
+    # 共享数据目录：优先按 TRIM_APPDEST_VOL 推导（/vol1/@appshare/<app>），否则回退到软链路径
+    vol = _env("TRIM_APPDEST_VOL")
+    if vol:
+        return Path(vol) / "@appshare" / APP_NAME
+    return Path(f"/var/apps/{APP_NAME}/shares/{APP_NAME}")
+
+
+APP_NAME = _env("TRIM_APPNAME", "fn-bluetooth")
+
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
-DATA_DIR = os.environ.get("DATA_DIR", ROOT_DIR)
-APP_NAME = "fn-bluetooth"
-SHARE_DIR = os.path.join(f"/var/apps/{APP_NAME}/shares/{APP_NAME}")
-DEFAULT_RECEIVE_DIR = os.path.join(SHARE_DIR, "received")
-CFG_FILE = os.environ.get("CFG_FILE", os.path.join(DATA_DIR, "bluetooth.env"))
+_pkgvar = _env("TRIM_PKGVAR")
+VAR_DIR = Path(_pkgvar) if _pkgvar else Path("/var/apps/{}/var".format(APP_NAME))
+
+SHARE_DIR = _share_dir()
+DEFAULT_RECEIVE_DIR = str(SHARE_DIR / "received")
+CFG_FILE = str(VAR_DIR / "bluetooth.env")
 
 CURRENT_STEP = "init"
 QUERY = parse_qs(os.environ.get("QUERY_STRING", ""), keep_blank_values=True)
@@ -54,7 +71,7 @@ class ThreadingUnixHTTPServer(
     allow_reuse_address = True
 
     def __init__(self, socket_path, handler_cls, *, base_path, www_root):
-        self.server_name = "fn-bluetooth"
+        self.server_name = APP_NAME
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
         self.www_root = Path(www_root)
@@ -62,7 +79,7 @@ class ThreadingUnixHTTPServer(
 
 
 def ensure_data_dir():
-    os.makedirs(DATA_DIR, exist_ok=True)
+    VAR_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def command_exists(name):
@@ -150,7 +167,10 @@ def http_write(payload):
         handler.send_header("Content-Length", str(len(body)))
         handler.end_headers()
         if handler.command != "HEAD":
-            handler.wfile.write(body)
+            try:
+                handler.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
         raise ResponseDone()
     sys.stdout.write(
         "Status: 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\n\r\n"
@@ -789,26 +809,26 @@ def handle_adapter_info():
 
 
 def handle_adapter_power():
-    action = first_form_value("action") or first_query_value("action")
-    if action == "on":
+    state = first_form_value("state") or first_query_value("state")
+    if state == "on":
         rc, _, _ = btctl_exec(["power on"], timeout=10)
         if rc != 0:
             error_response("500 Internal Server Error", "adapter power on failed")
         ensure_obex_server()
         ok_response()
-    elif action == "off":
+    elif state == "off":
         stop_obex_server()
         rc, _, _ = btctl_exec(["power off"], timeout=10)
         if rc != 0:
             error_response("500 Internal Server Error", "adapter power off failed")
         ok_response()
     else:
-        error_response("400 Bad Request", "missing action")
+        error_response("400 Bad Request", "missing state")
 
 
 def handle_adapter_discoverable():
-    action = first_form_value("action") or first_query_value("action")
-    if action == "on":
+    state = first_form_value("state") or first_query_value("state")
+    if state == "on":
         ensure_agent()
         rc, _, _ = btctl_exec(["discoverable on"], timeout=10)
         if rc != 0:
@@ -816,7 +836,7 @@ def handle_adapter_discoverable():
                 "500 Internal Server Error", "adapter discoverable on failed"
             )
         ok_response()
-    elif action == "off":
+    elif state == "off":
         rc, _, _ = btctl_exec(["discoverable off"], timeout=10)
         if rc != 0:
             error_response(
@@ -824,31 +844,31 @@ def handle_adapter_discoverable():
             )
         ok_response()
     else:
-        error_response("400 Bad Request", "missing action")
+        error_response("400 Bad Request", "missing state")
 
 
 def handle_adapter_pairable():
-    action = first_form_value("action") or first_query_value("action")
-    if action == "on":
+    state = first_form_value("state") or first_query_value("state")
+    if state == "on":
         ensure_agent()
         btctl_exec(["pairable on"], timeout=10)
         ok_response()
-    elif action == "off":
+    elif state == "off":
         btctl_exec(["pairable off"], timeout=10)
         ok_response()
     else:
-        error_response("400 Bad Request", "missing action")
+        error_response("400 Bad Request", "missing state")
 
 
-SCAN_PID_FILE = os.path.join(DATA_DIR, "scan.pid")
-AGENT_PID_FILE = os.path.join(DATA_DIR, "agent.pid")
+SCAN_PID_FILE = VAR_DIR / "scan.pid"
+AGENT_PID_FILE = VAR_DIR / "agent.pid"
 SCAN_DURATION = 30
 BRIDGE_NAME = "br-bt0"
 BRIDGE_IP_DEFAULT = "192.168.7.1"
 BRIDGE_CIDR_DEFAULT = "192.168.7.1/24"
 DHCP_RANGE_START_DEFAULT = "192.168.7.10"
 DHCP_RANGE_END_DEFAULT = "192.168.7.50"
-TETHER_STATE_FILE = os.path.join(DATA_DIR, "tether.state")
+TETHER_STATE_FILE = VAR_DIR / "tether.state"
 
 
 def get_adapter_path():
@@ -922,7 +942,7 @@ def _is_obex_agent_registered():
     except Exception as e:
         print(f"_is_obex_agent_registered: obexd not on session bus: {e}", flush=True)
         return False
-    pid_file = os.path.join(DATA_DIR, "agent.pid")
+    pid_file = VAR_DIR / "agent.pid"
     if not os.path.isfile(pid_file):
         rc, _, _ = run_cmd(["pgrep", "-f", "bt_agent.py"], timeout=3)
         if rc == 0:
@@ -965,7 +985,7 @@ def _restart_agent():
 
 
 def _is_agent_process_alive():
-    pid_file = os.path.join(DATA_DIR, "agent.pid")
+    pid_file = VAR_DIR / "agent.pid"
     if not os.path.isfile(pid_file):
         return False
     try:
@@ -988,7 +1008,7 @@ def ensure_agent():
     kill_agent_processes()
     _unregister_obex_agent()
 
-    pid_file = os.path.join(DATA_DIR, "agent.pid")
+    pid_file = VAR_DIR / "agent.pid"
     if os.path.isfile(pid_file):
         try:
             os.remove(pid_file)
@@ -996,7 +1016,7 @@ def ensure_agent():
             pass
     agent_script = os.path.join(ROOT_DIR, "bt_agent.py")
     print(
-        f"ensure_agent: agent_script={agent_script} exists={os.path.isfile(agent_script)} DATA_DIR={DATA_DIR} pid_file={pid_file}",
+        f"ensure_agent: agent_script={agent_script} exists={os.path.isfile(agent_script)} VAR_DIR={VAR_DIR} pid_file={pid_file}",
         flush=True,
     )
     if not os.path.isfile(agent_script):
@@ -1024,7 +1044,7 @@ def ensure_agent():
         return True
     ensure_data_dir()
     try:
-        log_path = os.path.join(DATA_DIR, "agent.log")
+        log_path = VAR_DIR / "agent.log"
         log_fh = open(log_path, "a")
         proc = subprocess.Popen(
             [sys.executable, agent_script],
@@ -1608,6 +1628,128 @@ def _ensure_audio_discovery():
             _load_pulse_module("module-bluez5-discover", audio_env)
 
 
+def _wait_for_audio_sink(addr, seconds=18):
+    """连接蓝牙音箱后等待 PulseAudio 注册对应 sink（地址在 bluez Name 中为 _ 分隔）。
+    找到后返回 sink name，否则返回空串。
+    """
+    addr_norm = addr.lower().replace(":", "_")
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        try:
+            sinks, _ = get_audio_devices()
+        except Exception:
+            sinks = []
+        for s in sinks:
+            name = s.get("name") or ""
+            disp = (s.get("displayName") or "").lower()
+            if addr_norm in name or addr.lower() in disp:
+                return name or ""
+        time.sleep(0.5)
+    return ""
+
+
+def _finalize_audio_connect(addr):
+    """连接成功后：确保音频发现模块就绪、等蓝牙 sink 注册并设为默认输出，
+    让音箱音频在控制台立即可用（避免“蓝牙音频未出现”）。"""
+    _ensure_audio_discovery()
+    sink_name = _wait_for_audio_sink(addr)
+    if sink_name and command_exists("pactl"):
+        run_ok(
+            ["pactl", "set-default-sink", sink_name],
+            timeout=5,
+            env_override=get_audio_env(),
+        )
+    return sink_name
+
+
+def _cleanup_bluetooth_audio(addr):
+    """断开/移除蓝牙设备后，清理 PulseAudio 中残留的蓝牙 sink/card。
+
+    - 若该蓝牙音箱是默认输出，先回退到第一个可用的非蓝牙 sink，避免声音丢失；
+    - 把该设备的 bluez card profile 置为 off，让 PulseAudio 释放蓝牙 sink。
+    """
+    audio_env = get_audio_env()
+    if not command_exists("pactl") or not _pactl_available(audio_env):
+        return
+    addr_norm = addr.lower().replace(":", "_")
+
+    # 1) 默认输出若为该蓝牙音箱，回退默认输出
+    _, out, _ = run_ok(["pactl", "get-default-sink"], timeout=5, env_override=audio_env)
+    default_sink = (out or "").strip()
+    if default_sink and addr_norm in default_sink:
+        fallback = None
+        sinks, _ = get_audio_devices()
+        for s in sinks:
+            name = (s.get("name") or "").lower()
+            if addr_norm in name or "monitor" in name:
+                continue
+            fallback = s.get("name")
+            break
+        if fallback:
+            run_ok(
+                ["pactl", "set-default-sink", fallback],
+                timeout=5,
+                env_override=audio_env,
+            )
+
+    # 2) 将该设备的 bluez card profile 置为 off，释放蓝牙 sink/card
+    rc, out2, _ = run_ok(
+        ["pactl", "list", "cards", "short"], timeout=5, env_override=audio_env
+    )
+    if rc:
+        for line in (out2 or "").splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and "bluez_card." in parts[1] and addr_norm in parts[1]:
+                run_ok(
+                    ["pactl", "set-card-profile", parts[1], "off"],
+                    timeout=5,
+                    env_override=audio_env,
+                )
+
+
+def _cleanup_all_bluetooth_audio():
+    """软件停止/卸载时的全量音频清理：回退默认输出并关闭所有 bluez card。"""
+    audio_env = get_audio_env()
+    if not command_exists("pactl") or not _pactl_available(audio_env):
+        return
+    _, out0, _ = run_ok(
+        ["pactl", "get-default-sink"], timeout=5, env_override=audio_env
+    )
+    default_sink = (out0 or "").strip()
+    _, out_s, _ = run_ok(
+        ["pactl", "list", "sinks", "short"], timeout=5, env_override=audio_env
+    )
+    fallback = None
+    has_bluetooth_sink = False
+    for line in (out_s or "").splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        name = parts[1].lower()
+        if "bluez" in name:
+            has_bluetooth_sink = True
+        elif fallback is None and "monitor" not in name:
+            fallback = name
+    if has_bluetooth_sink and "bluez" in default_sink and fallback:
+        run_ok(
+            ["pactl", "set-default-sink", fallback],
+            timeout=5,
+            env_override=audio_env,
+        )
+    rc, out_c, _ = run_ok(
+        ["pactl", "list", "cards", "short"], timeout=5, env_override=audio_env
+    )
+    if rc:
+        for line in (out_c or "").splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and "bluez_card." in parts[1]:
+                run_ok(
+                    ["pactl", "set-card-profile", parts[1], "off"],
+                    timeout=5,
+                    env_override=audio_env,
+                )
+
+
 def _trust_device(addr):
     dev_path = get_device_path(addr)
     if not dev_path:
@@ -1648,7 +1790,7 @@ def handle_connect():
     if not is_valid_bdaddr(addr):
         error_response("400 Bad Request", "invalid device address")
     if is_device_connected(addr):
-        _ensure_audio_discovery()
+        _finalize_audio_connect(addr)
         ok_response()
         return
     _trust_device(addr)
@@ -1665,14 +1807,14 @@ def handle_connect():
     if connected_now:
         _trust_device(addr)
         if wait_for_device_stable(addr):
-            _ensure_audio_discovery()
+            _finalize_audio_connect(addr)
             ok_response()
             return
     if rc2 != 0:
         last_err = stderr2 or stdout2 or ""
     if is_device_connected(addr):
         _trust_device(addr)
-        _ensure_audio_discovery()
+        _finalize_audio_connect(addr)
         ok_response()
         return
     print(f"handle_connect: {addr} starting dbus_connect", flush=True)
@@ -1686,14 +1828,14 @@ def handle_connect():
     if connected_now:
         _trust_device(addr)
         if wait_for_device_stable(addr):
-            _ensure_audio_discovery()
+            _finalize_audio_connect(addr)
             ok_response()
             return
     if rc != 0:
         last_err = err_msg or last_err
     if is_device_connected(addr):
         _trust_device(addr)
-        _ensure_audio_discovery()
+        _finalize_audio_connect(addr)
         ok_response()
         return
     print(f"handle_connect: {addr} starting network_connect", flush=True)
@@ -1705,7 +1847,7 @@ def handle_connect():
     )
     if rc_net == 0:
         if is_network_connected(addr) or is_device_connected(addr):
-            _ensure_audio_discovery()
+            _finalize_audio_connect(addr)
             ok_response()
             return
     else:
@@ -1713,7 +1855,7 @@ def handle_connect():
             last_err = net_msg or last_err
     if is_device_connected(addr):
         _trust_device(addr)
-        _ensure_audio_discovery()
+        _finalize_audio_connect(addr)
         ok_response()
         return
     print(f"handle_connect: {addr} trying individual profiles", flush=True)
@@ -1728,12 +1870,12 @@ def handle_connect():
         )
         if connected_now or rc_p == 0:
             _trust_device(addr)
-            _ensure_audio_discovery()
+            _finalize_audio_connect(addr)
             ok_response()
             return
     if is_device_connected(addr):
         _trust_device(addr)
-        _ensure_audio_discovery()
+        _finalize_audio_connect(addr)
         ok_response()
         return
     print(f"handle_connect: {addr} all methods failed, last_err={last_err}", flush=True)
@@ -2021,6 +2163,53 @@ def btctl_connect_fallback(addr, timeout=20):
     return 1, stdout_text, "connect timeout"
 
 
+def _cancel_active_transfer(addr):
+    """断开/移除设备时，取消与之对应的进行中 OBEX 传输并记为失败，
+    避免断开后 UI 进度一直卡在“发送中”。"""
+    if not addr:
+        return
+    fname = ""
+    fsize = 0
+    with _transfer_progress_lock:
+        tp = _transfer_progress
+        if tp.get("active") and tp.get("address", "").upper() == addr.upper():
+            fname = tp.get("filename") or ""
+            fsize = tp.get("size") or 0
+            tp.update({"active": False, "status": "canceled"})
+    if fname:
+        _add_transfer_record("send", addr, fname, fsize, "failed")
+
+
+def _disconnect_device(addr):
+    """断开单个蓝牙设备（dbus 优先，失败退回 bluetoothctl）。"""
+    dev_path = get_device_path(addr)
+    if not dev_path:
+        btctl_exec([f"disconnect {addr}"], timeout=15)
+        return
+    rc, _, _ = dbus_call(
+        "org.bluez", dev_path, "org.bluez.Device1", "Disconnect", timeout=15
+    )
+    if rc != 0:
+        btctl_exec([f"disconnect {addr}"], timeout=15)
+
+
+def _disconnect_all_devices():
+    """软件停止时强制断开所有已连接的蓝牙设备，并清理对应音频与文件传输。"""
+    try:
+        devices = get_paired_devices()
+    except Exception:
+        devices = []
+    for dev in devices:
+        if not dev.get("connected"):
+            continue
+        addr = dev.get("address")
+        if not addr:
+            continue
+        _disconnect_device(addr)
+        _cleanup_bluetooth_audio(addr)
+        _cancel_active_transfer(addr)
+
+
 def handle_disconnect():
     addr = first_form_value("address")
     if not is_valid_bdaddr(addr):
@@ -2031,6 +2220,10 @@ def handle_disconnect():
     )
     if rc != 0:
         btctl_exec([f"disconnect {addr}"], timeout=15)
+    # 断开后清理 PulseAudio 里残留的蓝牙 sink，并回退默认输出
+    _cleanup_bluetooth_audio(addr)
+    # 若有与其相关的进行中文件传输，一并取消
+    _cancel_active_transfer(addr)
     ok_response()
 
 
@@ -2052,6 +2245,10 @@ def handle_remove():
         )
     if not adapter_path or rc != 0:
         btctl_exec([f"remove {addr}"], timeout=15)
+    # 移除前先断开并清理 PulseAudio 蓝牙 sink，避免残留
+    _cleanup_bluetooth_audio(addr)
+    # 取消该设备的进行中文件传输
+    _cancel_active_transfer(addr)
     ok_response()
 
 
@@ -2108,6 +2305,8 @@ def handle_untrust():
 
 
 def handle_audio_status():
+    # 每次轮询/打开都确保 PulseAudio 蓝牙发现模块就绪（幂等，缺包时自动忽略）
+    _ensure_audio_discovery()
     audio_available = ensure_audio_service()
     audio_env = get_audio_env()
     if command_exists("pactl"):
@@ -2166,6 +2365,7 @@ def handle_audio_disconnect():
     )
     if rc != 0:
         btctl_exec([f"disconnect {addr}"], timeout=15)
+    _cleanup_bluetooth_audio(addr)
     ok_response()
 
 
@@ -2711,16 +2911,16 @@ def handle_role_set():
 
 
 def handle_server_advertise():
-    action = first_form_value("action") or first_query_value("action")
-    if action == "on":
+    state = first_form_value("state") or first_query_value("state")
+    if state == "on":
         ensure_agent()
         btctl_exec(["power on", "discoverable on", "pairable on"], timeout=15)
         ok_response()
-    elif action == "off":
+    elif state == "off":
         btctl_exec(["discoverable off", "pairable off"], timeout=10)
         ok_response()
     else:
-        error_response("400 Bad Request", "missing action")
+        error_response("400 Bad Request", "missing state")
 
 
 def handle_server_alias():
@@ -2783,7 +2983,7 @@ def handle_status():
 
 
 RECEIVE_DIR = DEFAULT_RECEIVE_DIR
-TRANSFER_HISTORY_FILE = os.path.join(DATA_DIR, "transfer_history.json")
+TRANSFER_HISTORY_FILE = VAR_DIR / "transfer_history.json"
 _transfer_progress = {
     "active": False,
     "direction": "",
@@ -3205,7 +3405,7 @@ def get_tethering_clients():
             pass
         dhcp_leases = {}
         try:
-            lease_file = os.path.join(DATA_DIR, "dnsmasq.log")
+            lease_file = VAR_DIR / "dnsmasq.log"
             if os.path.isfile(lease_file):
                 with open(lease_file) as f:
                     for line in f:
@@ -3488,7 +3688,7 @@ def handle_tethering_start():
         run_cmd(["pkill", "dnsmasq"], timeout=5)
     time.sleep(0.5)
     if command_exists("dnsmasq"):
-        dnsmasq_pid = os.path.join(DATA_DIR, "dnsmasq.pid")
+        dnsmasq_pid = VAR_DIR / "dnsmasq.pid"
         subprocess.Popen(
             [
                 "dnsmasq",
@@ -3499,7 +3699,7 @@ def handle_tethering_start():
                 "--server=8.8.8.8",
                 "--server=8.8.4.4",
                 "--log-dhcp",
-                f"--log-facility={os.path.join(DATA_DIR, 'dnsmasq.log')}",
+                f"--log-facility={VAR_DIR / 'dnsmasq.log'}",
                 f"--pid-file={dnsmasq_pid}",
             ],
             stdout=subprocess.DEVNULL,
@@ -3756,24 +3956,35 @@ def merge_query_action(path, query):
     return parsed
 
 
-def dispatch_api(handler, api_path, query):
-    request = current_request()
+@contextmanager
+def request_context(handler, body, query):
+    previous = getattr(REQUEST_CONTEXT, "value", None)
+    REQUEST_CONTEXT.value = {"handler": handler, "body": body, "query": query}
     try:
-        REQUEST_CONTEXT.value = {
-            "handler": handler,
-            "body": parse_request_body(handler),
-            "query": merge_query_action(api_path, query),
-        }
-        action = first_query_value("action")
-        if action.endswith(".cgi"):
-            action = action[:-4]
-        if not action:
-            error_response("400 Bad Request", "missing action")
-        handler_fn = ACTIONS.get(action)
-        if not handler_fn:
-            error_response("404 Not Found", f"unknown action: {action}")
+        yield
+    finally:
+        if previous is None:
+            if hasattr(REQUEST_CONTEXT, "value"):
+                del REQUEST_CONTEXT.value
         else:
-            handler_fn()
+            REQUEST_CONTEXT.value = previous
+
+
+def dispatch_api(handler, api_path, query):
+    body = parse_request_body(handler)
+    merged_query = merge_query_action(api_path, query)
+    try:
+        with request_context(handler, body, merged_query):
+            action = first_form_value("action") or first_query_value("action")
+            if action.endswith(".cgi"):
+                action = action[:-4]
+            if not action:
+                error_response("400 Bad Request", "missing action")
+            handler_fn = ACTIONS.get(action)
+            if not handler_fn:
+                error_response("404 Not Found", f"unknown action: {action}")
+            else:
+                handler_fn()
     except ResponseDone:
         return
     except Exception as exc:
@@ -3784,12 +3995,6 @@ def dispatch_api(handler, api_path, query):
             )
         except ResponseDone:
             return
-    finally:
-        if request == {}:
-            if hasattr(REQUEST_CONTEXT, "value"):
-                del REQUEST_CONTEXT.value
-        else:
-            REQUEST_CONTEXT.value = request
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -3867,12 +4072,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         if self.command == "HEAD":
             return
-        with target.open("rb") as handle:
-            while True:
-                chunk = handle.read(1024 * 256)
-                if not chunk:
-                    break
-                self.wfile.write(chunk)
+        try:
+            with target.open("rb") as handle:
+                while True:
+                    chunk = handle.read(1024 * 256)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
 
 def stop_agent():
@@ -3899,21 +4107,21 @@ def cleanup():
     stop_agent()
     kill_btctl_processes()
     stop_obex_server()
+    # 软件停止时先强制断开所有已连接的蓝牙设备
+    _disconnect_all_devices()
+    # 再清理 PulseAudio 蓝牙音频残留并回退默认输出
+    _cleanup_all_bluetooth_audio()
     if is_tethering_active():
         handle_tethering_stop_silent()
 
 
 def main():
-    global DATA_DIR, CFG_FILE
     parser = argparse.ArgumentParser(description="fn-bluetooth Unix socket server")
     parser.add_argument("--unix-socket", required=True)
     parser.add_argument("--base-path", default="/app/fn-bluetooth")
     parser.add_argument("--www-root", required=True)
-    parser.add_argument("--data-dir", default=DATA_DIR)
     args = parser.parse_args()
 
-    DATA_DIR = args.data_dir
-    CFG_FILE = os.path.join(DATA_DIR, "bluetooth.env")
     ensure_data_dir()
 
     if not command_exists("bluetoothctl"):

@@ -1,4 +1,9 @@
-const API = "/app/fn-bluetooth/api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+
+const API_ENDPOINT = "./api";
 
 const state = {
   language: "zh-CN",
@@ -53,6 +58,7 @@ const I18N = {
     targetDevice: "目标设备",
     filePath: "文件路径",
     sendFile: "发送文件",
+    browse: "浏览",
     connect: "连接",
     disconnect: "断开",
     pair: "配对",
@@ -76,6 +82,8 @@ const I18N = {
     pairedSuccess: "配对成功",
     connectedSuccess: "连接成功",
     disconnectedSuccess: "已断开连接",
+    processing: "处理中...",
+    operationBusy: "正在处理，请稍候",
     removedSuccess: "已移除设备",
     trustedSuccess: "已设为信任",
     untrustedSuccess: "已取消信任",
@@ -185,6 +193,7 @@ const I18N = {
     targetDevice: "Target Device",
     filePath: "File Path",
     sendFile: "Send File",
+    browse: "Browse",
     connect: "Connect",
     disconnect: "Disconnect",
     pair: "Pair",
@@ -208,6 +217,8 @@ const I18N = {
     pairedSuccess: "Paired successfully",
     connectedSuccess: "Connected successfully",
     disconnectedSuccess: "Disconnected",
+    processing: "Processing...",
+    operationBusy: "Please wait...",
     removedSuccess: "Device removed",
     trustedSuccess: "Device trusted",
     untrustedSuccess: "Device untrusted",
@@ -330,6 +341,7 @@ const els = {
   sendTargetSelect: document.getElementById("sendTargetSelect"),
   sendFilePath: document.getElementById("sendFilePath"),
   sendFileBtn: document.getElementById("sendFileBtn"),
+  pickFileBtn: document.getElementById("pickFileBtn"),
   toast: document.getElementById("toast"),
   modal: document.getElementById("modal"),
   modalTitle: document.getElementById("modalTitle"),
@@ -373,103 +385,27 @@ function safeDecode(value) {
   }
 }
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
+function applyLanguage() {
+  const language = safeDecode(platformConfig.language).replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
 }
 
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_e) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage.getItem(name) ||
-      window.parent.sessionStorage.getItem(name) ||
-      ""
-    );
-  } catch (_e) {
-    return "";
-  }
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
-}
-
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_e) {
-    return "";
-  }
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night") return "dark";
-  if (theme.includes("light") || theme === "day") return "light";
-  if (theme === "10") return "light";
-  if (theme === "20") return "dark";
-  if (["system", "auto", "os"].includes(theme))
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  return "";
-}
-
-function currentTheme() {
-  return (
-    [
-      queryValue("theme"),
-      cookieValue("fnos-theme-mode"),
-      cookieValue("os-theme-mode"),
-      storedValue("fnos-theme-mode"),
-      storedValue("os-theme-mode"),
-      parentStoredValue("fnos-theme-mode"),
-      parentStoredValue("os-theme-mode"),
-      documentThemeValue(document),
-      parentDocumentThemeValue(),
-    ]
-      .map(normalizeTheme)
-      .find(Boolean) ||
-    (window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light")
-  );
+function applyTheme() {
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = safeDecode(v).toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
+  return theme;
 }
 
 function t(key, params = {}) {
@@ -481,22 +417,19 @@ function t(key, params = {}) {
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
-  const changed = nextLanguage !== state.language;
-  state.language = nextLanguage;
-  state.theme = currentTheme();
-  document.documentElement.lang = nextLanguage;
-  document.documentElement.dataset.theme = state.theme;
-  document.body.dataset.theme = state.theme;
+  const changed = applyLanguage();
+  applyTheme();
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     node.textContent = t(node.dataset.i18n);
   });
-  document.title = t("appTitle");
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    node.title = t(node.dataset.i18nTitle);
+  });
+  const title = t("appTitle");
+  document.title = title;
+  if (sdk.setTitle) {
+    sdk.setTitle(title).catch(() => {});
+  }
   if (state.loaded) render();
   else els.summary.textContent = t("loading");
   if (rerender && changed) render();
@@ -517,21 +450,14 @@ function setBusy(busy) {
   els.sendFileBtn.disabled = state.busy;
 }
 
-function apiUrl(action) {
-  const [path, rawQuery = ""] = String(action).split("?", 2);
-  const params = new URLSearchParams(rawQuery);
-  params.set("lang", state.language === "zh-CN" ? "zh-CN" : "en-US");
-  return `${API}/${encodeURIComponent(path)}?${params.toString()}`;
-}
-
-async function api(action, { method = "GET", data = null } = {}) {
-  const options = { method, cache: "no-store" };
-  if (data) {
-    options.method = method === "GET" ? "POST" : method;
-    options.headers = { "Content-Type": "application/x-www-form-urlencoded" };
-    options.body = new URLSearchParams(data);
-  }
-  const response = await fetch(apiUrl(action), options);
+async function api(action, data = {}) {
+  const response = await fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    credentials: "include",
+    body: JSON.stringify({ action, ...data }),
+  });
   const result = await response.json();
   if (!response.ok || result.ok === false) {
     throw new Error(
@@ -1165,21 +1091,14 @@ async function loadAll() {
       };
     }
 
+    // 打开时不自动发起扫描；仅同步适配器已有状态（discovering 由用户手动触发）。
     if (state.adapter && state.adapter.discovering && !state.scanning) {
       state.scanning = true;
       startScanTimer();
     } else if (state.adapter && !state.adapter.discovering) {
       state.scanning = false;
       clearScanTimer();
-    }
-    if (state.adapter && !state.scanning && state.available.length === 0) {
-      api("scan_start", { method: "POST" })
-        .then(() => {
-          state.scanning = true;
-          startScanTimer();
-          render();
-        })
-        .catch(() => {});
+      api("scan_stop").catch(() => {});
     }
     state.loaded = true;
     startReceiveWatch();
@@ -1251,11 +1170,12 @@ function confirmDialog(title, body) {
 }
 
 async function togglePower() {
+  if (state.busy) return;
   if (!state.adapter) return;
   setBusy(true);
   try {
     const action = state.adapter.powered ? "off" : "on";
-    await api("adapter_power", { method: "POST", data: { action } });
+    await api("adapter_power", { state: action });
     showToast(state.adapter.powered ? t("powerOff") : t("powerOn"));
     await loadAll();
   } catch (error) {
@@ -1266,11 +1186,12 @@ async function togglePower() {
 }
 
 async function toggleDiscoverable() {
+  if (state.busy) return;
   if (!state.adapter) return;
   setBusy(true);
   try {
     const action = state.adapter.discoverable ? "off" : "on";
-    await api("adapter_discoverable", { method: "POST", data: { action } });
+    await api("adapter_discoverable", { state: action });
     showToast(
       state.adapter.discoverable ? t("discoverableOff") : t("discoverableOn"),
     );
@@ -1283,11 +1204,12 @@ async function toggleDiscoverable() {
 }
 
 async function togglePairable() {
+  if (state.busy) return;
   if (!state.adapter) return;
   setBusy(true);
   try {
     const action = state.adapter.pairable ? "off" : "on";
-    await api("adapter_pairable", { method: "POST", data: { action } });
+    await api("adapter_pairable", { state: action });
     showToast(state.adapter.pairable ? t("pairableOff") : t("pairableOn"));
     await loadAll();
   } catch (error) {
@@ -1311,7 +1233,7 @@ function startScanTimer() {
   state.scanTimer = setTimeout(async () => {
     if (state.scanning) {
       try {
-        await api("scan_stop", { method: "POST" });
+        await api("scan_stop");
       } catch (_e) {
         /* ignore */
       }
@@ -1322,14 +1244,15 @@ function startScanTimer() {
 }
 
 async function toggleScan() {
+  if (state.busy) return;
   setBusy(true);
   try {
     if (state.scanning) {
-      await api("scan_stop", { method: "POST" });
+      await api("scan_stop");
       state.scanning = false;
       clearScanTimer();
     } else {
-      await api("scan_start", { method: "POST" });
+      await api("scan_start");
       state.scanning = true;
       startScanTimer();
     }
@@ -1342,6 +1265,7 @@ async function toggleScan() {
 }
 
 async function pairDevice(addr) {
+  if (state.busy) return;
   const dev = state.available.find((d) => d.address === addr);
   const name = dev ? dev.alias || dev.name || addr : addr;
   const ok = await confirmDialog(
@@ -1351,7 +1275,7 @@ async function pairDevice(addr) {
   if (!ok) return;
   setBusy(true);
   try {
-    await api("pair", { method: "POST", data: { address: addr } });
+    await api("pair", { address: addr });
     showToast(t("pairedSuccess"));
     await loadAll();
   } catch (error) {
@@ -1362,9 +1286,10 @@ async function pairDevice(addr) {
 }
 
 async function connectDevice(addr) {
+  if (state.busy) return;
   setBusy(true);
   try {
-    await api("connect", { method: "POST", data: { address: addr } });
+    await api("connect", { address: addr });
     showToast(t("connectedSuccess"));
     await loadAll();
   } catch (error) {
@@ -1376,6 +1301,7 @@ async function connectDevice(addr) {
 }
 
 async function disconnectDevice(addr) {
+  if (state.busy) return;
   const dev = state.paired.find((d) => d.address === addr);
   const name = dev ? dev.alias || dev.name || addr : addr;
   const ok = await confirmDialog(
@@ -1385,7 +1311,7 @@ async function disconnectDevice(addr) {
   if (!ok) return;
   setBusy(true);
   try {
-    await api("disconnect", { method: "POST", data: { address: addr } });
+    await api("disconnect", { address: addr });
     showToast(t("disconnectedSuccess"));
     await loadAll();
   } catch (error) {
@@ -1396,6 +1322,7 @@ async function disconnectDevice(addr) {
 }
 
 async function removeDevice(addr) {
+  if (state.busy) return;
   const dev = state.paired.find((d) => d.address === addr);
   const name = dev ? dev.alias || dev.name || addr : addr;
   const ok = await confirmDialog(
@@ -1405,7 +1332,7 @@ async function removeDevice(addr) {
   if (!ok) return;
   setBusy(true);
   try {
-    await api("remove", { method: "POST", data: { address: addr } });
+    await api("remove", { address: addr });
     showToast(t("removedSuccess"));
     await loadAll();
   } catch (error) {
@@ -1416,9 +1343,10 @@ async function removeDevice(addr) {
 }
 
 async function trustDevice(addr) {
+  if (state.busy) return;
   setBusy(true);
   try {
-    await api("trust", { method: "POST", data: { address: addr } });
+    await api("trust", { address: addr });
     showToast(t("trustedSuccess"));
     await loadAll();
   } catch (error) {
@@ -1429,9 +1357,10 @@ async function trustDevice(addr) {
 }
 
 async function untrustDevice(addr) {
+  if (state.busy) return;
   setBusy(true);
   try {
-    await api("untrust", { method: "POST", data: { address: addr } });
+    await api("untrust", { address: addr });
     showToast(t("untrustedSuccess"));
     await loadAll();
   } catch (error) {
@@ -1441,7 +1370,36 @@ async function untrustDevice(addr) {
   }
 }
 
+async function pickFileForSend() {
+  if (!sdk.pickFile) {
+    showToast("File picker not available", true);
+    return;
+  }
+  try {
+    const picked = await sdk.pickFile({});
+    let path = "";
+    if (picked) {
+      if (Array.isArray(picked)) {
+        path =
+          picked[0] && typeof picked[0] === "object"
+            ? picked[0].path
+            : picked[0];
+      } else if (typeof picked === "object") {
+        path = picked.path;
+      } else if (typeof picked === "string") {
+        path = picked;
+      }
+    }
+    if (path) {
+      els.sendFilePath.value = path;
+    }
+  } catch (_error) {
+    // 用户取消或环境不支持时忽略
+  }
+}
+
 async function sendFile() {
+  if (state.busy) return;
   const addr = els.sendTargetSelect.value;
   const filepath = els.sendFilePath.value.trim();
   if (!addr) {
@@ -1473,10 +1431,7 @@ async function sendFile() {
   startProgressPolling();
   let sendOk = false;
   try {
-    await api("send_file", {
-      method: "POST",
-      data: { address: addr, filepath },
-    });
+    await api("send_file", { address: addr, filepath });
     sendOk = true;
     showToast(t("fileSent"));
   } catch (error) {
@@ -1514,8 +1469,9 @@ async function sendFile() {
 }
 
 async function clearReceived() {
+  if (state.busy) return;
   try {
-    await api("clear_received", { method: "POST" });
+    await api("clear_received");
     state.receivedFiles = [];
     renderReceivedFiles();
     showToast(t("cleared"));
@@ -1525,8 +1481,9 @@ async function clearReceived() {
 }
 
 async function clearTransferHistory() {
+  if (state.busy) return;
   try {
-    await api("clear_transfer_history", { method: "POST" });
+    await api("clear_transfer_history");
     state.transferHistory = [];
     renderTransferHistory();
     showToast(t("cleared"));
@@ -1536,8 +1493,9 @@ async function clearTransferHistory() {
 }
 
 async function deleteReceived(name) {
+  if (state.busy) return;
   try {
-    await api("delete_received", { method: "POST", data: { name } });
+    await api("delete_received", { name });
     state.receivedFiles = state.receivedFiles.filter((f) => f.name !== name);
     renderReceivedFiles();
   } catch (error) {
@@ -1561,10 +1519,11 @@ async function loadAudio() {
 }
 
 async function setSink() {
+  if (state.busy) return;
   const sink = els.sinkSelect.value;
   if (!sink) return;
   try {
-    await api("audio_sink_set", { method: "POST", data: { sink } });
+    await api("audio_sink_set", { sink });
     showToast(t("sinkSet"));
     await loadAudio();
   } catch (error) {
@@ -1574,10 +1533,11 @@ async function setSink() {
 }
 
 async function setSource() {
+  if (state.busy) return;
   const source = els.sourceSelect.value;
   if (!source) return;
   try {
-    await api("audio_source_set", { method: "POST", data: { source } });
+    await api("audio_source_set", { source });
     showToast(t("sourceSet"));
     await loadAudio();
   } catch (error) {
@@ -1596,6 +1556,7 @@ els.powerToggle.addEventListener("click", () => togglePower());
 els.discoverableToggle.addEventListener("click", () => toggleDiscoverable());
 els.pairableToggle.addEventListener("click", () => togglePairable());
 els.sendFileBtn.addEventListener("click", () => sendFile());
+els.pickFileBtn.addEventListener("click", () => pickFileForSend());
 els.sinkSelect.addEventListener("change", () => setSink());
 els.sourceSelect.addEventListener("change", () => setSource());
 els.sendTargetSelect.addEventListener("change", () => {
@@ -1620,10 +1581,11 @@ els.aboutBtn.addEventListener("click", () =>
 );
 
 async function switchRole(role) {
+  if (state.busy) return;
   if (state.role === role) return;
   setBusy(true);
   try {
-    await api("role_set", { method: "POST", data: { role } });
+    await api("role_set", { role });
     state.role = role;
     if (role === "server") {
       const [profilesRes, incomingRes] = await Promise.all([
@@ -1642,10 +1604,11 @@ async function switchRole(role) {
 }
 
 async function toggleAdvertise() {
+  if (state.busy) return;
   setBusy(true);
   try {
     const action = state.serverAdvertise ? "off" : "on";
-    await api("server_advertise", { method: "POST", data: { action } });
+    await api("server_advertise", { state: action });
     state.serverAdvertise = !state.serverAdvertise;
     showToast(state.serverAdvertise ? t("advertiseOn") : t("advertiseOff"));
     await loadAll();
@@ -1657,10 +1620,11 @@ async function toggleAdvertise() {
 }
 
 async function setServerAlias() {
+  if (state.busy) return;
   const alias = els.serverAliasInput.value.trim();
   if (!alias) return;
   try {
-    await api("server_alias", { method: "POST", data: { alias } });
+    await api("server_alias", { alias });
     showToast(t("aliasSet"));
     await loadAll();
   } catch (error) {
@@ -1669,6 +1633,7 @@ async function setServerAlias() {
 }
 
 async function fixObexAgent() {
+  if (state.busy) return;
   setBusy(true);
   try {
     const res = await api("server_accept");
@@ -1703,17 +1668,15 @@ async function loadReceivedFiles() {
 }
 
 async function toggleTethering() {
+  if (state.busy) return;
   setBusy(true);
   try {
     if (state.tethering.active) {
-      await api("tethering_stop", { method: "POST" });
+      await api("tethering_stop");
       showToast(t("tetheringOff"));
     } else {
       const bridgeIP = els.tetherBridgeIP.value.trim() || "192.168.7.1";
-      await api("tethering_start", {
-        method: "POST",
-        data: { bridge_ip: bridgeIP },
-      });
+      await api("tethering_start", { bridge_ip: bridgeIP });
       showToast(t("tetheringOn"));
     }
     const res = await api("tethering_status");
@@ -1754,33 +1717,72 @@ document.addEventListener("click", async (event) => {
     return;
   }
   if (!action || !addr) return;
+  // 设备操作：处理中即时反馈 + 禁止重复触发（防连点）
+  const busyActions = [
+    "pair",
+    "connect",
+    "disconnect",
+    "remove",
+    "trust",
+    "untrust",
+  ];
+  if (busyActions.includes(action)) {
+    if (state.busy) {
+      showToast(t("operationBusy"));
+      return;
+    }
+    const origLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = t("processing");
+    try {
+      switch (action) {
+        case "pair":
+          await pairDevice(addr);
+          break;
+        case "connect":
+          await connectDevice(addr);
+          break;
+        case "disconnect":
+          await disconnectDevice(addr);
+          break;
+        case "remove":
+          await removeDevice(addr);
+          break;
+        case "trust":
+          await trustDevice(addr);
+          break;
+        case "untrust":
+          await untrustDevice(addr);
+          break;
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origLabel;
+    }
+    return;
+  }
   switch (action) {
-    case "pair":
-      await pairDevice(addr);
+    case "delete-received":
       break;
-    case "connect":
-      await connectDevice(addr);
-      break;
-    case "disconnect":
-      await disconnectDevice(addr);
-      break;
-    case "remove":
-      await removeDevice(addr);
-      break;
-    case "trust":
-      await trustDevice(addr);
-      break;
-    case "untrust":
-      await untrustDevice(addr);
+    default:
       break;
   }
 });
 
-applyPreferences();
-window
-  .matchMedia?.("(prefers-color-scheme: dark)")
-  .addEventListener?.("change", () => applyPreferences());
-window.addEventListener("storage", () => applyPreferences({ rerender: true }));
+(async function initPlatform() {
+  platformConfig = await sdk.getPlatformConfig();
+  applyPreferences();
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+})();
 setInterval(() => refreshLiveData(), 5000);
 setBusy(true);
 loadAll().catch((error) => {

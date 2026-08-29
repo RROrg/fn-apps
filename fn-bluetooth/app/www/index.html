@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>蓝牙管理</title>
+  <title data-i18n="appTitle">蓝牙管理</title>
   <link rel="stylesheet" href="/app/fn-bluetooth/style.css">
 </head>
 
@@ -13,7 +13,7 @@
     <header class="topbar">
       <div>
         <h1 data-i18n="appTitle">蓝牙管理</h1>
-        <p id="statusSummary">正在加载...</p>
+        <p id="statusSummary" data-i18n="loading">正在加载...</p>
       </div>
       <div class="row-actions">
         <div class="role-switch">
@@ -34,13 +34,13 @@
           </div>
           <div class="adapter-row">
             <span class="label" data-i18n="bluetooth">蓝牙</span>
-            <div id="powerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0" title="蓝牙">
+            <div id="powerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0" title="蓝牙" data-i18n-title="bluetooth">
             </div>
             <span class="label" data-i18n="discoverable">可发现</span>
             <div id="discoverableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
-              title="可发现"></div>
+              title="可发现" data-i18n-title="discoverable"></div>
             <span class="label" data-i18n="pairable">可配对</span>
-            <div id="pairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0" title="可配对">
+            <div id="pairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0" title="可配对" data-i18n-title="pairable">
             </div>
           </div>
           <div class="stats-grid stats-grid-gap">
@@ -96,7 +96,10 @@
             </label>
             <label class="field">
               <span data-i18n="filePath">文件路径</span>
-              <input id="sendFilePath" type="text" placeholder="/path/to/file" autocomplete="off">
+              <div class="file-path-row">
+                <input id="sendFilePath" type="text" placeholder="/path/to/file" autocomplete="off">
+                <button id="pickFileBtn" class="secondary-btn" type="button" data-i18n="browse">浏览</button>
+              </div>
             </label>
           </div>
           <div id="transferProgress" class="transfer-progress hidden"></div>
@@ -128,13 +131,13 @@
           <div class="adapter-row">
             <span class="label" data-i18n="bluetooth">蓝牙</span>
             <div id="serverPowerToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
-              title="蓝牙"></div>
+              title="蓝牙" data-i18n-title="bluetooth"></div>
             <span class="label" data-i18n="discoverable">可发现</span>
             <div id="serverDiscoverableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
-              title="可发现"></div>
+              title="可发现" data-i18n-title="discoverable"></div>
             <span class="label" data-i18n="pairable">可配对</span>
             <div id="serverPairableToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
-              title="可配对"></div>
+              title="可配对" data-i18n-title="pairable"></div>
           </div>
           <div class="grid grid-gap">
             <label class="field">
@@ -175,7 +178,7 @@
           <div class="section-head">
             <h2 data-i18n="tethering">蓝牙共享网络</h2>
             <div id="tetheringToggle" class="toggle-switch" role="switch" aria-checked="false" tabindex="0"
-              title="蓝牙共享网络"></div>
+              title="蓝牙共享网络" data-i18n-title="tethering"></div>
           </div>
           <div class="stats-grid three-col">
             <div class="stat"><span data-i18n="tetheringBridge">网桥接口</span><strong id="tetherBridge">-</strong></div>
@@ -226,7 +229,7 @@
         <div class="about-section">
           <h3 data-i18n="sponsorSupport">赞助支持</h3>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
 
         <div class="about-copyright">
@@ -239,7 +242,7 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="/app/fn-bluetooth/app.js"></script>
+  <script type="module" src="/app/fn-bluetooth/app.js"></script>
 </body>
 
 </html>

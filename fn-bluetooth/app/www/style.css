@@ -282,6 +282,37 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.16);
 }
 
+.file-path-row {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.file-path-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-path-row .secondary-btn,
+.file-path-row .pick-file-btn {
+  flex: none;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--button);
+  color: var(--button-text);
+  cursor: pointer;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.file-path-row .secondary-btn:hover:not(:disabled),
+.file-path-row .pick-file-btn:hover:not(:disabled) {
+  background: var(--button-hover);
+}
+
 .device-list {
   display: grid;
   gap: 8px;
