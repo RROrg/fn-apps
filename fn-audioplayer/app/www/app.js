@@ -1,4 +1,10 @@
-const API_BASE = "/app/fn-audioplayer/api";
+import { TrimApp } from "./web-app.js";
+
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
+
+const API_ENDPOINT = "./api";
+
 let playlist = [];
 let currentIndex = -1;
 let currentLyrics = [];
@@ -56,6 +62,14 @@ const I18N = {
     alignCenter: "居中",
     alignRight: "靠右",
     playbackSetting: "播放设置",
+    prev: "上一首",
+    play: "播放",
+    next: "下一首",
+    volume: "音量",
+    sortModeTitle: "播放顺序",
+    lyricsAlignTitle: "歌词对齐",
+    selectOutputDevice: "选择输出设备",
+    selectAudioFile: "选择音频文件",
     about: "关于",
     aboutDeclaration:
       "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
@@ -101,6 +115,14 @@ const I18N = {
     alignCenter: "Center",
     alignRight: "Right",
     playbackSetting: "Settings",
+    prev: "Previous",
+    play: "Play",
+    next: "Next",
+    volume: "Volume",
+    sortModeTitle: "Playback Order",
+    lyricsAlignTitle: "Lyrics Align",
+    selectOutputDevice: "Select output device",
+    selectAudioFile: "Select audio file",
     about: "About",
     aboutDeclaration:
       "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
@@ -110,10 +132,13 @@ const I18N = {
   },
 };
 
-let currentLang = "zh-CN";
+const state = {
+  language: "zh-CN",
+  theme: "light",
+};
 
 function t(key, params) {
-  const messages = I18N[currentLang] || I18N["zh-CN"];
+  const messages = I18N[state.language] || I18N["zh-CN"];
   let text = messages[key] || I18N["zh-CN"][key] || key;
   if (params) {
     Object.keys(params).forEach((k) => {
@@ -123,29 +148,12 @@ function t(key, params) {
   return text;
 }
 
-function detectLanguage() {
-  try {
-    const cookie = document.cookie
-      .split(";")
-      .map((s) => s.trim())
-      .find((s) => s.startsWith("language="));
-    if (cookie) {
-      const val = decodeURIComponent(cookie.split("=")[1] || "");
-      if (val.toLowerCase().startsWith("zh")) return "zh-CN";
-      if (val.toLowerCase().startsWith("en")) return "en-US";
-    }
-  } catch (e) {}
-  const nav = (navigator.language || "").toLowerCase();
-  if (nav.startsWith("zh")) return "zh-CN";
-  return "en-US";
-}
-
-function applyI18n() {
-  currentLang = detectLanguage();
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  document.title = t("appTitle");
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return resolved;
 }
 
 function openAbout() {
@@ -162,45 +170,37 @@ document.addEventListener("click", function (e) {
   }
 });
 
-function detectTheme() {
-  try {
-    const cookie = document.cookie
-      .split(";")
-      .map((s) => s.trim())
-      .find((s) => s.startsWith("fnos-theme-mode="));
-    if (cookie) {
-      const val = decodeURIComponent(cookie.split("=")[1] || "").toLowerCase();
-      if (val === "10" || val === "light") return "light";
-      if (val === "20" || val === "dark") return "dark";
-    }
-  } catch (e) {}
-  try {
-    const bodyTheme = document.body?.getAttribute("theme-mode");
-    if (bodyTheme === "10" || bodyTheme === "light") return "light";
-    if (bodyTheme === "20" || bodyTheme === "dark") return "dark";
-  } catch (e) {}
-  try {
-    const stored = localStorage.getItem("fnos-theme-mode");
-    if (stored === "10" || stored === "light") return "light";
-    if (stored === "20" || stored === "dark") return "dark";
-  } catch (e) {}
-  try {
-    const parentStored =
-      window.parent?.localStorage?.getItem("fnos-theme-mode");
-    if (parentStored === "10" || parentStored === "light") return "light";
-    if (parentStored === "20" || parentStored === "dark") return "dark";
-  } catch (e) {}
-  const urlTheme = new URLSearchParams(location.search).get("theme");
-  if (urlTheme === "light") return "light";
-  if (urlTheme === "dark") return "dark";
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+function applyTheme() {
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
+  return theme;
 }
 
-function applyTheme() {
-  const theme = detectTheme();
-  document.documentElement.dataset.theme = theme;
+function applyPreferences({ rerender = false } = {}) {
+  applyLanguage();
+  applyTheme();
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  document.title = t("appTitle");
+  if (sdk.setTitle) {
+    sdk.setTitle(t("appTitle")).catch(() => {});
+  }
+  if (rerender) {
+    updatePlaylistUI();
+    renderLyrics();
+  }
 }
 
 const channel = new BroadcastChannel("fn-audioplayer");
@@ -263,7 +263,7 @@ const FORMAT_LABELS = {
   ape: "APE",
 };
 
-function setOutputMode(mode) {
+async function setOutputMode(mode) {
   const prevMode = outputMode;
   outputMode = mode;
   document
@@ -286,13 +286,17 @@ function setOutputMode(mode) {
       position = audioPlayer.currentTime || 0;
       audioPlayer.pause();
     } else {
-      const status = fetchSync(API_BASE + "/output/status");
-      if (status && status.state === "playing") {
-        position = status.position || 0;
-      } else if (status && status.state === "paused") {
-        position = status.position || 0;
-      }
-      fetch(API_BASE + "/output/stop", { method: "POST" }).catch(() => {});
+      try {
+        const resp = await fetch(API_ENDPOINT + "/output/status");
+        const status = await resp.json();
+        if (
+          status &&
+          (status.state === "playing" || status.state === "paused")
+        ) {
+          position = status.position || 0;
+        }
+      } catch (e) {}
+      fetch(API_ENDPOINT + "/output/stop", { method: "POST" }).catch(() => {});
       stopServerPoll();
     }
     if (track.isServerFile && position > 0) {
@@ -314,7 +318,7 @@ function setOutputMode(mode) {
 }
 
 function loadServerDevices() {
-  fetch(API_BASE + "/output/devices")
+  fetch(API_ENDPOINT + "/output/devices")
     .then((r) => r.json())
     .then((data) => {
       serverDevices = data.devices || [];
@@ -358,7 +362,7 @@ function onServerDeviceChange() {
     const track = playlist[currentIndex];
     if (track.isServerFile) {
       let position = 0;
-      fetch(API_BASE + "/output/status")
+      fetch(API_ENDPOINT + "/output/status")
         .then((r) => r.json())
         .then((status) => {
           position = status.position || 0;
@@ -372,7 +376,7 @@ function onServerDeviceChange() {
 }
 
 function serverPlay(filePath, position) {
-  fetch(API_BASE + "/output/play", {
+  fetch(API_ENDPOINT + "/output/play", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -394,16 +398,6 @@ function serverPlay(filePath, position) {
     });
 }
 
-function fetchSync(url) {
-  try {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", url, false);
-    xhr.send();
-    if (xhr.status === 200) return JSON.parse(xhr.responseText);
-  } catch (e) {}
-  return null;
-}
-
 function startServerPoll() {
   stopServerPoll();
   serverPollTimer = setInterval(pollServerStatus, 1000);
@@ -417,7 +411,7 @@ function stopServerPoll() {
 }
 
 function pollServerStatus() {
-  fetch(API_BASE + "/output/status")
+  fetch(API_ENDPOINT + "/output/status")
     .then((r) => r.json())
     .then((status) => {
       if (status.state === "playing") {
@@ -511,15 +505,17 @@ function togglePlayPause() {
       showToast(t("pleaseAddAudio"), "error");
       return;
     }
-    fetch(API_BASE + "/output/status")
+    fetch(API_ENDPOINT + "/output/status")
       .then((r) => r.json())
       .then((status) => {
         if (status.state === "playing") {
-          fetch(API_BASE + "/output/pause", { method: "POST" }).catch(() => {});
+          fetch(API_ENDPOINT + "/output/pause", { method: "POST" }).catch(
+            () => {},
+          );
           playIcon.innerHTML = PLAY_ICON;
           disc.classList.remove("spinning");
         } else if (status.state === "paused") {
-          fetch(API_BASE + "/output/resume", { method: "POST" }).catch(
+          fetch(API_ENDPOINT + "/output/resume", { method: "POST" }).catch(
             () => {},
           );
           playIcon.innerHTML = PAUSE_ICON;
@@ -539,7 +535,7 @@ function togglePlayPause() {
 function previousTrack() {
   if (playlist.length === 0) return;
   if (outputMode === "server") {
-    fetch(API_BASE + "/output/stop", { method: "POST" }).catch(() => {});
+    fetch(API_ENDPOINT + "/output/stop", { method: "POST" }).catch(() => {});
     stopServerPoll();
   }
   let idx = getPrevIndex();
@@ -550,7 +546,7 @@ function previousTrack() {
 function nextTrack() {
   if (playlist.length === 0) return;
   if (outputMode === "server") {
-    fetch(API_BASE + "/output/stop", { method: "POST" }).catch(() => {});
+    fetch(API_ENDPOINT + "/output/stop", { method: "POST" }).catch(() => {});
     stopServerPoll();
   }
   let idx = getNextIndex();
@@ -718,7 +714,7 @@ function loadTrack(index) {
     fetchMetadata(track, index, true);
   }
   if (outputMode === "server" && track.isServerFile) {
-    fetch(API_BASE + "/output/stop", { method: "POST" }).catch(() => {});
+    fetch(API_ENDPOINT + "/output/stop", { method: "POST" }).catch(() => {});
     serverPlay(track.path, 0);
   } else {
     setClientTrackSource(track, 0, true);
@@ -727,7 +723,8 @@ function loadTrack(index) {
 
 function getClientTrackSrc(track, cacheBust) {
   if (!track.isServerFile) return track.path;
-  let url = API_BASE + "/audio/stream?file=" + encodeURIComponent(track.path);
+  let url =
+    API_ENDPOINT + "/audio/stream?file=" + encodeURIComponent(track.path);
   if (cacheBust) url += "&r=" + Date.now();
   return url;
 }
@@ -797,6 +794,9 @@ function recoverClientPlayback(position) {
     return;
   const track = playlist[currentIndex];
   if (!track || !track.isServerFile) return;
+  // 若无有效续播位置（错误后 currentTime 已归零）且已自动恢复过，则不再自动从头重播，
+  // 交由用户手动控制，避免“播放几秒又从 0 开始”的无限恢复循环。
+  if (position < 0.5 && clientRecoverAttempts >= 1) return;
   clientRecoverAttempts += 1;
   clientRecovering = true;
   lastClientRecoverAt = Date.now();
@@ -813,7 +813,8 @@ function fetchCover(track) {
   discCover.style.display = "none";
   discLabel.style.display = "flex";
   if (!track.isServerFile) return;
-  const url = API_BASE + "/audio/cover?file=" + encodeURIComponent(track.path);
+  const url =
+    API_ENDPOINT + "/audio/cover?file=" + encodeURIComponent(track.path);
   const img = new Image();
   img.onload = function () {
     discCover.src = url;
@@ -829,7 +830,7 @@ function fetchLyrics(track) {
   activeLyricIndex = -1;
   renderLyrics();
   if (!track.isServerFile) return;
-  const url = API_BASE + "/lyrics?file=" + encodeURIComponent(track.path);
+  const url = API_ENDPOINT + "/lyrics?file=" + encodeURIComponent(track.path);
   fetch(url)
     .then((r) => r.json())
     .then((data) => {
@@ -887,7 +888,7 @@ function renderLyrics() {
 function seekToLyric(index) {
   if (index < 0 || index >= currentLyrics.length) return;
   if (outputMode === "server") {
-    fetch(API_BASE + "/output/seek", {
+    fetch(API_ENDPOINT + "/output/seek", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ position: currentLyrics[index].time }),
@@ -927,10 +928,6 @@ function updateLyrics(serverPosition) {
 
 function updateProgress() {
   if (outputMode === "server") return;
-  if (lastClientRecoverAt && Date.now() - lastClientRecoverAt > 10000) {
-    clientRecoverAttempts = 0;
-    lastClientRecoverAt = 0;
-  }
   if (audioPlayer.duration) {
     const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
     progressFill.style.width = percent + "%";
@@ -950,12 +947,12 @@ function seek(e) {
     Math.min(1, (e.clientX - rect.left) / rect.width),
   );
   if (outputMode === "server") {
-    fetch(API_BASE + "/output/status")
+    fetch(API_ENDPOINT + "/output/status")
       .then((r) => r.json())
       .then((status) => {
         const dur = status.duration || 0;
         if (dur > 0) {
-          fetch(API_BASE + "/output/seek", {
+          fetch(API_ENDPOINT + "/output/seek", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ position: percent * dur }),
@@ -972,7 +969,7 @@ function updateVolume() {
   const vol = volumeSlider.value;
   if (outputMode === "server") {
     audioPlayer.volume = vol / 100;
-    fetch(API_BASE + "/output/volume", {
+    fetch(API_ENDPOINT + "/output/volume", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1044,7 +1041,7 @@ function addFileFromPath(filePath) {
 
 function fetchMetadata(track, index, shouldPlay) {
   if (!track.isServerFile) return;
-  fetch(API_BASE + "/audio/metadata?file=" + encodeURIComponent(track.path))
+  fetch(API_ENDPOINT + "/audio/metadata?file=" + encodeURIComponent(track.path))
     .then((r) => r.json())
     .then((data) => {
       if (data.title) track.title = data.title;
@@ -1072,7 +1069,7 @@ function updatePlaylistUI() {
       const ext = item.name.split(".").pop().toLowerCase();
       const active = index === currentIndex;
       const coverUrl = item.isServerFile
-        ? API_BASE + "/audio/cover?file=" + encodeURIComponent(item.path)
+        ? API_ENDPOINT + "/audio/cover?file=" + encodeURIComponent(item.path)
         : "";
       const iconHtml = coverUrl
         ? `<img src="${coverUrl}" onerror="this.classList.add('is-hidden');this.nextElementSibling.classList.remove('is-hidden')"><svg viewBox="0 0 24 24" class="is-hidden"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`
@@ -1117,7 +1114,7 @@ function browseDir(dirPath) {
   const body = document.getElementById("browserBody");
   body.innerHTML = '<div class="browse-loading">' + t("loading") + "</div>";
 
-  fetch(API_BASE + "/browse?dir=" + encodeURIComponent(dirPath))
+  fetch(API_ENDPOINT + "/browse?dir=" + encodeURIComponent(dirPath))
     .then((r) => r.json())
     .then((data) => {
       if (data.error) {
@@ -1223,24 +1220,30 @@ loadSortMode();
 if (outputMode === "server") {
   setOutputMode("server");
 }
-applyTheme();
-applyI18n();
 claimPrimary();
 
-window
-  .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", applyTheme);
-try {
-  window.addEventListener("storage", function (e) {
-    if (e.key === "fnos-theme-mode") applyTheme();
-  });
-} catch (e) {}
+// 初始化：通过 TrimApp SDK 获取平台语言/主题，并订阅实时变化
+(async function initPlatform() {
+  platformConfig = await sdk.getPlatformConfig();
+  applyPreferences();
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+})();
 
 window.addEventListener("beforeunload", function () {
   if (outputMode === "server") {
-    fetch(API_BASE + "/output/stop", { method: "POST", keepalive: true }).catch(
-      () => {},
-    );
+    fetch(API_ENDPOINT + "/output/stop", {
+      method: "POST",
+      keepalive: true,
+    }).catch(() => {});
   } else {
     audioPlayer.pause();
     audioPlayer.src = "";
@@ -1272,3 +1275,20 @@ window.addEventListener("beforeunload", function () {
     }, 500);
   }
 })();
+
+// HTML 内联 onclick 处理器在全局作用域解析函数名。
+// module 脚本顶层函数不挂到 window，需显式导出供内联 onclick 使用。
+window.openAbout = openAbout;
+window.closeAbout = closeAbout;
+window.cycleSortMode = cycleSortMode;
+window.cycleLyricsAlign = cycleLyricsAlign;
+window.setOutputMode = setOutputMode;
+window.onServerDeviceChange = onServerDeviceChange;
+window.openBrowser = openBrowser;
+window.closeBrowser = closeBrowser;
+window.confirmBrowser = confirmBrowser;
+window.browseDir = browseDir;
+window.toggleBrowseSelect = toggleBrowseSelect;
+window.loadTrack = loadTrack;
+window.seekToLyric = seekToLyric;
+window.addFileFromPath = addFileFromPath;

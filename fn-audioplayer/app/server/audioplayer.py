@@ -23,7 +23,12 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-APP_NAME = "fn-audioplayer"
+
+def _env(name, default=""):
+    return os.environ.get(name, "").strip() or default
+
+
+APP_NAME = _env("TRIM_APPNAME", "fn-audioplayer")
 
 SUPPORTED_FORMATS = {"mp3", "wav", "ogg", "flac", "m4a", "aac", "wma", "ape"}
 
@@ -201,7 +206,10 @@ class Handler(BaseHTTPRequestHandler):
         )
         self.end_headers()
         if self.command != "HEAD":
-            self.wfile.write(data)
+            try:
+                self.wfile.write(data)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
     def serve_api(self, path, query):
         from urllib.parse import parse_qs
@@ -252,7 +260,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if self.command != "HEAD":
-            self.wfile.write(body)
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
     def handle_audio_info(self, params):
         file_param = self._get_param(params, "file")

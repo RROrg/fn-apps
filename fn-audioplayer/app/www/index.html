@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>音频播放器</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="appTitle">音频播放器</title>
   <link rel="stylesheet" href="/app/fn-audioplayer/style.css">
 </head>
 
@@ -12,7 +12,8 @@
   <div class="player">
     <div class="player-left">
       <div class="disc-area">
-        <button class="about-btn" id="btnAbout" onclick="openAbout()" data-i18n="about" title="关于">关于</button>
+        <button class="about-btn" id="btnAbout" onclick="openAbout()" data-i18n="about" title="关于"
+          data-i18n-title="about">关于</button>
         <div class="disc-wrapper">
           <div class="disc" id="disc">
             <div class="disc-grooves"></div>
@@ -43,17 +44,17 @@
       </div>
 
       <div class="controls">
-        <button class="ctrl-btn" id="prevBtn" title="上一首">
+        <button class="ctrl-btn" id="prevBtn" title="上一首" data-i18n-title="prev">
           <svg viewBox="0 0 24 24">
             <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
           </svg>
         </button>
-        <button class="ctrl-btn play-btn" id="playPauseBtn" title="播放">
+        <button class="ctrl-btn play-btn" id="playPauseBtn" title="播放" data-i18n-title="play">
           <svg viewBox="0 0 24 24" id="playIcon">
             <path d="M8 5v14l11-7z" />
           </svg>
         </button>
-        <button class="ctrl-btn" id="nextBtn" title="下一首">
+        <button class="ctrl-btn" id="nextBtn" title="下一首" data-i18n-title="next">
           <svg viewBox="0 0 24 24">
             <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
           </svg>
@@ -67,23 +68,26 @@
               d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
           </svg>
         </div>
-        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" title="音量">
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" title="音量"
+          data-i18n-title="volume">
         <span class="volume-val" id="volumeValue">70%</span>
       </div>
 
       <div class="toolbar-row" id="toolbarRow">
         <div class="toolbar-label" data-i18n="playbackSetting">播放设置</div>
-        <button class="toolbar-btn" id="sortModeBtn" onclick="cycleSortMode()" title="播放顺序">
+        <button class="toolbar-btn" id="sortModeBtn" onclick="cycleSortMode()" title="播放顺序"
+          data-i18n-title="sortModeTitle">
           <svg viewBox="0 0 24 24" id="sortModeIcon">
             <path d="M3 15h6v-2H3v2zm0 4h6v-2H3v2zm0-8h6V9H3v2zm0-6v2h6V5H3zm10 0v14l7-7z" />
           </svg>
-          <span id="sortModeText">顺序播放</span>
+          <span id="sortModeText" data-i18n="sortSeq">顺序播放</span>
         </button>
-        <button class="toolbar-btn" id="lyricsAlignBtn" onclick="cycleLyricsAlign()" title="歌词对齐">
+        <button class="toolbar-btn" id="lyricsAlignBtn" onclick="cycleLyricsAlign()" title="歌词对齐"
+          data-i18n-title="lyricsAlignTitle">
           <svg viewBox="0 0 24 24" id="lyricsAlignIcon">
             <path d="M3 3h18v2H3zm0 4h12v2H3zm0 4h18v2H3zm0 4h12v2H3z" />
           </svg>
-          <span id="lyricsAlignText">靠左</span>
+          <span id="lyricsAlignText" data-i18n="alignLeft">靠左</span>
         </button>
       </div>
 
@@ -95,15 +99,16 @@
           <button class="output-mode-btn" id="modeServerBtn" onclick="setOutputMode('server')"
             data-i18n="serverMode">服务器</button>
         </div>
-        <select class="output-select is-hidden" id="serverDeviceSelect" onchange="onServerDeviceChange()"
-          title="选择输出设备">
+        <select class="output-select is-hidden" id="serverDeviceSelect" onchange="onServerDeviceChange()" title="选择输出设备"
+          data-i18n-title="selectOutputDevice">
           <option value="" data-i18n="noDevices">未检测到音频设备</option>
         </select>
       </div>
 
       <div class="add-section">
         <div class="add-btns">
-          <input type="file" id="fileInput" class="file-input" multiple accept="audio/*" title="选择音频文件">
+          <input type="file" id="fileInput" class="file-input" multiple accept="audio/*" title="选择音频文件"
+            data-i18n-title="selectAudioFile">
           <button class="add-btn" onclick="document.getElementById('fileInput').click()">
             <svg viewBox="0 0 24 24">
               <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
@@ -221,7 +226,7 @@
         <div class="about-section">
           <h4 data-i18n="sponsorSupport">赞助支持</h4>
           <img class="about-sponsor-image" src="https://fastly.jsdelivr.net/gh/wjz304/wjz304@master/my/buymeacoffee.png"
-            alt="sponsoring">
+            alt="sponsoring" loading="lazy" decoding="async">
         </div>
         <div class="about-copyright">
           <a href="https://github.com/RROrg" target="_blank" rel="noopener noreferrer">RROrg</a>
@@ -235,7 +240,7 @@
   <div class="toast" id="toast"></div>
   <audio id="audioPlayer"></audio>
 
-  <script src="/app/fn-audioplayer/app.js"></script>
+  <script type="module" src="/app/fn-audioplayer/app.js"></script>
 </body>
 
 </html>
