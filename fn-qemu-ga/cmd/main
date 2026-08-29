@@ -33,7 +33,16 @@ case $1 in
   start)
     # run start command. exit 0 if success, exit 1 if failed
     if [ ! -e /dev/virtio-ports/org.qemu.guest_agent.0 ]; then
-      echo "QEMU Guest Agent device not found. Cannot start." >$TRIM_TEMP_LOGFILE
+      SYS_LANGUAGE="${TRIM_SYS_LANGUAGE:-}"
+      case "${SYS_LANGUAGE,,}" in
+        zh[-_]cn)
+          MSG="未找到 QEMU Guest Agent 设备，无法启动。"
+          ;;
+        *)
+          MSG="QEMU Guest Agent device not found. Cannot start."
+          ;;
+      esac
+      echo "${MSG}" >"$TRIM_TEMP_LOGFILE"
       exit 1
     fi
     start_process
