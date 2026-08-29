@@ -1,27 +1,16 @@
-function trimTrailingSlash(value) {
-  return String(value || "").replace(/\/+$/, "");
-}
+import { TrimApp } from "./web-app.js";
 
-function currentBasePath() {
-  const script =
-    document.currentScript || document.querySelector('script[src$="app.js"]');
-  if (script?.src) {
-    const url = new URL(script.src, location.href);
-    return trimTrailingSlash(url.pathname.replace(/\/app\.js$/, ""));
-  }
-  return trimTrailingSlash(
-    location.pathname.replace(/\/(?:index\.html)?$/, ""),
-  );
-}
+const sdk = new TrimApp();
+let platformConfig = { language: "zh-CN", theme: "light" };
 
-const BASE_PATH = currentBasePath() || ".";
-const API_ENDPOINT = `${BASE_PATH}/api`;
+const API_ENDPOINT = "./api";
 
 const state = {
   mappings: [],
   status: "all",
   scheme: "all",
   language: "zh-CN",
+  theme: "light",
 };
 
 const I18N = {
@@ -139,64 +128,6 @@ function escapeHtml(value) {
   );
 }
 
-function cookieValue(name) {
-  const prefix = `${name}=`;
-  return (
-    document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix))
-      ?.slice(prefix.length) || ""
-  );
-}
-
-function safeDecode(value) {
-  try {
-    return decodeURIComponent(value || "");
-  } catch (_error) {
-    return value || "";
-  }
-}
-
-function storedValue(name) {
-  try {
-    return localStorage.getItem(name) || sessionStorage.getItem(name) || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-function parentStoredValue(name) {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return (
-      window.parent.localStorage.getItem(name) ||
-      window.parent.sessionStorage.getItem(name) ||
-      ""
-    );
-  } catch (_error) {
-    return "";
-  }
-}
-
-function queryValue(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function normalizeLanguage(value) {
-  const language = safeDecode(value).replace("_", "-");
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-}
-
-function currentLanguage() {
-  return normalizeLanguage(
-    cookieValue("language") ||
-      queryValue("language") ||
-      navigator.language ||
-      "zh-CN",
-  );
-}
-
 function t(key, params = {}) {
   const messages = I18N[state.language] || I18N["zh-CN"];
   return String(messages[key] || I18N["zh-CN"][key] || key).replace(
@@ -205,80 +136,38 @@ function t(key, params = {}) {
   );
 }
 
-function documentThemeValue(doc) {
-  if (!doc) return "";
-  const root = doc.documentElement;
-  const body = doc.body;
-  return (
-    [
-      body?.getAttribute("theme-mode"),
-      body?.dataset?.theme,
-      root?.dataset?.theme,
-      root?.classList?.contains("dark") ? "dark" : "",
-      root?.classList?.contains("light") ? "light" : "",
-    ].find(Boolean) || ""
-  );
+function applyLanguage() {
+  const language = String(platformConfig.language || "").replace("_", "-");
+  const resolved = language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+  const changed = resolved !== state.language;
+  state.language = resolved;
+  document.documentElement.lang = resolved;
+  return changed;
 }
 
-function parentDocumentThemeValue() {
-  try {
-    if (!window.parent || window.parent === window) return "";
-    return documentThemeValue(window.parent.document);
-  } catch (_error) {
-    return "";
-  }
-}
-
-function themeMedia() {
-  return typeof window.matchMedia === "function"
-    ? window.matchMedia("(prefers-color-scheme: dark)")
-    : null;
-}
-
-function prefersDarkTheme() {
-  return Boolean(themeMedia()?.matches);
-}
-
-function normalizeTheme(value) {
-  const theme = safeDecode(value).toLowerCase();
-  if (theme.includes("dark") || theme === "night" || theme === "20")
-    return "dark";
-  if (theme.includes("light") || theme === "day" || theme === "10")
-    return "light";
-  if (["system", "auto", "os"].includes(theme))
-    return prefersDarkTheme() ? "dark" : "light";
-  return "";
-}
-
-function currentTheme() {
-  return (
-    [
-      queryValue("theme"),
-      cookieValue("fnos-theme-mode"),
-      cookieValue("os-theme-mode"),
-      storedValue("fnos-theme-mode"),
-      storedValue("os-theme-mode"),
-      parentStoredValue("fnos-theme-mode"),
-      parentStoredValue("os-theme-mode"),
-      documentThemeValue(document),
-      parentDocumentThemeValue(),
-      queryValue("fnos-theme-mode"),
-    ]
-      .map(normalizeTheme)
-      .find(Boolean) || (prefersDarkTheme() ? "dark" : "light")
-  );
+function applyTheme() {
+  // fnOS 宿主可能返回 { theme: "dark" } 对象，先解包再规范化
+  const value = platformConfig.theme;
+  const v =
+    value && typeof value === "object" && "theme" in value
+      ? value.theme
+      : value;
+  const theme = String(v || "").toLowerCase() === "dark" ? "dark" : "light";
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
 }
 
 function applyPreferences({ rerender = false } = {}) {
-  const nextLanguage = currentLanguage();
-  const languageChanged = nextLanguage !== state.language;
-  state.language = nextLanguage;
-  document.documentElement.lang = nextLanguage;
-  document.documentElement.dataset.theme = currentTheme();
+  const languageChanged = applyLanguage();
+  applyTheme();
   document.title = t("appTitle");
+  if (sdk.setTitle) {
+    sdk.setTitle(t("appTitle")).catch(() => {});
+  }
 
   document.querySelectorAll("[data-i18n]").forEach((node) => {
-    node.textContent = t(node.dataset.i18n, { base: BASE_PATH });
+    node.textContent = t(node.dataset.i18n);
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
     node.placeholder = t(node.dataset.i18nPlaceholder);
@@ -287,24 +176,15 @@ function applyPreferences({ rerender = false } = {}) {
     node.title = t(node.dataset.i18nTitle);
     node.setAttribute("aria-label", t(node.dataset.i18nTitle));
   });
+
   if (rerender && languageChanged) renderRows();
 }
 
-function authToken() {
-  return safeDecode(
-    cookieValue("fnos-token") ||
-      cookieValue("trim_token") ||
-      cookieValue("token"),
-  );
-}
-
 async function api(action, data = {}) {
-  const headers = { "Content-Type": "application/json" };
-  const token = authToken();
-  if (token) headers.Authorization = `trim ${token}`;
+  // token 由 fnOS 网关注入鉴权；后端不校验 token，不在此转发
   const response = await fetch(API_ENDPOINT, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     cache: "no-store",
     credentials: "include",
     body: JSON.stringify({ action, ...data }),
@@ -326,7 +206,7 @@ function showToast(message, isError = false) {
 }
 
 function proxyPath(mapping) {
-  return `${BASE_PATH}/${mapping.slug}`;
+  return `./${mapping.slug}`;
 }
 
 function targetText(mapping) {
@@ -583,10 +463,20 @@ function bindEvents() {
 }
 
 window.addEventListener("load", async () => {
+  platformConfig = await sdk.getPlatformConfig();
   applyPreferences();
+
+  if (sdk.isWeb === true && sdk.isStandaloneWeb === false) {
+    await sdk.$on("os/theme", (theme) => {
+      platformConfig = { ...platformConfig, theme };
+      applyPreferences();
+    });
+    await sdk.$on("os/language", (language) => {
+      platformConfig = { ...platformConfig, language };
+      applyPreferences({ rerender: true });
+    });
+  }
+
   bindEvents();
   await loadMappings();
 });
-
-themeMedia()?.addEventListener?.("change", () => applyPreferences());
-window.addEventListener("storage", () => applyPreferences({ rerender: true }));

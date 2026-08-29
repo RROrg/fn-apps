@@ -26,8 +26,8 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-APP_NAME = "fn-p2s"
-VAR_DIR = Path(f"/var/apps/{APP_NAME}/var")
+APP_NAME = os.environ.get("TRIM_APPNAME") or "fn-p2s"
+VAR_DIR = Path(os.environ.get("TRIM_PKGVAR") or f"/var/apps/{APP_NAME}/var")
 SETTINGS_FILE = VAR_DIR / "mappings.json"
 DEFAULT_SETTINGS = {"mappings": []}
 HOP_BY_HOP_HEADERS = {
