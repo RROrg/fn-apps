@@ -61,16 +61,19 @@ curl -skL "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/FygoO
 ## Proxmox VE
   ```
   # One Click Install fnOS VM on Proxmox VE:
-  curl -fsSL https://github.com/RROrg/fn-apps/raw/refs/heads/main/pve.sh | bash -s -- --arch x86_64
+  curl -fsSL https://github.com/RROrg/fn-apps/raw/refs/heads/main/pve.sh | bash -s -- --type fnos --arch x86_64
 
-  # Optional Parameters:
-  --onboot <0|1>             Enable VM on boot, default 1 (enable)"
-  --arch <x86_64|aarch64>    Architecture, support x86_64 and aarch64, default x86_64"
-  --efi <0|1>                Enable UEFI boot, default 1 (enable)"
-  --iso <path>               Local ISO path, use local ISO if set"
-  --storage <name>           Storage name for images, as local-lvm, default auto get"
-  --v9ppath <path>           Set to /path/to/9p to mount virtio 9p share"
-  --vfsdirid <dirid>         Set to <dirid> to mount virtio fs share"
+  Usage: ./pve.sh [--onboot <0|1>] [--arch <x86_64|aarch64>] [--efi <0|1>] [--iso <path>]
+            [--storage <name>] [--v9ppath <path>] [--vfsdirid <dirid>]
+
+    --onboot <0|1>             Enable VM on boot, default 1 (enable)
+    --type <fnos|fygonas>      Type, support fnos and fygonas, default fnos
+    --arch <x86_64|aarch64>    Architecture, support x86_64 and aarch64, default x86_64
+    --efi <0|1>                Enable UEFI boot, default 1 (enable)
+    --iso <path>               Local ISO path, use local ISO if set
+    --storage <name>           Storage name for images, as local-lvm, default auto get
+    --v9ppath <path>           Set to /path/to/9p to mount virtio 9p share
+    --vfsdirid <dirid>         Set to <dirid> to mount virtio fs share
   ```
 
 ## 社区支持

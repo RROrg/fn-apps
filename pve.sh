@@ -8,6 +8,7 @@
 
 # 参数
 ONBOOT=1      # 开机启动，默认1
+TYPE="fnos"   # 类型，支持 fnos 和 fygonas，默认 fnos
 ARCH="x86_64" # 架构，支持 x86_64 和 aarch64，默认 x86_64
 EFI=1         # 启用 UEFI 引导，默认1
 ISO=""        # 本地ISO路径，默认空
@@ -20,6 +21,7 @@ usage() {
   echo "          [--storage <name>] [--v9ppath <path>] [--vfsdirid <dirid>]"
   echo ""
   echo "  --onboot <0|1>             Enable VM on boot, default 1 (enable)"
+  echo "  --type <fnos|fygonas>      Type, support fnos and fygonas, default fnos"
   echo "  --arch <x86_64|aarch64>    Architecture, support x86_64 and aarch64, default x86_64"
   echo "  --efi <0|1>                Enable UEFI boot, default 1 (enable)"
   echo "  --iso <path>               Local ISO path, use local ISO if set"
@@ -28,7 +30,7 @@ usage() {
   echo "  --vfsdirid <dirid>         Set to <dirid> to mount virtio fs share"
 }
 
-ARGS=$(getopt -o '' --long onboot:,arch:,efi:,iso:,storage:,v9ppath:,vfsdirid: -n "$0" -- "$@")
+ARGS=$(getopt -o '' --long onboot:,type:,arch:,efi:,iso:,storage:,v9ppath:,vfsdirid: -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
   usage
   exit 1
@@ -39,6 +41,11 @@ while true; do
     --onboot)
       ONBOOT="$2"
       echo "$ONBOOT" | grep -qvE '^(0|1)$' && ONBOOT=1
+      shift 2
+      ;;
+    --type)
+      TYPE="$2"
+      echo "$TYPE" | grep -qvE '^(fnos|fygonas)$' && TYPE="fnos"
       shift 2
       ;;
     --arch)
@@ -96,27 +103,35 @@ else
   if ! command -v jq >/dev/null 2>&1; then
     apt update >/dev/null 2>&1 && apt install -y jq >/dev/null 2>&1
   fi
-  if [ "$ARCH" = "x86_64" ]; then
-    ISO_URL="$(curl -sL "https://www.fnnas.com/download?key=fnos" | grep -oP '{[^{}]*fnos[^,]*\.iso[^}]*thunder[^}]*"}' | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].thunder // empty' 2>/dev/null | sed 's/^thunder:\/\///' | base64 -d 2>/dev/null | sed 's/^AA//; s/ZZ$//')"
+  if [ "${TYPE}" = "fnos" ]; then
+    if [ "$ARCH" = "x86_64" ]; then
+      ISO_URL="$(curl -sL "https://www.fnnas.com/download?key=fnos" | grep -oP '{(?:[^{}]*fnos[^,]*\.iso[^{}]*thunder|[^{}]*thunder[^{}]*fnos[^,]*\.iso)[^}]*"}' | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].thunder // empty' 2>/dev/null | sed 's/^thunder:\/\///' | base64 -d 2>/dev/null | sed 's/^AA//; s/ZZ$//')"
+    else
+      ISO_URL="$(curl -sL "https://www.fnnas.com/download-arm" | grep -oP '{(?:[^{}]*fnos[^,]*\.iso[^{}]*thunder|[^{}]*thunder[^{}]*fnos[^,]*\.iso)[^}]*"}' | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].thunder // empty' 2>/dev/null | sed 's/^thunder:\/\///' | base64 -d 2>/dev/null | sed 's/^AA//; s/ZZ$//')"
+    fi
   else
-    ISO_URL="$(curl -sL "https://www.fnnas.com/download-arm" | grep -oP '{[^{}]*fnos[^,]*\.iso[^}]*thunder[^}]*"}' | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].thunder // empty' 2>/dev/null | sed 's/^thunder:\/\///' | base64 -d 2>/dev/null | sed 's/^AA//; s/ZZ$//')"
+    if [ "$ARCH" = "x86_64" ]; then
+      ISO_URL="$(curl -sL "https://fygonas.com/download" | grep -oP '{[^{}]*fygoos[^,]*\.iso[^}]*"}' | grep x86 | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].url // empty' 2>/dev/null)"
+    else
+      ISO_URL="$(curl -sL "https://fygonas.com/download" | grep -oP '{[^{}]*fygoos[^,]*\.iso[^}]*"}' | grep arm | sort -u | sed 's/\\\"/"/g' | jq -rs '.[0].url // empty' 2>/dev/null)"
+    fi
   fi
   [ -z "${ISO_URL}" ] && {
-    echo "Failed to retrieve fnOS-${ARCH} ISO URL"
+    echo "Failed to retrieve ${TYPE}-${ARCH} ISO URL"
     exit 1
   }
-  echo "Downloading fnOS-${ARCH} ISO ... "
+  echo "Downloading ${TYPE}-${ARCH} ISO ... "
   ISO_PATH="/var/lib/vz/template/iso/$(basename "${ISO_URL}")"
   rm -f "${ISO_PATH}" || true
   mkdir -p /var/lib/vz/template/iso >/dev/null 2>&1
   STATUS=$(curl -skL --connect-timeout 10 -w "%{http_code}" "${ISO_URL}" -o "${ISO_PATH}")
   if [ "${STATUS}" -ne 200 ]; then
-    echo "Failed to download fnOS-${ARCH} ISO." >&2
+    echo "Failed to download ${TYPE}-${ARCH} ISO." >&2
     exit 1
   fi
 fi
 
-echo "Creating VM with fnOS-${ARCH} ... "
+echo "Creating VM with ${TYPE}-${ARCH} ... "
 
 # 获取可用的 VMID
 LAST_VMID=$(qm list | awk 'NR>1{print $1}' | sort -n | tail -1 2>/dev/null)
@@ -128,9 +143,9 @@ SATAIDX=0
 # 创建 VM
 # vga.type: 'cirrus, qxl, qxl2, qxl3, qxl4, none, serial0, serial1, serial2, serial3, std, virtio, virtio-gl, vmware'
 if [ "$ARCH" = "x86_64" ]; then
-  qm create ${VMID} --name fnOS-amd64 --arch x86_64 --machine q35 --ostype l26 --vga virtio --sockets 1 --cores 2 --cpu host --numa 0 --memory 4096 --scsihw virtio-scsi-single
+  qm create ${VMID} --name ${TYPE}-amd64 --arch x86_64 --machine q35 --ostype l26 --vga virtio --sockets 1 --cores 2 --cpu host --numa 0 --memory 4096 --scsihw virtio-scsi-single
 else
-  qm create ${VMID} --name fnOS-arm64 --arch aarch64 --machine virt --ostype l26 --vga std --sockets 1 --cores 2 --cpu cortex-a72 --numa 0 --memory 4096 --scsihw virtio-scsi-single
+  qm create ${VMID} --name ${TYPE}-arm64 --arch aarch64 --machine virt --ostype l26 --vga std --sockets 1 --cores 2 --cpu cortex-a72 --numa 0 --memory 4096 --scsihw virtio-scsi-single
 fi
 if [ $? -ne 0 ]; then
   echo "Create VM failed"
@@ -188,7 +203,7 @@ qm set ${VMID} --net0 virtio,bridge=${BRIDGE}
 
 qm set ${VMID} --serial0 socket
 qm set ${VMID} --agent enabled=1
-qm set ${VMID} --smbios1 "uuid=$(cat /proc/sys/kernel/random/uuid),manufacturer=$(echo -n "RROrg" | base64),product=$(echo -n "fnOS" | base64),version=$(echo -n "${ARCH:-x86_64}" | base64),base64=1"
+qm set ${VMID} --smbios1 "uuid=$(cat /proc/sys/kernel/random/uuid),manufacturer=$(echo -n "RROrg" | base64),product=$(echo -n "${TYPE}" | base64),version=$(echo -n "${ARCH:-x86_64}" | base64),base64=1"
 qm set ${VMID} --onboot "${ONBOOT}"
 
 echo "Created success, VMID=${VMID}"
