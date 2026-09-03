@@ -1,498 +1,1003 @@
 {
-  "fn-advancedsettings": {
-    "display_name": "高级设置",
-    "platform": "all",
-    "version": "1.1.1",
-    "desc": "管理启动设置、电源设置、屏幕设置、SSH设置、CPU设置、DNS设置、网络设置、代理设置、设备信息、端口信息、进程管理、服务管理、网络诊断。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-advancedsettings/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.345",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-advancedsettings_all_v1.1.1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-advancedsettings package."
+  "schema_version": "2",
+  "source_info": {
+    "name": "RROrg",
+    "author": "Ing",
+    "homepage": "https://github.com/RROrg/fn-apps",
+    "description": "RROrg 的 fnOS 第三方应用源"
   },
-  "fn-appdownload": {
-    "display_name": "应用坏心",
-    "platform": "all",
-    "version": "1.1.3",
-    "desc": "官方商店和第三方源应用下载",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appdownload/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.318",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-appdownload_all_v1.1.3.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-appdownload package."
-  },
-  "fn-appsettings": {
-    "display_name": "应用设置",
-    "platform": "all",
-    "version": "1.0.8",
-    "desc": "设置已安装应用的数据",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appsettings/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.137",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-appsettings_all_v1.0.8.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-appsettings package."
-  },
-  "fn-audioplayer": {
-    "display_name": "音频播放器",
-    "platform": "all",
-    "version": "1.0.5",
-    "desc": "音频播放器应用，用于播放音频文件。支持包括 mp3、wav、flac、ogg、m4a、aac、wma、ape 等格式，会自动加载音频文件所在目录的歌词文件；支持客户端和服务端两种模式。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-audioplayer/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.110",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-audioplayer_all_v1.0.5.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-audioplayer package."
-  },
-  "fn-bluetooth": {
-    "display_name": "蓝牙",
-    "platform": "all",
-    "version": "1.0.3",
-    "desc": "蓝牙设备管理工具，支持配对连接音频设备、键鼠、文件传输、共享网络等功能。支持客户端模式（扫描连接）和服务端模式（接受连接）。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-bluetooth/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.099",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-bluetooth_all_v1.0.3.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-bluetooth package."
-  },
-  "fn-chromium": {
-    "display_name": "chromium",
-    "platform": "all",
-    "version": "1.0.4",
-    "desc": "Chromium 是一个开源的网页浏览器项目，旨在为用户提供更安全、更快速和更稳定的浏览体验。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-chromium/ICON_256.PNG",
-    "distributor": "linuxserver",
-    "distributor_url": "https://github.com/linuxserver",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.046",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-chromium_all_v1.0.4.fpk",
-    "install_type": "存储空间",
-    "isdocker": "true",
-    "changelog": "Initial release of fn-chromium package."
-  },
-  "fn-chromium-desktop": {
-    "display_name": "chromium-desktop",
-    "platform": "all",
-    "version": "1.0.3",
-    "desc": "Chromium-desktop 是一个基于 KMS/DRM 的网页浏览器及音频支持，旨在本地显示器提供浏览器功能。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-chromium-desktop/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.047",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-chromium-desktop_all_v1.0.3.fpk",
-    "install_type": "存储空间",
-    "isdocker": "true",
-    "changelog": "Initial release of fn-chromium-desktop package."
-  },
-  "fn-codeserver": {
-    "display_name": "code-server",
-    "platform": "all",
-    "version": "1.1.1",
-    "desc": "code-server 是 VS Code 的在线版本，允许您通过浏览器进行代码编辑和开发。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-codeserver/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.017",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-codeserver_all_v1.1.1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-codeserver package."
-  },
-  "fn-execute": {
-    "display_name": "执行器",
-    "platform": "all",
-    "version": "1.0.4",
-    "desc": "执行器可直接在可执行程序上右键执行，支持 sh、py、pl、rb、js、ts、lua、bash、zsh、fish、bin、run 等格式的文件。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-execute/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.030",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-execute_all_v1.0.4.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-execute package."
-  },
-  "fn-fail2ban": {
-    "display_name": "fail2ban",
-    "platform": "all",
-    "version": "1.0.6",
-    "desc": "fail2ban 是一个开源的入侵防御工具，用于保护 Linux 服务器免受暴力破解攻击。 它通过监控日志文件，检测可疑的登录尝试，并自动封禁恶意 IP 地址，从而增强系统的安全性。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-fail2ban/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.191",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-fail2ban_all_v1.0.6.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-fail2ban package."
-  },
-  "fn-grafana-alloy": {
-    "display_name": "Grafana Alloy",
-    "platform": "all",
-    "version": "1.19.2",
-    "desc": "可观测性数据采集器，收集系统和应用日志并发送到 Loki。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-grafana-alloy/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "285.847",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-grafana-alloy_all_v1.19.2.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-grafana-alloy package."
-  },
-  "fn-guacamole": {
-    "display_name": "guacamole",
-    "platform": "all",
-    "version": "1.6.0-1",
-    "desc": "Apache Guacamole 是一个无客户端的远程桌面网关，支持 RDP、VNC、SSH、telnet 等标准协议。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-guacamole/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.057",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-guacamole_all_v1.6.0-1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "true",
-    "changelog": "Initial release of fn-guacamole package."
-  },
-  "fn-influxdb": {
-    "display_name": "InfluxDB",
-    "platform": "all",
-    "version": "2.9.1",
-    "desc": "高性能时序数据库，适用于指标、事件和分析工作负载。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-influxdb/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.017",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-influxdb_all_v2.9.1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-influxdb package."
-  },
-  "fn-installer": {
-    "display_name": "安装器",
-    "platform": "all",
-    "version": "1.0.5",
-    "desc": "安装器，用于安装本地 FPK 应用文件。支持右键安装。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-installer/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.045",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-installer_all_v1.0.5.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-installer package."
-  },
-  "fn-iVentoy": {
-    "display_name": "iVentoy",
-    "platform": "all",
-    "version": "1.0.39-1",
-    "desc": "iVentoy - PXE 启动服务器，支持通过局域网网络安装操作系统。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-iVentoy/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "42.615",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-iVentoy_all_v1.0.39-1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-iVentoy package."
-  },
-  "fn-kodi": {
-    "display_name": "kodi",
-    "platform": "all",
-    "version": "1.0.8",
-    "desc": "Kodi 是一个免费且开源的媒体播放器软件，用于播放视频、音频和图像。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-kodi/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.049",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-kodi_all_v1.0.8.fpk",
-    "install_type": "存储空间",
-    "isdocker": "true",
-    "changelog": "Initial release of fn-kodi package."
-  },
-  "fn-linux-station": {
-    "display_name": "linux-station",
-    "platform": "all",
-    "version": "1.0.2",
-    "desc": "Linux 工作站是一个基于 Linux 的桌面环境，旨在为用户提供一个高效、稳定和易用的工作环境。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-linux-station/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.206",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-linux-station_all_v1.0.2.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-linux-station package."
-  },
-  "fn-open-vm-tools": {
-    "display_name": "open-vm-tools",
-    "platform": "all",
-    "version": "1.1.1",
-    "desc": "Open-VM-Tools 是 VMware Tools 的开源替代品，旨在为运行在 VMware 环境中的虚拟机提供更好的性能和用户体验。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-open-vm-tools/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.058",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-open-vm-tools_all_v1.1.1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-open-vm-tools package."
-  },
-  "fn-p2s": {
-    "display_name": "端口代理",
-    "platform": "all",
-    "version": "1.0.4",
-    "desc": "通过 fnOS 应用网关路径访问本机端口服务。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-p2s/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.081",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-p2s_all_v1.0.4.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-p2s package."
-  },
-  "fn-qemu-ga": {
-    "display_name": "qemu-ga",
-    "platform": "all",
-    "version": "1.1.1",
-    "desc": "QEMU Guest Agent 是一个运行在虚拟机内部的守护进程，旨在通过与虚拟化主机的交互，执行一系列操作以增强虚拟机的管理能力。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-qemu-ga/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.055",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-qemu-ga_all_v1.1.1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-qemu-ga package."
-  },
-  "fn-scheduler": {
-    "display_name": "任务计划",
-    "platform": "all",
-    "version": "1.3.2",
-    "desc": "轻量级的任务计划应用，支持设置定时任务以自动执行脚本或命令，同时也支持基于条件的任务触发。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-scheduler/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.215",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-scheduler_all_v1.3.2.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-scheduler package."
-  },
-  "fn-scrutiny": {
-    "display_name": "Scrutiny",
-    "platform": "all",
-    "version": "1.70.0",
-    "desc": "硬盘 S.M.A.R.T 健康监控，集成 Scrutiny Web 与 Collector，提供可视化硬盘健康状态追踪。依赖 InfluxDB。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-scrutiny/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "75.508",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-scrutiny_all_v1.70.0.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-scrutiny package."
-  },
-  "fn-speedtest": {
-    "display_name": "网络测速",
-    "platform": "all",
-    "version": "1.0.1",
-    "desc": "测量客户端到服务器的速率，以及服务器到外网的出口速率。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-speedtest/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.046",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-speedtest_all_v1.0.1.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-speedtest package."
-  },
-  "fn-terminal": {
-    "display_name": "terminal",
-    "platform": "all",
-    "version": "1.1.2",
-    "desc": "terminal (ttyd + tmux) 是一个基于 Web 的终端应用程序，允许用户通过浏览器访问和管理服务器终端会话，提供便捷的远程终端操作体验。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-terminal/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "6.776",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-terminal_all_v1.1.2.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-terminal package."
-  },
-  "fn-vfnOS": {
-    "display_name": "vfnOS",
-    "platform": "all",
-    "version": "1.0.4",
-    "desc": "在 fnOS/FygoOS 系统中创建异架构的 fnOS 虚拟机（x86_64 fnOS 下则创建 aarch64 的 fnOS 虚拟机, aarch64 fnOS 下则创建 x86_64 的 fnOS 虚拟机）。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-vfnOS/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.040",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-vfnOS_all_v1.0.4.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-vfnOS package."
-  },
-  "fn-vFygoOS": {
-    "display_name": "vFygoOS",
-    "platform": "all",
-    "version": "1.0.4",
-    "desc": "在 fnOS/FygoOS 系统中创建异架构的 FygoOS 虚拟机（x86_64 fnOS 下则创建 aarch64 的 FygoOS 虚拟机, aarch64 fnOS 下则创建 x86_64 的 FygoOS 虚拟机）。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-vFygoOS/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.012",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-vFygoOS_all_v1.0.4.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-vFygoOS package."
-  },
-  "fn-vgmng": {
-    "display_name": "存储池管理",
-    "platform": "all",
-    "version": "1.0.5",
-    "desc": "存储池管理, 支持非飞牛存储池(其他NAS系统存储池)的管理。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-vgmng/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.277",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-vgmng_all_v1.0.5.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-vgmng package."
-  },
-  "fn-VirtualHereServer": {
-    "display_name": "VirtualHereServer",
-    "platform": "all",
-    "version": "4.8.8",
-    "desc": "VirtualHere USB 服务端，支持通过网络远程访问 USB 设备。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-VirtualHereServer/ICON_256.PNG",
-    "distributor": "VirtualHere Pty. Ltd.",
-    "distributor_url": "https://www.virtualhere.com",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "3.153",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-VirtualHereServer_all_v4.8.8.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-VirtualHereServer package."
-  },
-  "fn-wifi-hotspot": {
-    "display_name": "无线热点",
-    "platform": "all",
-    "version": "1.1.9",
-    "desc": "无线热点创建工具，允许用户轻松地将计算机变成一个 Wi-Fi 热点，分享网络连接给其他设备。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-wifi-hotspot/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.119",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-wifi-hotspot_all_v1.1.9.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-wifi-hotspot package."
-  },
-  "fn-WParted": {
-    "display_name": "WParted",
-    "platform": "all",
-    "version": "1.0.2",
-    "desc": "磁盘分区编辑器 - 创建、调整大小、删除、移动、复制、检查和格式化分区。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-WParted/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.086",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-WParted_all_v1.0.2.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-WParted package."
-  },
-  "fn-zerotier": {
-    "display_name": "ZeroTier",
-    "platform": "all",
-    "version": "1.0.9",
-    "desc": "ZeroTier 是一个无中心的虚拟网络，无需配置即可连接设备。",
-    "icon": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-zerotier/ICON_256.PNG",
-    "distributor": "RROrg",
-    "distributor_url": "https://github.com/RROrg/fn-apps",
-    "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
-    "labels": "工具",
-    "size": "0.076",
-    "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.08.29-2240/fn-zerotier_all_v1.0.9.fpk",
-    "install_type": "存储空间",
-    "isdocker": "false",
-    "changelog": "Initial release of fn-zerotier package."
+  "apps": {
+    "fn-advancedsettings": {
+      "display_name": "高级设置",
+      "desc": "管理启动设置、电源设置、屏幕设置、SSH设置、CPU设置、DNS设置、网络设置、代理设置、设备信息、端口信息、进程管理、服务管理、网络诊断。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-advancedsettings/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.1": {
+          "changelog": "Initial release of fn-advancedsettings package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-advancedsettings_all_v1.1.1.fpk",
+              "sha256": "9fd358ce360ffba3492a953126c63cd2d452a044e15d936f1ea7aa01d67526b1",
+              "size": 361485
+            }
+          }
+        }
+      }
+    },
+    "fn-appdownload": {
+      "display_name": "应用坏心",
+      "desc": "官方商店和第三方源应用下载",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appdownload/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.4": {
+          "changelog": "Initial release of fn-appdownload package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-appdownload_all_v1.1.4.fpk",
+              "sha256": "68c3502404dcec329ffc3ef8d776f30f8c43ac54007f417bb51c7313e132f37c",
+              "size": 340198
+            }
+          }
+        }
+      }
+    },
+    "fn-appsettings": {
+      "display_name": "应用设置",
+      "desc": "设置已安装应用的数据",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-appsettings/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.8": {
+          "changelog": "Initial release of fn-appsettings package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-appsettings_all_v1.0.8.fpk",
+              "sha256": "d1217f12bc4e18bcfbe37f0d4a7edbaeec5f777bd6a8f0d3be274b58750a6410",
+              "size": 143230
+            }
+          }
+        }
+      }
+    },
+    "fn-audioplayer": {
+      "display_name": "音频播放器",
+      "desc": "音频播放器应用，用于播放音频文件。支持包括 mp3、wav、flac、ogg、m4a、aac、wma、ape 等格式，会自动加载音频文件所在目录的歌词文件；支持客户端和服务端两种模式。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-audioplayer/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.5": {
+          "changelog": "Initial release of fn-audioplayer package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-audioplayer_all_v1.0.5.fpk",
+              "sha256": "71c6d853f5ca2dd2030ee0b350a0e937130c4f9f8c7e43669a73e1054010134c",
+              "size": 115774
+            }
+          }
+        }
+      }
+    },
+    "fn-bluetooth": {
+      "display_name": "蓝牙",
+      "desc": "蓝牙设备管理工具，支持配对连接音频设备、键鼠、文件传输、共享网络等功能。支持客户端模式（扫描连接）和服务端模式（接受连接）。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-bluetooth/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.3": {
+          "changelog": "Initial release of fn-bluetooth package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-bluetooth_all_v1.0.3.fpk",
+              "sha256": "d55815e54fea0d3151c74cfe278880a4d16cb232173a0384307184a3793b8669",
+              "size": 104283
+            }
+          }
+        }
+      }
+    },
+    "fn-chromium": {
+      "display_name": "chromium",
+      "desc": "Chromium 是一个开源的网页浏览器项目，旨在为用户提供更安全、更快速和更稳定的浏览体验。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-chromium/ICON_256.PNG",
+      "maintainer": "linuxserver",
+      "maintainer_url": "https://github.com/linuxserver/docker-chromium",
+      "distributor": "linuxserver",
+      "distributor_url": "https://github.com/linuxserver",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": true,
+      "service_port": "",
+      "releases": {
+        "1.0.4": {
+          "changelog": "Initial release of fn-chromium package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-chromium_all_v1.0.4.fpk",
+              "sha256": "9bed3783665975814f0d4651df2b53a176cc6e0bda8a8b4d53b1119a60003e93",
+              "size": 48716
+            }
+          }
+        }
+      }
+    },
+    "fn-chromium-desktop": {
+      "display_name": "chromium-desktop",
+      "desc": "Chromium-desktop 是一个基于 KMS/DRM 的网页浏览器及音频支持，旨在本地显示器提供浏览器功能。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-chromium-desktop/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": true,
+      "service_port": "",
+      "releases": {
+        "1.0.3": {
+          "changelog": "Initial release of fn-chromium-desktop package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-chromium-desktop_all_v1.0.3.fpk",
+              "sha256": "7eae6c4bcfc734cb7ac643ec05106d90ec668caf4cc54b661e3ff30cb42ad057",
+              "size": 49292
+            }
+          }
+        }
+      }
+    },
+    "fn-codeserver": {
+      "display_name": "code-server",
+      "desc": "code-server 是 VS Code 的在线版本，允许您通过浏览器进行代码编辑和开发。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-codeserver/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.1": {
+          "changelog": "Initial release of fn-codeserver package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-codeserver_all_v1.1.1.fpk",
+              "sha256": "ab2d549da1f8ef2ef2c001809d9a7dfe4eb87b31bdb18c82a13bdef7948577c2",
+              "size": 17472
+            }
+          }
+        }
+      }
+    },
+    "fn-execute": {
+      "display_name": "执行器",
+      "desc": "执行器可直接在可执行程序上右键执行，支持 sh、py、pl、rb、js、ts、lua、bash、zsh、fish、bin、run 等格式的文件。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-execute/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.4": {
+          "changelog": "Initial release of fn-execute package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-execute_all_v1.0.4.fpk",
+              "sha256": "62269f55da21ca1f17710aa5dcdb4599b290c6cc7d23421a79d878ca01820d30",
+              "size": 31586
+            }
+          }
+        }
+      }
+    },
+    "fn-fail2ban": {
+      "display_name": "fail2ban",
+      "desc": "fail2ban 是一个开源的入侵防御工具，用于保护 Linux 服务器免受暴力破解攻击。 它通过监控日志文件，检测可疑的登录尝试，并自动封禁恶意 IP 地址，从而增强系统的安全性。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-fail2ban/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.6": {
+          "changelog": "Initial release of fn-fail2ban package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-fail2ban_all_v1.0.6.fpk",
+              "sha256": "e9a01f3499f9ed57d7b539be5932edfa5e4ab252ce2bd28ab50617eea0aac2cc",
+              "size": 199793
+            }
+          }
+        }
+      }
+    },
+    "fn-grafana-alloy": {
+      "display_name": "Grafana Alloy",
+      "desc": "可观测性数据采集器，收集系统和应用日志并发送到 Loki。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-grafana-alloy/ICON_256.PNG",
+      "maintainer": "Grafana Labs",
+      "maintainer_url": "https://github.com/grafana/alloy",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.19.2": {
+          "changelog": "Initial release of fn-grafana-alloy package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-grafana-alloy_all_v1.19.2.fpk",
+              "sha256": "fb4376715d54e5db2b6386ab2d33d48be91477891b7c8cecf5c2beec03e93af0",
+              "size": 299728255
+            }
+          }
+        }
+      }
+    },
+    "fn-guacamole": {
+      "display_name": "guacamole",
+      "desc": "Apache Guacamole 是一个无客户端的远程桌面网关，支持 RDP、VNC、SSH、telnet 等标准协议。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-guacamole/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": true,
+      "service_port": "",
+      "releases": {
+        "1.6.0-1": {
+          "changelog": "Initial release of fn-guacamole package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-guacamole_all_v1.6.0-1.fpk",
+              "sha256": "802a1cb1e41609dde65805496efae54a7cd9fb7f0c8d28bd7f2a965d90762096",
+              "size": 59269
+            }
+          }
+        }
+      }
+    },
+    "fn-influxdb": {
+      "display_name": "InfluxDB",
+      "desc": "高性能时序数据库，适用于指标、事件和分析工作负载。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-influxdb/ICON_256.PNG",
+      "maintainer": "InfluxData",
+      "maintainer_url": "https://www.influxdata.com",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "2.9.1": {
+          "changelog": "Initial release of fn-influxdb package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-influxdb_all_v2.9.1.fpk",
+              "sha256": "8a5f40374072b1e6698740e61a4f71b7b592eb7e73607dce447db2e69d2a52a5",
+              "size": 18056
+            }
+          }
+        }
+      }
+    },
+    "fn-installer": {
+      "display_name": "安装器",
+      "desc": "安装器，用于安装本地 FPK 应用文件。支持右键安装。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-installer/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.6": {
+          "changelog": "Initial release of fn-installer package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-installer_all_v1.0.6.fpk",
+              "sha256": "0a7f730daeaab2b4aed60834900616d0d949989005931dee245fae7dd6b79cfa",
+              "size": 49898
+            }
+          }
+        }
+      }
+    },
+    "fn-iVentoy": {
+      "display_name": "iVentoy",
+      "desc": "iVentoy - PXE 启动服务器，支持通过局域网网络安装操作系统。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-iVentoy/ICON_256.PNG",
+      "maintainer": "ventoy",
+      "maintainer_url": "https://github.com/ventoy/PXE",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.39-1": {
+          "changelog": "Initial release of fn-iVentoy package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-iVentoy_all_v1.0.39-1.fpk",
+              "sha256": "7c2820bd56d686ddb61178f87c4937c640450c28a791eedc7a07aafc2f6bf24e",
+              "size": 44684464
+            }
+          }
+        }
+      }
+    },
+    "fn-kodi": {
+      "display_name": "kodi",
+      "desc": "Kodi 是一个免费且开源的媒体播放器软件，用于播放视频、音频和图像。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-kodi/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": true,
+      "service_port": "8080,9090,9777",
+      "releases": {
+        "1.0.8": {
+          "changelog": "Initial release of fn-kodi package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-kodi_all_v1.0.8.fpk",
+              "sha256": "e8042520cd17c7263b16aeaf9a4bc5069064da087f86f1041743a8491a5fc086",
+              "size": 51474
+            }
+          }
+        }
+      }
+    },
+    "fn-linux-station": {
+      "display_name": "linux-station",
+      "desc": "Linux 工作站是一个基于 Linux 的桌面环境，旨在为用户提供一个高效、稳定和易用的工作环境。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-linux-station/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "5900,5901",
+      "releases": {
+        "1.0.2": {
+          "changelog": "Initial release of fn-linux-station package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-linux-station_all_v1.0.2.fpk",
+              "sha256": "a8c2b21ade6d6972e549ed7a3ae51a1323656a1958cbd93e64b3a76c5f7744b2",
+              "size": 216365
+            }
+          }
+        }
+      }
+    },
+    "fn-open-vm-tools": {
+      "display_name": "open-vm-tools",
+      "desc": "Open-VM-Tools 是 VMware Tools 的开源替代品，旨在为运行在 VMware 环境中的虚拟机提供更好的性能和用户体验。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-open-vm-tools/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.1": {
+          "changelog": "Initial release of fn-open-vm-tools package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-open-vm-tools_all_v1.1.1.fpk",
+              "sha256": "5c8c6516433bc7ed083fce4320ea7392d004afb6e89f4102c6ce3b3194b0a3c4",
+              "size": 60689
+            }
+          }
+        }
+      }
+    },
+    "fn-p2s": {
+      "display_name": "端口代理",
+      "desc": "通过 fnOS 应用网关路径访问本机端口服务。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-p2s/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.5": {
+          "changelog": "Initial release of fn-p2s package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-p2s_all_v1.0.5.fpk",
+              "sha256": "66a8e939dbfea03ce2479c2160d857389ef25ec17805fe93e4ffe89ba2eaf3e0",
+              "size": 84717
+            }
+          }
+        }
+      }
+    },
+    "fn-qemu-ga": {
+      "display_name": "qemu-ga",
+      "desc": "QEMU Guest Agent 是一个运行在虚拟机内部的守护进程，旨在通过与虚拟化主机的交互，执行一系列操作以增强虚拟机的管理能力。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-qemu-ga/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.1": {
+          "changelog": "Initial release of fn-qemu-ga package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-qemu-ga_all_v1.1.1.fpk",
+              "sha256": "c67d66712664d97779704469acb6e3a2d49887688ce43012393dd38cc0330fc0",
+              "size": 57698
+            }
+          }
+        }
+      }
+    },
+    "fn-scheduler": {
+      "display_name": "任务计划",
+      "desc": "轻量级的任务计划应用，支持设置定时任务以自动执行脚本或命令，同时也支持基于条件的任务触发。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-scheduler/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.3.2": {
+          "changelog": "Initial release of fn-scheduler package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-scheduler_all_v1.3.2.fpk",
+              "sha256": "4bbe133016ecbf3a48385e6427eca6985fa8b6da7ec829c67add9a12c2634b4c",
+              "size": 225511
+            }
+          }
+        }
+      }
+    },
+    "fn-scrutiny": {
+      "display_name": "Scrutiny",
+      "desc": "硬盘 S.M.A.R.T 健康监控，集成 Scrutiny Web 与 Collector，提供可视化硬盘健康状态追踪。依赖 InfluxDB。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-scrutiny/ICON_256.PNG",
+      "maintainer": "Starosdev",
+      "maintainer_url": "https://github.com/Starosdev/scrutiny",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.70.0": {
+          "changelog": "Initial release of fn-scrutiny package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-scrutiny_all_v1.70.0.fpk",
+              "sha256": "37279aab2481ad64abbcc521c1a913602f57ca27b92df4ca471d5370dd02b189",
+              "size": 79175626
+            }
+          }
+        }
+      }
+    },
+    "fn-speedtest": {
+      "display_name": "网络测速",
+      "desc": "测量客户端到服务器的速率，以及服务器到外网的出口速率。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-speedtest/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.1": {
+          "changelog": "Initial release of fn-speedtest package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-speedtest_all_v1.0.1.fpk",
+              "sha256": "4ee035bd612cf4122df09c2c936d4085fa6be742e65200aeb3c54cbbabccf0aa",
+              "size": 48453
+            }
+          }
+        }
+      }
+    },
+    "fn-terminal": {
+      "display_name": "terminal",
+      "desc": "terminal (ttyd + tmux) 是一个基于 Web 的终端应用程序，允许用户通过浏览器访问和管理服务器终端会话，提供便捷的远程终端操作体验。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-terminal/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.2": {
+          "changelog": "Initial release of fn-terminal package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-terminal_all_v1.1.2.fpk",
+              "sha256": "9ee6cdba8e2864327cff61597362402acee14d3d9c5ae1e0cf94af85d8318f46",
+              "size": 7105524
+            }
+          }
+        }
+      }
+    },
+    "fn-vfnOS": {
+      "display_name": "vfnOS",
+      "desc": "在 fnOS/FygoOS 系统中创建异架构的 fnOS 虚拟机（x86_64 fnOS 下则创建 aarch64 的 fnOS 虚拟机, aarch64 fnOS 下则创建 x86_64 的 fnOS 虚拟机）。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-vfnOS/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.4": {
+          "changelog": "Initial release of fn-vfnOS package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-vfnOS_all_v1.0.4.fpk",
+              "sha256": "da75bd438f7ca26f9ec402267cb3adcfc0240b6dd88cb5c53153881f8ea5dfe7",
+              "size": 42032
+            }
+          }
+        }
+      }
+    },
+    "fn-vFygoOS": {
+      "display_name": "vFygoOS",
+      "desc": "在 fnOS/FygoOS 系统中创建异架构的 FygoOS 虚拟机（x86_64 fnOS 下则创建 aarch64 的 FygoOS 虚拟机, aarch64 fnOS 下则创建 x86_64 的 FygoOS 虚拟机）。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-vFygoOS/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.4": {
+          "changelog": "Initial release of fn-vFygoOS package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-vFygoOS_all_v1.0.4.fpk",
+              "sha256": "89a3d2a40fd95e597176643cbfd54179985290c5e8c203f669aae5c670e5ab3c",
+              "size": 12805
+            }
+          }
+        }
+      }
+    },
+    "fn-vgmng": {
+      "display_name": "存储池管理",
+      "desc": "存储池管理, 支持非飞牛存储池(其他NAS系统存储池)的管理。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-vgmng/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.5": {
+          "changelog": "Initial release of fn-vgmng package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-vgmng_all_v1.0.5.fpk",
+              "sha256": "bef2645ed030503e6d4ff5d08e58a5b408950819897d306d55bd4c64bf34e621",
+              "size": 289982
+            }
+          }
+        }
+      }
+    },
+    "fn-VirtualHereServer": {
+      "display_name": "VirtualHereServer",
+      "desc": "VirtualHere USB 服务端，支持通过网络远程访问 USB 设备。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-VirtualHereServer/ICON_256.PNG",
+      "maintainer": "VirtualHere Pty. Ltd.",
+      "maintainer_url": "https://www.virtualhere.com/usb_server_software",
+      "distributor": "VirtualHere Pty. Ltd.",
+      "distributor_url": "https://www.virtualhere.com",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "4.8.8": {
+          "changelog": "Initial release of fn-VirtualHereServer package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-VirtualHereServer_all_v4.8.8.fpk",
+              "sha256": "c9d5d1c620aad39c56455869f3ac2ee128328e9d9b3179b477bbbcdc6620465b",
+              "size": 3306617
+            }
+          }
+        }
+      }
+    },
+    "fn-wifi-hotspot": {
+      "display_name": "无线热点",
+      "desc": "无线热点创建工具，允许用户轻松地将计算机变成一个 Wi-Fi 热点，分享网络连接给其他设备。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-wifi-hotspot/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.1.9": {
+          "changelog": "Initial release of fn-wifi-hotspot package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-wifi-hotspot_all_v1.1.9.fpk",
+              "sha256": "cc95378d52914665c782bd47aa9ecac32c13aab6d5864be35120de8d97aa35a7",
+              "size": 124759
+            }
+          }
+        }
+      }
+    },
+    "fn-WParted": {
+      "display_name": "WParted",
+      "desc": "磁盘分区编辑器 - 创建、调整大小、删除、移动、复制、检查和格式化分区。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-WParted/ICON_256.PNG",
+      "maintainer": "Ing",
+      "maintainer_url": "https://github.com/RROrg",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.2": {
+          "changelog": "Initial release of fn-WParted package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-WParted_all_v1.0.2.fpk",
+              "sha256": "79bb95df2b8ad06a0680af4f31690e8b952a1e0823998ada9181e2c2ef16eddb",
+              "size": 89750
+            }
+          }
+        }
+      }
+    },
+    "fn-zerotier": {
+      "display_name": "ZeroTier",
+      "desc": "ZeroTier 是一个无中心的虚拟网络，无需配置即可连接设备。",
+      "platform": [
+        "all"
+      ],
+      "categories": [
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/RROrg/fn-apps/refs/heads/main/fn-zerotier/ICON_256.PNG",
+      "maintainer": "ZeroTier",
+      "maintainer_url": "https://www.zerotier.com",
+      "distributor": "RROrg",
+      "distributor_url": "https://github.com/RROrg/fn-apps",
+      "bug_report_url": "https://github.com/RROrg/fn-apps/issues",
+      "run_as": "root",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "",
+      "releases": {
+        "1.0.9": {
+          "changelog": "Initial release of fn-zerotier package.",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.03-1659/fn-zerotier_all_v1.0.9.fpk",
+              "sha256": "7da66a871ec72b8b3440162668951792cffd4173f6d628e1495fdfb379e124d7",
+              "size": 79540
+            }
+          }
+        }
+      }
+    }
   }
 }
