@@ -24,6 +24,7 @@ const state = {
   installedInfo: null,
   canUpdate: false,
   canOverwrite: false,
+  canUpgrade: null,
   installAction: "install",
   installed: false,
   packageType: "file",
@@ -71,6 +72,7 @@ const I18N = {
     errorTokenNotFound: "鉴权失败：未找到授权令牌，请从系统桌面打开此应用",
     errorNetwork: "网络请求失败",
     errorUnknown: "未知错误",
+    errorTimeout: "操作超时",
     loading: "加载中...",
     versionUnknown: "未知",
     sizeUnknown: "未知",
@@ -104,6 +106,19 @@ const I18N = {
     updateConfirmTitle: "发现新版本",
     updateConfirmDesc:
       "当前已安装 {installedVersion}，发现新版本 {newVersion}，是否更新？",
+    errLocalAppNotAllowUpdate:
+      "该应用不允许更新（可能受系统策略或应用类型限制）",
+    errLocalAppNotUpdate: "该应用没有可用更新",
+    cloudAppNotUpgradable:
+      "该应用为云端安装，不支持通过本地安装包升级，请通过应用商店升级",
+    errLocalAppAlreadyUpdating: "该应用正在更新中，请稍后再试",
+    errLocalAppUpdateException: "应用更新失败",
+    errUpgradeInitException: "升级初始化失败",
+    errUpgradeInitPermException: "升级初始化权限不足",
+    errInstallVolumeUnavailable: "安装卷不可用",
+    errInstallDataVolumeUnavailable: "数据卷不可用",
+    errLocalAppNotFound: "本地应用不存在",
+    errLocalAppNotUninstall: "该应用不允许卸载",
     about: "关于",
     aboutDeclaration:
       "本项目由社区维护，免费开源，仅用于学习与交流，请遵守所在地法律法规与平台服务条款。",
@@ -153,6 +168,7 @@ const I18N = {
       "Auth failed: authorization token not found, please open this app from system desktop",
     errorNetwork: "Network request failed",
     errorUnknown: "Unknown error",
+    errorTimeout: "Operation timed out",
     loading: "Loading...",
     versionUnknown: "Unknown",
     sizeUnknown: "Unknown",
@@ -186,6 +202,21 @@ const I18N = {
     updateConfirmTitle: "New Version Available",
     updateConfirmDesc:
       "Currently installed {installedVersion}, new version {newVersion} available. Update now?",
+    errLocalAppNotAllowUpdate:
+      "This app is not allowed to update (restricted by system policy or app type)",
+    errLocalAppNotUpdate: "No updates available for this app",
+    cloudAppNotUpgradable:
+      "This app is cloud-installed and cannot be upgraded via local package. Please upgrade through the App Store",
+    errLocalAppAlreadyUpdating:
+      "This app is already updating, please try again later",
+    errLocalAppUpdateException: "App update failed",
+    errUpgradeInitException: "Upgrade initialization failed",
+    errUpgradeInitPermException:
+      "Insufficient permission for upgrade initialization",
+    errInstallVolumeUnavailable: "Install volume unavailable",
+    errInstallDataVolumeUnavailable: "Data volume unavailable",
+    errLocalAppNotFound: "Local app not found",
+    errLocalAppNotUninstall: "This app is not allowed to uninstall",
     about: "About",
     aboutDeclaration:
       "This community-maintained open source project is free and open source, intended only for learning and communication. Please follow local laws and platform terms.",
@@ -318,7 +349,13 @@ async function appCenter(path, options = {}) {
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
   if (!response.ok) {
-    throw new Error(`app-center HTTP ${response.status}`);
+    let msg = `app-center HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      const text = acMessage(body) || (body && body.message) || "";
+      if (text) msg = text;
+    } catch (_) {}
+    throw new Error(msg);
   }
   return response.json();
 }
@@ -471,6 +508,11 @@ async function acInstallInfo(appName, version, packageType, isUpdate) {
     : `install/info?version=${encodeURIComponent(version)}&${base}`;
   return appCenter(url);
 }
+async function acUpdateInfo(appName, updateVersion, packageType) {
+  // 升级场景对齐官方前端：调用 update/info 而非 install/info
+  const url = `update/info?appName=${encodeURIComponent(appName)}&packageType=${encodeURIComponent(packageType)}&updateVersion=${encodeURIComponent(updateVersion)}&language=${state.language}`;
+  return appCenter(url);
+}
 async function acInstallTask(payload) {
   return appCenter("install/task", { method: "POST", body: payload });
 }
@@ -554,9 +596,8 @@ function normalizeTaskStatus(rawStatus) {
 function acMessage(result, data) {
   const msg =
     (data && (data.outputText || data.message || data.msg)) ||
-    result.outputText ||
-    result.message ||
-    result.msg ||
+    (result && result.data && (result.data.outputText || result.data.message || result.data.msg)) ||
+    (result && (result.outputText || result.message || result.msg)) ||
     "";
   return String(msg || "");
 }
@@ -580,6 +621,24 @@ function acThrowIfError(result) {
     throw err;
   }
   return result;
+}
+
+// app-center 业务错误码到 i18n key 的映射（基于 os.json ErrCode 枚举）
+const ERR_CODE_I18N_MAP = {
+  10300: "errLocalAppNotFound",
+  10370: "errLocalAppNotUpdate",
+  10371: "errLocalAppNotAllowUpdate",
+  10372: "errLocalAppUpdateException",
+  10373: "errUpgradeInitException",
+  10375: "errLocalAppAlreadyUpdating",
+  10376: "errUpgradeInitPermException",
+  10390: "errLocalAppNotUninstall",
+};
+
+// 根据错误码获取友好提示文本，未命中则返回空字符串
+function errCodeMessage(code) {
+  const key = ERR_CODE_I18N_MAP[Number(code) || 0];
+  return key ? t(key) : "";
 }
 
 function showToast(message, isError = false) {
@@ -965,6 +1024,28 @@ function pollDownloadStatus() {
           state.canUpdate = action === "update";
           state.canOverwrite = action === "overwrite";
           state.isUpdate = action === "update";
+
+          // download/status 返回的 canUpgrade 表示后端是否允许通过本地 fpk 升级。
+          // 若 canUpgrade=false（如云端安装的官方应用），后端不允许本地 fpk 升级，
+          // 官方前端对此场景直接拒绝。fn-installer 同样直接提示并终止流程。
+          const dsCanUpgrade = info.installedInfo?.canUpgrade;
+          state.canUpgrade = dsCanUpgrade;
+          if (state.isUpdate && dsCanUpgrade === false) {
+            if (state.polling) {
+              clearInterval(state.polling);
+              state.polling = null;
+            }
+            downloadProgressBar.classList.add("error");
+            downloadStatusText.textContent = t("cloudAppNotUpgradable");
+            showToast(t("cloudAppNotUpgradable"), true);
+            showStep(4);
+            document.getElementById("resultSuccess").classList.add("hidden");
+            document.getElementById("resultError").classList.remove("hidden");
+            document.getElementById("resultErrorDesc").textContent = t(
+              "cloudAppNotUpgradable",
+            );
+            return;
+          }
         } catch (_e) {
           state.installed = false;
           state.installedInfo = null;
@@ -1003,9 +1084,10 @@ function pollDownloadStatus() {
           // 更新/覆盖也走 loadInstallInfo 展示包信息，但安装向导会被跳过
           loadInstallInfo();
         } else {
+          const failMsg = acMessage(result) || status.value;
           downloadProgressBar.classList.add("error");
-          downloadStatusText.textContent = status.value;
-          showToast(`${t("installFailed")}: ${status.value}`, true);
+          downloadStatusText.textContent = failMsg;
+          showToast(`${t("installFailed")}: ${failMsg}`, true);
         }
         return;
       }
@@ -1014,8 +1096,9 @@ function pollDownloadStatus() {
       if (pollCount >= maxPolls) {
         clearInterval(state.polling);
         state.polling = null;
-        downloadStatusText.textContent = t("errorUnknown");
+        downloadStatusText.textContent = t("errorTimeout");
         downloadProgressBar.classList.add("error");
+        showToast(t("errorTimeout"), true);
       }
     } catch (error) {
       pollCount++;
@@ -1066,6 +1149,12 @@ async function loadInstallInfo() {
           canUpdate = action === "update";
           canOverwrite = action === "overwrite";
           state.isUpdate = action === "update";
+
+          // canUpgrade=false 时已在 checkStatus 中拦截并提示，此处不应到达。
+          // 保留防御性检查：若 canUpgrade=false 则直接抛错终止。
+          if (state.isUpdate && state.canUpgrade === false) {
+            throw new Error(t("cloudAppNotUpgradable"));
+          }
         }
       } catch (_e) {}
 
@@ -1079,17 +1168,58 @@ async function loadInstallInfo() {
           ? "overwrite"
           : "install";
 
-      // 本地 fpk 安装，packageType 用下载登记返回的真实值（root 应用非 file）。
+      // 本地 fpk 安装，packageType 用 download/status 返回的真实值，默认 "file"（对齐官方前端）。
       // 用 acThrowIfError 把 10100 等业务错误码抛成异常，走下方 retry 重试。
+      // 升级场景优先调用 update/info（对齐官方前端），失败时回退 install/info。
       const packageType = state.packageType || "file";
-      const result = acThrowIfError(
-        await acInstallInfo(
-          state.appName,
-          state.version,
-          packageType,
-          state.isUpdate,
-        ),
-      );
+      let result;
+      try {
+        if (state.isUpdate) {
+          // 正常升级路径：调用 update/info
+          result = acThrowIfError(
+            await acUpdateInfo(state.appName, state.version, packageType),
+          );
+        } else {
+          result = acThrowIfError(
+            await acInstallInfo(
+              state.appName,
+              state.version,
+              packageType,
+              state.isUpdate,
+            ),
+          );
+        }
+      } catch (infoErr) {
+        const infoCode = acCode(infoErr);
+        // update/info 失败时回退到 install/info（兼容旧版后端）
+        if (state.isUpdate) {
+          result = acThrowIfError(
+            await acInstallInfo(
+              state.appName,
+              state.version,
+              packageType,
+              state.isUpdate,
+            ),
+          );
+        } else if (
+          infoCode === 10236 ||
+          /already installed|已安装/.test(infoErr.message || "")
+        ) {
+          // install/info 报 10236（已安装）：构造默认 result，继续安装流程。
+          // 对于覆盖安装/升级场景，不需要 wizard 信息，直接用 download/status 的数据。
+          result = {
+            data: {
+              wizardInfo: {
+                name: state.appName,
+                version: state.version,
+                installType: state.installType || "",
+              },
+            },
+          };
+        } else {
+          throw infoErr;
+        }
+      }
       state.installInfo = result;
 
       const info = result;
@@ -1226,11 +1356,18 @@ async function loadInstallInfo() {
     } catch (error) {
       lastError = error;
       const msg = error.message || "";
-      if (msg.includes("10100") || msg.includes("not ready")) {
+      const code = acCode(error);
+      // 10100(not ready) 可重试；其他业务错误码（如 10371）直接展示友好提示
+      if ((msg.includes("10100") || msg.includes("not ready")) && !code) {
         if (attempt < maxRetries - 1) {
           await new Promise((r) => setTimeout(r, 2000));
           continue;
         }
+      }
+      // 优先用错误码映射的友好提示
+      const friendly = errCodeMessage(code);
+      if (friendly) {
+        lastError = new Error(friendly);
       }
       break;
     }
@@ -1447,6 +1584,7 @@ function goToStep1() {
   state.installedInfo = null;
   state.canUpdate = false;
   state.canOverwrite = false;
+  state.canUpgrade = null;
   state.installAction = "install";
   state._updateConfirmed = false;
   const updateBanner = document.getElementById("updateBanner");
@@ -1495,10 +1633,6 @@ async function goToStep3() {
     // 系统空间(root)应用安装到系统分区，installVolumeID 必须为 0（对齐 fnOS 官方前端）。
     const isRoot = (state.installType || "").toLowerCase() === "root";
     const installVolume = isRoot ? 0 : state.volumeID;
-    const commonSysParams = {
-      installVolumeID: installVolume,
-      dataVolumeID: state.volumeID,
-    };
 
     const makeCustom = () => {
       if (state.wizardData && Object.keys(state.wizardData).length > 0) {
@@ -1510,20 +1644,27 @@ async function goToStep3() {
       return undefined;
     };
 
-    // 本地 fpk 安装，packageType 用下载登记返回的真实值（非固定 file）
+    // 对齐官方前端 update/task、install/task 请求体结构：
+    //   - immediateStart 放入 systemParameters 内（非顶层）
+    //   - dataVolumeId 小写 d（官方标准）
+    //   - agreedToProtocol 放入 systemParameters
+    //   - 不传冗余的 volumeID/installVolumeID/dataVolumeID 在顶层
+    //   - 不传非标准 INSTALL_VOLUME_ID
+    const systemParameters = {
+      agreedToProtocol: true,
+      installVolumeID: installVolume,
+      dataVolumeId: state.volumeID,
+      immediateStart: true,
+    };
+
+    // 本地 fpk 文件安装/升级，packageType 用 download/status 返回的真实值，默认 "file"（对齐官方前端）。
+    const packageType = state.packageType || "file";
+
     const installPayload = {
       appName: state.appName,
       version: state.version,
-      packageType: state.packageType || "file",
-      volumeID: state.volumeID,
-      installVolumeID: installVolume,
-      dataVolumeID: state.volumeID,
-      language,
-      immediateStart: true,
-      systemParameters: {
-        ...commonSysParams,
-        INSTALL_VOLUME_ID: String(installVolume),
-      },
+      packageType,
+      systemParameters: { ...systemParameters },
     };
     const custom = makeCustom();
     if (custom) {
@@ -1533,12 +1674,9 @@ async function goToStep3() {
 
     const updatePayload = {
       appName: state.appName,
-      packageType: state.packageType || "file",
-      version: state.version,
+      packageType,
       updateVersion: state.version,
-      language,
-      immediateStart: true,
-      systemParameters: commonSysParams,
+      systemParameters: { ...systemParameters },
     };
     if (custom) updatePayload.customParameters = custom;
 
@@ -1553,11 +1691,14 @@ async function goToStep3() {
       acThrowIfError(await acUpdateTask(updatePayload));
 
     let result = null;
+    let updateError = null;
     try {
       if (state.isUpdate) {
         try {
           result = await doUpdate();
-        } catch (_updateErr) {
+        } catch (updateErr) {
+          // 记下 update/task 的真实错误，供回退失败时透出，避免被误判为"已安装"。
+          updateError = updateErr;
           result = await doInstall(true);
         }
       } else {
@@ -1569,6 +1710,7 @@ async function goToStep3() {
             code === 10236 ||
             /already installed|已安装/.test(installErr.message || "")
           ) {
+            // 已安装：回退到 update/task 尝试更新
             result = await doUpdate();
           } else {
             throw installErr;
@@ -1578,8 +1720,16 @@ async function goToStep3() {
     } catch (error) {
       const code = acCode(error);
       const msg = error.message || "";
-      // 只有 update/task 与 install/task(upgrade) 都报"已安装"，才确为同版本无需重复安装。
-      if (code === 10236 || /already installed|已安装/.test(msg)) {
+      // 优先用错误码映射的友好提示
+      const friendly = errCodeMessage(code);
+      // 只有未检测到更高版本、且安装/升级任务一致报"已安装"，才确为同版本无需重复安装。
+      // 若已明确存在新版本（state.isUpdate），说明升级路径被系统拒绝，
+      // 应透出 update/task 的真实错误，而不是误报"应用已安装，无需重复安装"。
+      const trulyAlreadyInstalled =
+        !state.isUpdate &&
+        !state.canOverwrite &&
+        (code === 10236 || /already installed|已安装/.test(msg));
+      if (trulyAlreadyInstalled) {
         installProgressBar.classList.add("success");
         installProgressBar.style.width = "100%";
         installStatusText.textContent = t("alreadyInstalled");
@@ -1590,10 +1740,14 @@ async function goToStep3() {
           t("alreadyInstalled");
         return;
       }
-      installStatusText.textContent = msg;
+      // 更新场景优先透出 update/task 的真实错误，便于定位升级被拒原因。
+      const shown =
+        friendly ||
+        (state.isUpdate && updateError ? updateError.message || msg : msg);
+      installStatusText.textContent = shown;
       installProgressBar.classList.add("error");
       installProgressBar.style.width = "100%";
-      showToast(msg, true);
+      showToast(shown, true);
       return;
     }
 
@@ -1672,15 +1826,17 @@ function pollInstallStatus() {
           installProgressBar.classList.add("error");
           installProgressBar.style.width = "100%";
           const message = acMessage(result) || st.value;
-          installStatusText.textContent = state.canOverwrite
+          const failTitle = state.canOverwrite
             ? t("overwriteFailed")
             : state.isUpdate
               ? t("updateFailed")
               : t("installFailed");
+          installStatusText.textContent = failTitle;
           showStep(4);
           document.getElementById("resultSuccess").classList.add("hidden");
           document.getElementById("resultError").classList.remove("hidden");
           document.getElementById("resultErrorDesc").textContent = message;
+          showToast(`${failTitle}: ${message}`, true);
         }
         return;
       }
@@ -1689,8 +1845,9 @@ function pollInstallStatus() {
       if (pollCount >= maxPolls) {
         clearInterval(state.polling);
         state.polling = null;
-        installStatusText.textContent = t("errorUnknown");
+        installStatusText.textContent = t("errorTimeout");
         installProgressBar.classList.add("error");
+        showToast(t("errorTimeout"), true);
       }
     } catch (error) {
       pollCount++;
@@ -1707,6 +1864,7 @@ function pollInstallStatus() {
         document.getElementById("resultSuccess").classList.add("hidden");
         document.getElementById("resultError").classList.remove("hidden");
         document.getElementById("resultErrorDesc").textContent = error.message;
+        showToast(error.message, true);
       }
     }
   };
@@ -1733,6 +1891,7 @@ function resetWizard() {
   state.installedInfo = null;
   state.canUpdate = false;
   state.canOverwrite = false;
+  state.canUpgrade = null;
   state.installAction = "install";
   state._updateConfirmed = false;
   state._files = [];
