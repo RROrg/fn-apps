@@ -610,20 +610,42 @@ def rewrite_location(handler, mapping, value):
         return value
     parsed = urlsplit(value)
     origin = upstream_origin(mapping)
+    prefix = local_prefix(handler, mapping)
     if parsed.scheme and parsed.netloc:
         target_origin = f"{parsed.scheme}://{parsed.netloc}"
         if target_origin == origin:
             path = parsed.path or "/"
+            # 避免对已含 prefix 的路径重复添加前缀
+            path = strip_leading_prefix(path, prefix)
             return (
-                local_prefix(handler, mapping)
+                prefix
                 + path
                 + (("?" + parsed.query) if parsed.query else "")
                 + (("#" + parsed.fragment) if parsed.fragment else "")
             )
         return value
     if value.startswith("/"):
-        return local_prefix(handler, mapping) + value
+        # 避免对已含 prefix 的路径重复添加前缀
+        path = strip_leading_prefix(value, prefix)
+        return prefix + path
     return value
+
+
+def strip_leading_prefix(path, prefix):
+    """如果 path 已以 prefix 开头，则去除 prefix 前缀，避免重复拼接。
+
+    例如 prefix=/app/fn-p2s/bb:
+      /app/fn-p2s/bb/login -> /login
+      /app/fn-p2s/bb/ -> /
+      /login -> /login
+    """
+    if not path or not prefix:
+        return path
+    if path == prefix:
+        return "/"
+    if path.startswith(prefix + "/"):
+        return path[len(prefix):]
+    return path
 
 
 def rewrite_refresh(handler, mapping, value):
@@ -925,7 +947,7 @@ def proxy_bootstrap(handler, mapping, include_base=True):
         'if(t==="_top"||t==="_parent"){f.setAttribute("target","_self");if(f.getAttribute("action"))f.setAttribute("action",localUrl(f.getAttribute("action")));}},true);'
         'Array.prototype.forEach.call(document.querySelectorAll("*"),fixEl);'
         'if(window.MutationObserver){new MutationObserver(function(ms){ms.forEach(function(m){Array.prototype.forEach.call(m.addedNodes,function(n){fixEl(n);if(n.querySelectorAll)Array.prototype.forEach.call(n.querySelectorAll("*"),fixEl);});});}).observe(document.documentElement,{childList:true,subtree:true});}'
-        "if('serviceWorker' in navigator){navigator.serviceWorker.register(rootPath+'/sw.js',{scope:root}).catch(function(){});}"
+        "if('serviceWorker' in navigator&&window.top===window.self){try{navigator.serviceWorker.register(rootPath+'/sw.js',{scope:root}).catch(function(){});}catch(e){}}"
         "})();</script>"
     ) % (base, root)
 
