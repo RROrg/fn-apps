@@ -4,7 +4,9 @@ import re
 import sys
 import stat
 import json
+import time
 import shutil
+import hashlib
 import argparse
 import subprocess
 import urllib.request
@@ -72,11 +74,11 @@ def parse_i18n(path):
 VAR_RE = re.compile(r"\$\{([A-Za-z0-9_.-]+)\.([A-Za-z0-9_.-]+)\}")
 
 
-def resolve_manifest_value(app_dir, key, *, lang="zh"):
-    app_dir = Path(app_dir)
-    manifest = parse_key_value_file(app_dir / "manifest")
+def resolve_manifest_value(appdir, key, *, lang="zh"):
+    appdir = Path(appdir)
+    manifest = parse_key_value_file(appdir / "manifest")
     value = manifest.get(key, "")
-    i18n = parse_i18n(app_dir / "i18n" / lang)
+    i18n = parse_i18n(appdir / "i18n" / lang)
 
     def replace_var(match):
         ref = f"{match.group(1)}.{match.group(2)}"
@@ -127,55 +129,48 @@ def discover_apps(root, names):
     return apps
 
 
-def app_build_script(app_dir):
-    if (app_dir / "build.py").is_file():
-        return [sys.executable, str(app_dir / "build.py")]
-    if is_windows() and (app_dir / "build.ps1").is_file():
+def app_build_script(appdir):
+    if (appdir / "build.py").is_file():
+        return [sys.executable, str(appdir / "build.py")]
+    if is_windows() and (appdir / "build.ps1").is_file():
         return [
             "powershell",
             "-NoProfile",
             "-ExecutionPolicy",
             "Bypass",
             "-File",
-            str(app_dir / "build.ps1"),
+            str(appdir / "build.ps1"),
         ]
-    if not is_windows() and (app_dir / "build.sh").is_file():
-        return ["bash", str(app_dir / "build.sh")]
+    if not is_windows() and (appdir / "build.sh").is_file():
+        return ["bash", str(appdir / "build.sh")]
     return None
 
 
-def package_name(app_dir):
-    app_name = resolve_manifest_value(app_dir, "appname")
-    version = resolve_manifest_value(app_dir, "version")
-    target_platform = (
-        resolve_manifest_value(app_dir, "platform")
-        or resolve_manifest_value(app_dir, "arch")
-        or "all"
-    )
-    return app_name, version, target_platform
+def build_app(root, fnpack, appdir):
+    appname = resolve_manifest_value(appdir, "appname")
+    version = resolve_manifest_value(appdir, "version")
+    platform = resolve_manifest_value(appdir, "platform") or "all"
+    print(f"Building {appdir.name} ...", flush=True)
 
-
-def build_app(root, fnpack, app_dir):
-    app_name, version, target_platform = package_name(app_dir)
-    print(f"Building {app_dir.name} ...", flush=True)
-
-    web_app_js = app_dir / "app/www/web-app.js"
+    web_app_js = appdir / "app/www/web-app.js"
     if web_app_js.is_file():
         print(f"Downloading {WEB_APP_JS_URL}", flush=True)
         urllib.request.urlretrieve(WEB_APP_JS_URL, web_app_js)
 
-    script = app_build_script(app_dir)
+    script = app_build_script(appdir)
     if script:
         before = {path.resolve() for path in root.glob("*.fpk")}
         run(script, cwd=root)
-        app_name, version, target_platform = package_name(app_dir)
-        target = root / f"{app_name}_{target_platform}_v{version}.fpk"
+        appname = resolve_manifest_value(appdir, "appname")
+        version = resolve_manifest_value(appdir, "version")
+        platform = resolve_manifest_value(appdir, "platform") or "all"
+        target = root / f"{appname}_{platform}_v{version}.fpk"
         if target.is_file():
             return target
         created = sorted(
             [
                 path
-                for path in root.glob(f"{app_name}_*_v*.fpk")
+                for path in root.glob(f"{appname}_*_v*.fpk")
                 if path.resolve() not in before
             ],
             key=lambda path: path.stat().st_mtime,
@@ -184,10 +179,10 @@ def build_app(root, fnpack, app_dir):
         if created:
             return created[0]
     else:
-        run([fnpack, "build", "--directory", app_dir], cwd=root)
+        run([fnpack, "build", "--directory", appdir], cwd=root)
 
-    source = root / f"{app_name}.fpk"
-    target = root / f"{app_name}_{target_platform}_v{version}.fpk"
+    source = root / f"{appname}.fpk"
+    target = root / f"{appname}_{platform}_v{version}.fpk"
     if source.is_file():
         if target.exists():
             target.unlink()
@@ -198,56 +193,135 @@ def build_app(root, fnpack, app_dir):
 
 
 def package_size(path):
-    return f"{path.stat().st_size / 1024 / 1024:.3f}"
+    return int(path.stat().st_size)
 
 
-def app_metadata(root, app_dir, package_path, repo, tag):
-    app_name, version, target_platform = package_name(app_dir)
-    desc = resolve_manifest_value(app_dir, "desc")
-    display_name = resolve_manifest_value(app_dir, "display_name")
-    install_type = resolve_manifest_value(app_dir, "install_type")
-    distributor = resolve_manifest_value(app_dir, "distributor")
-    distributor_url = resolve_manifest_value(app_dir, "distributor_url")
-    storage_label = "系统空间" if install_type == "root" else "存储空间"
-    docker_string = (
-        "true" if (app_dir / "app/docker/docker-compose.yaml").exists() else "false"
-    )
+def package_sha256(path):
+    sha = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            sha.update(chunk)
+    return sha.hexdigest()
+
+
+# FnDepot V2 允许的固定分类，不能自行创造分类名称
+V2_CATEGORIES = {
+    "影音娱乐",
+    "系统工具",
+    "编程开发",
+    "AI赋能",
+    "生活服务",
+    "智能智控",
+    "教育学习",
+    "游戏地带",
+    "硬件驱动",
+}
+
+
+def app_metadata(root, appdir, package_path, repo, tag):
+    appname = resolve_manifest_value(appdir, "appname")
+    version = resolve_manifest_value(appdir, "version")
+    platform = resolve_manifest_value(appdir, "platform") or "all"
+    desc = resolve_manifest_value(appdir, "desc")
+    display_name = resolve_manifest_value(appdir, "display_name")
+    distributor = resolve_manifest_value(appdir, "distributor") or ""
+    distributor_url = resolve_manifest_value(appdir, "distributor_url") or ""
+    maintainer = resolve_manifest_value(appdir, "maintainer") or ""
+    maintainer_url = resolve_manifest_value(appdir, "maintainer_url") or ""
+    install_type = resolve_manifest_value(appdir, "install_type") or ""
+    service_port = resolve_manifest_value(appdir, "service_port") or ""
+
+    is_docker = (appdir / "app/docker/docker-compose.yaml").is_file()
     repo = repo or "RROrg/fn-apps"
     tag = tag or "local"
-    return {
+
+    # run_as 从 config/privilege 读取，只允许 package/root；install_type 空串表示存储空间，root 表示系统空间
+    try:
+        runs_as = (
+            json.loads((appdir / "config/privilege").read_text(encoding="utf-8"))
+            .get("defaults", {})
+            .get("run-as", "package")
+        )
+        runs_as = runs_as if runs_as in ("package", "root") else "package"
+    except Exception:
+        runs_as = "package"
+
+    # 优先使用 manifest 的 category，否则回退到固定的“系统工具”
+    category = (
+        resolve_manifest_value(appdir, "category")
+        if resolve_manifest_value(appdir, "category") in V2_CATEGORIES
+        else "系统工具"
+    )
+
+    app_node = {
+        "appname": appname,
         "display_name": display_name,
-        "platform": target_platform,
-        "version": version,
         "desc": desc,
-        "icon": f"https://raw.githubusercontent.com/{repo}/refs/heads/main/{app_dir.name}/ICON_256.PNG",
-        "distributor": distributor,
-        "distributor_url": distributor_url,
+        "platform": [platform],
+        "categories": [category],
+        "icon_url": (
+            f"https://raw.githubusercontent.com/{repo}/refs/heads/main/{appdir.name}/ICON_256.PNG"
+        ),
+        "maintainer": maintainer or None,
+        "maintainer_url": maintainer_url or None,
+        "distributor": distributor or None,
+        "distributor_url": distributor_url or None,
         "bug_report_url": f"https://github.com/{repo}/issues",
-        "labels": "工具",
-        "size": package_size(package_path),
-        "download_url": f"https://github.com/{repo}/releases/download/{tag}/{package_path.name}",
-        "install_type": storage_label,
-        "isdocker": docker_string,
-        "changelog": f"Initial release of {app_name} package.",
+        "run_as": runs_as,
+        "install_type": install_type,
+        "is_docker": is_docker,
+        "service_port": service_port,
+        "releases": {
+            version: {
+                "changelog": f"Initial release of {appname} package.",
+                "packages": {
+                    platform: {
+                        "download_url": (
+                            f"https://github.com/{repo}/releases/download/{tag}/{package_path.name}"
+                        ),
+                        "sha256": package_sha256(package_path),
+                        "size": package_size(package_path),
+                    }
+                },
+            }
+        },
     }
+    return app_node
 
 
 def write_metadata(root, rows, repo, tag):
+    repo = repo or "RROrg/fn-apps"
+    tag = tag or "local"
+
     apps_list = root / "apps-list.md"
     lines = [
         "| 应用名称 | 显示名称 | 版本 | 平台 | 描述 |",
         "|---------|---------|------|------|------|",
     ]
-    for row in rows:
-        meta = row["meta"]
+    for node in rows:
         lines.append(
-            f"| {row['app_name']} | {meta['display_name']} | v{meta['version']} | {meta['platform']} | {meta['desc']} |"
+            f"| {node['appname']} | {node['display_name']} | v{next(iter(node["releases"]))} | {node['platform'][0]} | {node['desc']} |"
         )
     lines.append("")
     lines.append(f"![](https://img.shields.io/github/downloads/{repo}/{tag}/total)")
     apps_list.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    fnpack = {row["app_dir"].name: row["meta"] for row in rows}
+    # FnDepot V2: apps 必须是对象，键名为 appname，节点内不再包含 appname
+    apps = {}
+    for node in rows:
+        appname = node["appname"]
+        apps[appname] = {key: value for key, value in node.items() if key != "appname"}
+
+    fnpack = {
+        "schema_version": "2",
+        "source_info": {
+            "name": "RROrg",
+            "author": "Ing",
+            "homepage": f"https://github.com/{repo}",
+            "description": "RROrg 的 fnOS 第三方应用源",
+        },
+        "apps": apps,
+    }
     (root / "fnpack.json").write_text(
         json.dumps(fnpack, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -262,7 +336,9 @@ def main():
     parser.add_argument(
         "--repo", default=os.environ.get("GITHUB_REPOSITORY", "RROrg/fn-apps")
     )
-    parser.add_argument("--tag", default=os.environ.get("TAG", "local"))
+    parser.add_argument(
+        "--tag", default=os.environ.get("TAG", "local"), help="Tag for Releases"
+    )
     parser.add_argument(
         "--metadata", action="store_true", help="Write apps-list.md and fnpack.json"
     )
@@ -276,19 +352,10 @@ def main():
         fnpack = download_fnpack(root)
 
     rows = []
-    for app_dir in discover_apps(root, args.apps):
-        package_path = build_app(root, fnpack, app_dir)
-        app_name, _version, _platform = package_name(app_dir)
+    for appdir in discover_apps(root, args.apps):
+        package_path = build_app(root, fnpack, appdir)
         if args.metadata:
-            rows.append(
-                {
-                    "app_dir": app_dir,
-                    "app_name": app_name,
-                    "meta": app_metadata(
-                        root, app_dir, package_path, args.repo, args.tag
-                    ),
-                }
-            )
+            rows.append(app_metadata(root, appdir, package_path, args.repo, args.tag))
 
     if args.metadata:
         write_metadata(root, rows, args.repo, args.tag)
