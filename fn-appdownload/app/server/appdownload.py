@@ -73,6 +73,189 @@ GITHUB_DOMAINS = (
     "https://github-releases.githubusercontent.com/",
 )
 
+# V2 规范相关常量
+V2_SCHEMA_VERSION = "2"
+V2_ALLOWED_PLATFORMS = ("all", "x86", "arm")
+V2_ALLOWED_ARCH_KEYS = ("all", "x86", "arm")
+V2_FIXED_CATEGORIES = (
+    "影音娱乐",
+    "系统工具",
+    "编程开发",
+    "AI赋能",
+    "生活服务",
+    "智能智控",
+    "教育学习",
+    "游戏地带",
+    "硬件驱动",
+)
+
+
+def _detect_arch():
+    """检测当前设备架构，返回 'x86' 或 'arm'。"""
+    machine = (os.uname().machine if hasattr(os, "uname") else "").lower()
+    if machine.startswith(("arm", "aarch")):
+        return "arm"
+    return "x86"
+
+
+def _resolve_relative_url(url, base_url):
+    """将相对 URL 相对于 base_url 解析为绝对 URL。"""
+    if not url:
+        return ""
+    if not isinstance(url, str):
+        return ""
+    if url.startswith(("http://", "https://")):
+        return url
+    if not base_url:
+        return url
+    return urllib.parse.urljoin(base_url, url)
+
+
+def _i18n_pick(obj, field_names, locale, base_obj=None):
+    """按 V2 i18n 回退顺序取值。
+
+    回退顺序：精确 locale -> 同语系 -> en-US -> zh-CN -> 基础字段
+    """
+    if not isinstance(obj, dict):
+        return ""
+
+    def locale_fallbacks(loc):
+        loc = (loc or "").strip()
+        if not loc:
+            return ["en-US", "zh-CN"]
+        candidates = [loc]
+        # 同语系回退
+        if loc.startswith("zh-"):
+            candidates.append("zh-CN")
+        elif loc.startswith("en-"):
+            candidates.append("en-US")
+        # 通用回退
+        for fallback in ("en-US", "zh-CN"):
+            if fallback not in candidates:
+                candidates.append(fallback)
+        return candidates
+
+    i18n = obj.get("i18n")
+    if isinstance(i18n, dict):
+        for candidate in locale_fallbacks(locale):
+            entry = i18n.get(candidate)
+            if isinstance(entry, dict):
+                for name in field_names:
+                    value = entry.get(name)
+                    if value not in (None, ""):
+                        return value
+    # 基础字段回退
+    if isinstance(base_obj, dict):
+        for name in field_names:
+            value = base_obj.get(name)
+            if value not in (None, ""):
+                return value
+    else:
+        for name in field_names:
+            value = obj.get(name)
+            if value not in (None, ""):
+                return value
+    return ""
+
+
+def _normalize_platform(platform):
+    """规范化 platform 字段为列表。"""
+    if isinstance(platform, str):
+        return [platform] if platform else []
+    if isinstance(platform, list):
+        return [str(p) for p in platform if isinstance(p, str)]
+    return []
+
+
+def _is_valid_sha256(value):
+    """检查 sha256 格式是否合法。"""
+    if not isinstance(value, str):
+        return False
+    return bool(re.fullmatch(r"[0-9a-fA-F]{64}", value))
+
+
+def _select_package(packages, arch):
+    """按 V2 规范选择安装包：优先当前架构，回退到 all。
+
+    返回 (arch_key, package_dict) 或 (None, None)。
+    """
+    if not isinstance(packages, dict):
+        return None, None
+    # 优先当前架构
+    pkg = packages.get(arch)
+    if isinstance(pkg, dict) and pkg.get("download_url"):
+        return arch, pkg
+    # 回退到 all
+    pkg = packages.get("all")
+    if isinstance(pkg, dict) and pkg.get("download_url"):
+        return "all", pkg
+    return None, None
+
+
+def _merge_package_fields(app_node, release_node, package_all, package_arch):
+    """按 V2 规范合并字段：应用级 -> 版本级 -> packages.all -> packages.[arch]。"""
+    merged = {}
+    # 应用级
+    if isinstance(app_node, dict):
+        for key in (
+            "run_as",
+            "install_type",
+            "is_docker",
+            "service_port",
+            "os_min_version",
+            "os_max_version",
+        ):
+            if app_node.get(key) is not None:
+                merged[key] = app_node.get(key)
+    # 版本级
+    if isinstance(release_node, dict):
+        for key in (
+            "run_as",
+            "install_type",
+            "is_docker",
+            "service_port",
+            "os_min_version",
+            "os_max_version",
+            "changelog",
+            "updated_at",
+        ):
+            if release_node.get(key) is not None:
+                merged[key] = release_node.get(key)
+    # packages.all
+    if isinstance(package_all, dict):
+        for key in (
+            "run_as",
+            "install_type",
+            "is_docker",
+            "service_port",
+            "os_min_version",
+            "os_max_version",
+            "changelog",
+            "updated_at",
+            "sha256",
+            "size",
+        ):
+            if package_all.get(key) is not None:
+                merged[key] = package_all.get(key)
+    # packages.[arch]（最后覆盖）
+    if isinstance(package_arch, dict):
+        for key in (
+            "run_as",
+            "install_type",
+            "is_docker",
+            "service_port",
+            "os_min_version",
+            "os_max_version",
+            "changelog",
+            "updated_at",
+            "sha256",
+            "size",
+            "download_url",
+        ):
+            if package_arch.get(key) is not None:
+                merged[key] = package_arch.get(key)
+    return merged
+
 
 def apply_github_proxy(url, settings=None):
     if not url or not isinstance(url, str):
@@ -864,32 +1047,445 @@ def _source_base_url(source_url):
     return base
 
 
-def normalize_third_party_item(app_id, item, source_name, source_url="", settings=None):
+def _runtime_locale():
+    """获取运行时语言，优先 TRIM_SYS_LANGUAGE 环境变量。"""
+    return _env("TRIM_SYS_LANGUAGE", "zh-CN")
+
+
+def _is_v2_source(data):
+    """检测数据是否为 V2 格式。"""
+    return (
+        isinstance(data, dict)
+        and str(data.get("schema_version", "")).strip() == V2_SCHEMA_VERSION
+    )
+
+
+def _load_details_json(details_url, source_url):
+    """加载 details_url 拆分模式的详情 JSON。"""
+    absolute_url = _resolve_relative_url(details_url, source_url)
+    return load_source_json(absolute_url), absolute_url
+
+
+def _select_highest_version(releases, arch, os_version=""):
+    """从 releases 中选择当前架构可用的最高版本。
+
+    返回 (version_str, release_node) 或 (None, None)。
+    """
+    if not isinstance(releases, dict) or not releases:
+        return None, None
+    candidates = []
+    for version, release_node in releases.items():
+        if not isinstance(release_node, dict):
+            continue
+        packages = release_node.get("packages")
+        if not isinstance(packages, dict):
+            continue
+        # 检查架构可用性
+        arch_key, _ = _select_package(packages, arch)
+        if arch_key is None:
+            continue
+        # 检查系统版本范围（os_min_version / os_max_version）
+        if os_version:
+            os_min = str(release_node.get("os_min_version") or "").strip()
+            os_max = str(release_node.get("os_max_version") or "").strip()
+            if os_min and compare_versions(os_version, os_min) < 0:
+                continue
+            if os_max and compare_versions(os_version, os_max) > 0:
+                continue
+        candidates.append((version, release_node))
+    if not candidates:
+        return None, None
+    # 按版本号排序，选择最高版本
+    candidates.sort(key=lambda item: version_sort_key(item[0]))
+    return candidates[-1]
+
+
+def normalize_v2_app_item(
+    app_id,
+    app_node,
+    source_name,
+    source_url="",
+    settings=None,
+    locale="",
+    arch=None,
+):
+    """将 V2 应用节点规范化为内部应用对象。
+
+    支持单文件模式和 details_url 拆分模式。
+    返回 (app_dict, error_message)。成功时 error_message 为 None。
+    """
     if settings is None:
         settings = read_settings()
-    version = str(pick(item, ("version", "versionName"), ""))
+    if not isinstance(app_node, dict):
+        return None, "app node is not a dict"
+    if arch is None:
+        arch = _detect_arch()
+    if not locale:
+        locale = _runtime_locale()
+
+    # 处理 details_url 拆分模式
+    details_url = str(app_node.get("details_url") or "").strip()
+    if details_url:
+        try:
+            details_data, details_base_url = _load_details_json(
+                details_url, source_url
+            )
+        except Exception as exc:
+            return None, f"details fetch failed: {exc}"
+        if not isinstance(details_data, dict):
+            return None, "details json is not a dict"
+        # 校验 app_name 一致性
+        details_app_name = str(details_data.get("app_name") or "").strip()
+        if details_app_name and details_app_name != app_id:
+            return None, f"app_name mismatch: {details_app_name} != {app_id}"
+        # 合并：详情字段覆盖主索引同名字段
+        merged_node = {}
+        merged_node.update(app_node)
+        merged_node.update(details_data)
+        app_node = merged_node
+        # 详情文件中的相对 URL 相对于详情 JSON 所在地址解析
+        base_url_for_resources = details_base_url
+    else:
+        base_url_for_resources = source_url
+
+    # 提取必填字段（合并后）
+    display_name = _i18n_pick(
+        app_node, ("display_name", "displayName"), locale, base_obj=app_node
+    )
+    if not display_name:
+        display_name = str(
+            pick(app_node, ("display_name", "displayName", "name", "title"), app_id)
+        )
+    desc = _i18n_pick(app_node, ("desc", "description"), locale, base_obj=app_node)
+    if not desc:
+        desc = str(pick(app_node, ("desc", "description"), ""))
+    platform = _normalize_platform(app_node.get("platform"))
+    if not platform:
+        # V1 兼容：没有 platform 时默认 x86
+        platform = ["x86"]
+    # 校验 platform 值
+    invalid_platforms = [p for p in platform if p not in V2_ALLOWED_PLATFORMS]
+    if invalid_platforms:
+        return None, f"invalid platform: {invalid_platforms}"
+    # 检查当前架构是否适用
+    if "all" not in platform and arch not in platform:
+        return None, f"platform {platform} not supported on {arch}"
+
+    categories = app_node.get("categories")
+    if not isinstance(categories, list) or not categories:
+        return None, "categories missing or not a list"
+    # 校验分类
+    invalid_categories = [c for c in categories if c not in V2_FIXED_CATEGORIES]
+    if invalid_categories:
+        return None, f"invalid categories: {invalid_categories}"
+
+    icon_url = str(app_node.get("icon_url") or app_node.get("icon") or "").strip()
+    icon_url = _resolve_relative_url(icon_url, base_url_for_resources)
+    icon_url = apply_github_proxy(icon_url, settings)
+
+    # 选择最高可用版本
+    releases = app_node.get("releases")
+    if not isinstance(releases, dict) or not releases:
+        return None, "releases missing or not a dict"
+
+    version, release_node = _select_highest_version(releases, arch)
+    if version is None:
+        return None, "no installable version for current arch"
+    packages = release_node.get("packages", {})
+    arch_key, package_node = _select_package(packages, arch)
+    if arch_key is None:
+        return None, "no valid package for current arch"
+    package_all = packages.get("all", {}) if isinstance(packages, dict) else {}
+
+    # 合并字段
+    merged = _merge_package_fields(
+        app_node, release_node, package_all, package_node
+    )
+
+    # 解析 download_url（必须存在于最终选中的分支中）
+    download_url = str(package_node.get("download_url") or "").strip()
+    if not download_url:
+        return None, "download_url missing in selected package"
+    download_url = _resolve_relative_url(download_url, base_url_for_resources)
+    download_url = apply_github_proxy(download_url, settings)
+
+    # sha256 校验
+    sha256 = str(merged.get("sha256") or "").strip()
+    if sha256 and not _is_valid_sha256(sha256):
+        # 哈希格式错误，跳过该版本
+        return None, f"invalid sha256 format: {sha256}"
+
+    # size 校验
+    size = merged.get("size")
+    if size is not None and (not isinstance(size, int) or size < 0):
+        return None, f"invalid size: {size}"
+
+    # 预览图
+    preview_urls = app_node.get("preview_urls") or []
+    if isinstance(preview_urls, list):
+        preview_urls = [
+            apply_github_proxy(
+                _resolve_relative_url(str(u), base_url_for_resources), settings
+            )
+            for u in preview_urls
+            if isinstance(u, str) and u
+        ][:8]
+    else:
+        preview_urls = []
+
+    # 其他可选字段
+    readme_url = str(app_node.get("readme_url") or "").strip()
+    if readme_url:
+        readme_url = _resolve_relative_url(readme_url, base_url_for_resources)
+        readme_url = apply_github_proxy(readme_url, settings)
+    bug_report_url = str(app_node.get("bug_report_url") or "").strip()
+    if bug_report_url:
+        bug_report_url = _resolve_relative_url(bug_report_url, base_url_for_resources)
+        bug_report_url = apply_github_proxy(bug_report_url, settings)
+
     download_path = download_path_for(app_id, version, settings)
-    icon_value = pick(item, ("icon", "icon_url", "iconUrl"), "")
-    download_url_value = pick(item, ("download_url", "downloadUrl", "url"), "")
-    base = _source_base_url(source_url)
-    if not icon_value and base and app_id:
-        icon_value = f"{base}/{app_id}/ICON.PNG"
-    if not download_url_value and base and app_id:
-        download_url_value = f"{base}/{app_id}/{app_id}.fpk"
-    icon_value = apply_github_proxy(icon_value, settings)
+    downloaded = download_path.exists()
+
+    # changelog i18n
+    changelog = _i18n_pick(
+        release_node, ("changelog",), locale, base_obj=release_node
+    )
+    if not changelog:
+        changelog = str(release_node.get("changelog") or "")
+
     return {
         "id": app_id,
         "store": "thirdparty",
-        "name": str(
-            pick(item, ("display_name", "displayName", "name", "title"), app_id)
-        ),
+        "name": str(display_name),
+        "version": version,
+        "icon": icon_url,
+        "source": source_name,
+        "downloadUrl": download_url,
+        "sha256": sha256,
+        "size": size if isinstance(size, int) else None,
+        "desc": desc,
+        "categories": categories,
+        "platform": platform,
+        "previewUrls": preview_urls,
+        "readmeUrl": readme_url,
+        "bugReportUrl": bug_report_url,
+        "maintainer": str(app_node.get("maintainer") or ""),
+        "maintainerUrl": str(app_node.get("maintainer_url") or ""),
+        "distributor": str(app_node.get("distributor") or ""),
+        "distributorUrl": str(app_node.get("distributor_url") or ""),
+        "runAs": str(merged.get("run_as") or ""),
+        "installType": str(merged.get("install_type") or ""),
+        "isDocker": bool(merged.get("is_docker")) if merged.get("is_docker") is not None else None,
+        "servicePort": str(merged.get("service_port") or ""),
+        "changelog": changelog,
+        "updatedAt": str(release_node.get("updated_at") or merged.get("updated_at") or ""),
+        "status": "downloaded" if downloaded else "",
+        "downloaded": downloaded,
+        "path": str(download_path) if downloaded else "",
+        "raw": app_node,
+    }, None
+
+
+def _normalize_platform_value(value):
+    """规范化 platform 字段为列表（V1 1.1.1 规范）。
+
+    - String: "all" 或 "x86" 等单值
+    - Array: ["all", "x86", "arm"]
+    - 缺失/空: 返回空列表，由调用方按旧版规则默认 x86
+    """
+    if isinstance(value, str) and value:
+        return [value]
+    if isinstance(value, list):
+        return [str(p) for p in value if isinstance(p, str) and p]
+    return []
+
+
+def _resolve_v1_download_url(app_id, item, arch, base_url):
+    """按 V1 1.1.1 规范解析 download_url，支持三级回退。
+
+    优先级：
+    1. 显式 download_url（arch_diff 覆盖后）
+    2. /{app_name}/{app_name}_{arch}.fpk
+    3. /{app_name}/{app_name}_all.fpk
+    4. /{app_name}/{app_name}.fpk（仅 platform 缺失时，旧版兼容）
+    """
+    download_url = str(
+        pick(item, ("download_url", "downloadUrl", "url"), "")
+    ).strip()
+    if download_url:
+        return download_url
+    if not base_url or not app_id:
+        return ""
+    # 架构专用包
+    arch_url = f"{base_url}/{app_id}/{app_id}_{arch}.fpk"
+    # 通用包 _all
+    all_url = f"{base_url}/{app_id}/{app_id}_all.fpk"
+    # 旧版兼容包（无 platform 时）
+    legacy_url = f"{base_url}/{app_id}/{app_id}.fpk"
+    # 返回所有候选，由调用方决定是否使用（此处返回首选 arch_url）
+    # 实际使用时客户端无法预判 URL 是否可访问，按规范优先级返回第一个非空
+    return arch_url
+
+
+def _v1_download_url_candidates(app_id, item, arch, base_url, has_platform):
+    """返回 download_url 候选列表，按优先级排序。"""
+    download_url = str(
+        pick(item, ("download_url", "downloadUrl", "url"), "")
+    ).strip()
+    candidates = []
+    if download_url:
+        candidates.append(download_url)
+    if base_url and app_id:
+        candidates.append(f"{base_url}/{app_id}/{app_id}_{arch}.fpk")
+        candidates.append(f"{base_url}/{app_id}/{app_id}_all.fpk")
+        # 仅 platform 缺失时回退到旧版命名
+        if not has_platform:
+            candidates.append(f"{base_url}/{app_id}/{app_id}.fpk")
+    return candidates
+
+
+def normalize_third_party_item(
+    app_id, item, source_name, source_url="", settings=None, arch=None
+):
+    """V1 1.1.1 规范：将扁平格式的第三方应用项规范化为内部应用对象。
+
+    实现完整规范：
+    - platform 字段检测和架构过滤（缺失默认 x86）
+    - arch_diff 架构差异覆盖（version/desc/size/download_url/changelog）
+    - download_url 三级回退（_{arch}.fpk → _all.fpk → .fpk）
+    - distributor/distributor_url 优先，author/author_url 兼容
+    - labels、install_type、isdocker、size、changelog、bug_report_url 等字段
+
+    返回 app_dict 或 None（架构不匹配或信息不全时）。
+    """
+    if settings is None:
+        settings = read_settings()
+    if not isinstance(item, dict):
+        return None
+    if arch is None:
+        arch = _detect_arch()
+
+    base = _source_base_url(source_url)
+
+    # 1. platform 字段检测
+    raw_platform = item.get("platform")
+    has_platform = raw_platform is not None and (
+        (isinstance(raw_platform, str) and raw_platform)
+        or (isinstance(raw_platform, list) and raw_platform)
+    )
+    platform = _normalize_platform_value(raw_platform)
+    if not platform:
+        # V1 兼容：没有 platform 时默认 x86
+        platform = ["x86"]
+
+    # 2. 架构过滤：检测当前架构是否适用
+    if "all" not in platform and arch not in platform:
+        return None
+
+    # 3. arch_diff 架构差异覆盖
+    arch_diff = item.get("arch_diff")
+    arch_overrides = {}
+    if isinstance(arch_diff, dict):
+        arch_overrides = arch_diff.get(arch, {}) or {}
+        if not isinstance(arch_overrides, dict):
+            arch_overrides = {}
+
+    # 合并字段：arch_diff[arch] 覆盖通用字段
+    # 支持覆盖的字段: version, desc, size, download_url, changelog
+    def merged_field(name, fallback_names=()):
+        """先查 arch_diff 覆盖，再查通用字段。"""
+        value = arch_overrides.get(name)
+        if value not in (None, ""):
+            return value
+        value = item.get(name)
+        if value not in (None, ""):
+            return value
+        for alt in fallback_names:
+            value = item.get(alt)
+            if value not in (None, ""):
+                return value
+        return ""
+
+    # 4. 提取字段
+    version = str(merged_field("version", ("versionName", "")))
+    if not version:
+        return None
+
+    display_name = str(
+        pick(item, ("display_name", "displayName", "name", "title"), app_id)
+    )
+    desc = str(merged_field("desc", ("description", "")))
+    labels = str(item.get("labels") or "")
+    changelog = str(merged_field("changelog", ("",)))
+
+    # distributor 优先，author 兼容
+    distributor = str(
+        pick(item, ("distributor", "author", "maintainer"), "")
+    )
+    distributor_url = str(
+        pick(item, ("distributor_url", "author_url", "maintainer_url"), "")
+    )
+    bug_report_url = str(item.get("bug_report_url") or "")
+    install_type = str(item.get("install_type") or "")
+    isdocker_raw = item.get("isdocker")
+    if isinstance(isdocker_raw, bool):
+        is_docker = isdocker_raw
+    else:
+        is_docker = str(isdocker_raw or "").strip().lower() == "true"
+    size_value = str(merged_field("size", ("",)))
+
+    # 5. 图标 URL
+    icon_value = str(pick(item, ("icon", "icon_url", "iconUrl"), ""))
+    if not icon_value and base and app_id:
+        icon_value = f"{base}/{app_id}/ICON.PNG"
+    icon_value = apply_github_proxy(icon_value, settings)
+
+    # 6. download_url 解析（含 arch_diff 覆盖和三级回退）
+    download_url_value = str(merged_field("download_url", ("downloadUrl", "url")))
+    if not download_url_value:
+        # 回退到目录拼接
+        candidates = _v1_download_url_candidates(
+            app_id, item, arch, base, has_platform
+        )
+        # 过滤掉已尝试的显式 URL，取回退候选
+        download_url_value = candidates[0] if candidates else ""
+    download_url_value = apply_github_proxy(download_url_value, settings)
+
+    if not download_url_value:
+        # 信息不全，不录入
+        return None
+
+    # 7. 预览图目录
+    preview_urls = []
+    if base and app_id:
+        # 预览图路径由前端按目录枚举，此处仅提供基础目录
+        pass
+
+    download_path = download_path_for(app_id, version, settings)
+    downloaded = download_path.exists()
+
+    return {
+        "id": app_id,
+        "store": "thirdparty",
+        "name": display_name,
         "version": version,
         "icon": icon_value,
         "source": source_name,
         "downloadUrl": download_url_value,
-        "status": "downloaded" if download_path.exists() else "",
-        "downloaded": download_path.exists(),
-        "path": str(download_path) if download_path.exists() else "",
+        "desc": desc,
+        "labels": labels,
+        "categories": [c.strip() for c in labels.split(",") if c.strip()] if labels else [],
+        "platform": platform,
+        "distributor": distributor,
+        "distributorUrl": distributor_url,
+        "bugReportUrl": bug_report_url,
+        "installType": install_type,
+        "isDocker": is_docker,
+        "size": size_value,
+        "changelog": changelog,
+        "status": "downloaded" if downloaded else "",
+        "downloaded": downloaded,
+        "path": str(download_path) if downloaded else "",
         "raw": item,
     }
 
@@ -959,6 +1555,8 @@ def third_party_apps(official_ids, settings=None):
     apps = []
     errors = []
     known_keys = set()
+    arch = _detect_arch()
+    locale = _runtime_locale()
     for source in settings.get("thirdPartySources", []):
         if not source.get("enabled", True):
             continue
@@ -968,19 +1566,84 @@ def third_party_apps(official_ids, settings=None):
         name = str(source.get("name") or url)
         try:
             data = load_source_json(url)
-            if isinstance(data, dict):
-                entries = data.items()
-            else:
-                entries = [(str(index), item) for index, item in enumerate(data or [])]
-            for app_id, item in entries:
-                if isinstance(item, dict):
-                    apps.append(
-                        normalize_third_party_item(
-                            str(app_id), item, name, source_url=url, settings=settings
-                        )
+            if _is_v2_source(data):
+                # V2 格式解析
+                source_info = data.get("source_info") or {}
+                # 源级 i18n 名称回退
+                source_display_name = _i18n_pick(
+                    source_info, ("name",), locale, base_obj=source_info
+                )
+                if not source_display_name:
+                    source_display_name = str(source_info.get("name") or name)
+                apps_node = data.get("apps")
+                if not isinstance(apps_node, dict):
+                    errors.append(
+                        {
+                            "source": name,
+                            "url": url,
+                            "message": "V2 source missing apps object",
+                        }
                     )
-                    version = str(pick(item, ("version", "versionName"), ""))
-                    known_keys.add(task_key("thirdparty", str(app_id), version))
+                    continue
+                for app_id, app_node in apps_node.items():
+                    if not isinstance(app_node, dict):
+                        continue
+                    try:
+                        app_obj, err = normalize_v2_app_item(
+                            str(app_id),
+                            app_node,
+                            source_display_name,
+                            source_url=url,
+                            settings=settings,
+                            locale=locale,
+                            arch=arch,
+                        )
+                        if err:
+                            # 应用级错误：跳过该应用，不影响其他应用
+                            errors.append(
+                                {
+                                    "source": name,
+                                    "url": url,
+                                    "message": f"{app_id}: {err}",
+                                }
+                            )
+                            continue
+                        apps.append(app_obj)
+                        known_keys.add(
+                            task_key("thirdparty", str(app_id), app_obj["version"])
+                        )
+                    except Exception as exc:
+                        errors.append(
+                            {
+                                "source": name,
+                                "url": url,
+                                "message": f"{app_id}: {exc}",
+                            }
+                        )
+            else:
+                # V1 兼容：扁平格式
+                if isinstance(data, dict):
+                    entries = data.items()
+                else:
+                    entries = [
+                        (str(index), item) for index, item in enumerate(data or [])
+                    ]
+                for app_id, item in entries:
+                    if isinstance(item, dict):
+                        normalized = normalize_third_party_item(
+                            str(app_id),
+                            item,
+                            name,
+                            source_url=url,
+                            settings=settings,
+                            arch=arch,
+                        )
+                        # 架构不匹配或信息不全时返回 None，跳过该应用
+                        if normalized is None:
+                            continue
+                        apps.append(normalized)
+                        version = normalized.get("version", "")
+                        known_keys.add(task_key("thirdparty", str(app_id), version))
         except Exception as exc:
             errors.append({"source": name, "url": url, "message": str(exc)})
     if official_ids is None:
@@ -1061,8 +1724,16 @@ def start_third_party_download(app):
         "updatedAt": int(time.time()),
     }
     save_tasks(tasks)
+    # V2 新增：传递 sha256 和 size 用于校验
+    expected_sha256 = str(app.get("sha256") or "").strip() or None
+    expected_size = app.get("size")
+    if expected_size is not None:
+        expected_size = int(expected_size) if isinstance(expected_size, (int, float)) else None
     worker = threading.Thread(
-        target=download_worker, args=(key, url, str(target)), daemon=True
+        target=download_worker,
+        args=(key, url, str(target)),
+        kwargs={"expected_sha256": expected_sha256, "expected_size": expected_size},
+        daemon=True,
     )
     worker.start()
     return tasks["tasks"][key]
@@ -1105,7 +1776,21 @@ def delete_download(app):
     return {"key": key, "path": str(target)}
 
 
-def download_worker(key, url, target):
+def _compute_sha256(path):
+    """计算文件的 SHA256 哈希值。"""
+    import hashlib
+
+    hasher = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(1024 * 256)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def download_worker(key, url, target, expected_sha256=None, expected_size=None):
     ensure_dirs()
     url = apply_github_proxy(url)
     Path(target).parent.mkdir(parents=True, exist_ok=True)
@@ -1120,6 +1805,20 @@ def download_worker(key, url, target):
                 if not chunk:
                     break
                 output.write(chunk)
+        # V2 新增：size 校验
+        if expected_size is not None and expected_size >= 0:
+            actual_size = os.path.getsize(tmp)
+            if actual_size != expected_size:
+                raise RuntimeError(
+                    f"size mismatch: expected {expected_size}, got {actual_size}"
+                )
+        # V2 新增：sha256 校验
+        if expected_sha256:
+            actual_sha256 = _compute_sha256(tmp)
+            if actual_sha256.lower() != expected_sha256.lower():
+                raise RuntimeError(
+                    f"sha256 mismatch: expected {expected_sha256}, got {actual_sha256}"
+                )
         os.replace(tmp, target)
         update_task(key, status="downloaded", path=target, fileExists=True, error="")
         finalize_download_file(target)
