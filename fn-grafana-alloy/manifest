@@ -1,12 +1,13 @@
 appname               = fn-grafana-alloy
-version               = 1.17.0
+version               = 1.19.2
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all
 source                = thirdparty
-maintainer            = Grafana Labs
-distributor           = RROrg
-distributor_url       = https://github.com/RROrg/fn-apps
 desktop_uidir         = ui
 desktop_applaunchname = fn-grafana-alloy.main
+maintainer            = Grafana Labs
+maintainer_url        = https://github.com/grafana/alloy
+distributor           = RROrg
+distributor_url       = https://github.com/RROrg/fn-apps
 ctl_stop              = true
