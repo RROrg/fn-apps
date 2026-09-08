@@ -4,7 +4,7 @@
       "title": "${entry.title}",
       "icon": "images/icon_{0}.png",
       "type": "iframe",
-      "url": "/app/fn-chromium-desktop/vnc.html",
+      "url": "/app/fn-chromium-desktop/vnc.html?autoconnect=true",
       "gatewaySocket": "fn-chromium-desktop.sock",
       "gatewayPrefix": "/app/fn-chromium-desktop",
       "allUsers": false,
