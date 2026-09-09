@@ -210,6 +210,11 @@
     "enabled": false
   },
   {
+    "name": "tzi-shue/FnDepot-1",
+    "url": "https://raw.githubusercontent.com/tzi-shue/FnDepot-1/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
     "name": "upchr/FnDepot",
     "url": "https://raw.githubusercontent.com/upchr/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
