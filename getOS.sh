@@ -26,13 +26,13 @@ fnos() {
       if [ "${ARCH}" == "x86_64" ]; then
         NAME="fnOS-${ARCH}"
         VER="$(echo "${data}" | jq -r '.version')"
-        if [ "${VER}" == "null" ]; then
-          VER="$(echo "${BASE}" | sed -n 's/.*_\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')"
-        fi
       fi
       if [ "${ARCH}" == "aarch64" ]; then
         NAME="$(echo "${data}" | jq -r '.name')"
         VER="$(echo "${BASE}" | awk -F'/' '{print $6}')"
+      fi
+      if ! echo "${VER}" | grep -q "[0-9]\+\.[0-9]\+\.[0-9]\+"; then
+        VER="$(echo "${NAME}" | sed -n 's/.*_\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')"
       fi
       if [ -z "${NAME}" ] || [ -z "${VER}" ]; then
         continue
@@ -78,9 +78,9 @@ fygonas() {
       if [ "${ARCH}" == "aarch64" ]; then
         NAME="$(echo "${data}" | jq -r '.name')"
         VER="$(echo "${BASE}" | awk -F'/' '{print $6}')"
-        if [ "armsr" = "${VER}" ]; then
-          VER="$(echo "${NAME}" | sed -n 's/.*_\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')"
-        fi
+      fi
+      if ! echo "${VER}" | grep -q "[0-9]\+\.[0-9]\+\.[0-9]\+"; then
+        VER="$(echo "${NAME}" | sed -n 's/.*_\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')"
       fi
       if [ -z "${NAME}" ] || [ -z "${VER}" ]; then
         continue
