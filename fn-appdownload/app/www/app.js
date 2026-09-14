@@ -21,7 +21,7 @@ const state = {
 
 const I18N = {
   "zh-CN": {
-    appTitle: "应用管理",
+    appTitle: "应用坏心",
     search: "搜索",
     settings: "设置",
     about: "关于",
