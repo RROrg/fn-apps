@@ -205,6 +205,11 @@
     "enabled": false
   },
   {
+    "name": "sushazhi/FnDepot",
+    "url": "https://raw.githubusercontent.com/sushazhi/FnDepot/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
     "name": "tianjian518/casgen",
     "url": "https://raw.githubusercontent.com/tianjian518/casgen/refs/heads/main/fnpack.json",
     "enabled": false
