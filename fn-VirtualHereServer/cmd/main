@@ -5,7 +5,7 @@ PID_FILE="${TRIM_PKGVAR}/app.pid"
 
 # write the command to start your program here
 ARCH=$(uname -m)
-CMD="${TRIM_APPDEST}/server/vhusbd${ARCH}"
+CMD="${TRIM_APPDEST}/server/vhusbd${ARCH} -i"
 
 log_msg() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>${LOG_FILE}
