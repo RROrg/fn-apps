@@ -1,5 +1,5 @@
 appname               = fn-scheduler
-version               = 1.3.2
+version               = 1.3.3
 display_name          = "${common.display_name}"
 desc                  = "${common.desc}"
 platform              = all

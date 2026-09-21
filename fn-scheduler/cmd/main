@@ -48,10 +48,10 @@ stop_process() {
     kill -TERM ${pid} >>${LOG_FILE} 2>&1
 
     local count=0
-    while check_process "${pid}" && [ $count -lt 300 ]; do
+    while check_process "${pid}" && [ $count -lt 60 ]; do
       sleep 1
       count=$((count + 1))
-      log_msg "waiting process terminal... (${count}s/300s)"
+      log_msg "waiting process terminal... (${count}s/60s)"
     done
 
     if check_process "${pid}"; then

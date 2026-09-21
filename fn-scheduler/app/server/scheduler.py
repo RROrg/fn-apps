@@ -24,10 +24,15 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, overload
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from subprocess import PIPE, Popen, TimeoutExpired, run
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows does not provide flock
+    fcntl = None
 
 try:
     import grp
@@ -89,7 +94,15 @@ def normalize_base_path(raw):
     return base or "/"
 
 
-def strip_wrapping_quotes(value):
+@overload
+def strip_wrapping_quotes(value: None) -> None: ...
+
+
+@overload
+def strip_wrapping_quotes(value: str) -> str: ...
+
+
+def strip_wrapping_quotes(value: str | None) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
@@ -100,7 +113,7 @@ def strip_wrapping_quotes(value):
     return trimmed
 
 
-def parse_bool_value(value, default= False):
+def parse_bool_value(value, default=False):
     if value is None:
         return default
     if isinstance(value, bool):
@@ -116,9 +129,7 @@ def parse_bool_value(value, default= False):
     return bool(value)
 
 
-def summarize_log_text(
-    text, limit= CONDITION_LOG_PREVIEW_LIMIT
-):
+def summarize_log_text(text, limit=CONDITION_LOG_PREVIEW_LIMIT):
     normalized = str(text or "").strip().replace("\r\n", "\n").replace("\r", "\n")
     if not normalized:
         return ""
@@ -128,9 +139,7 @@ def summarize_log_text(
     return single_line
 
 
-def serialize_result_row(
-    row, include_log= True, log_limit= None
-):
+def serialize_result_row(row, include_log=True, log_limit=None):
     payload = dict(row)
     log_text = payload.get("log") or ""
     if not isinstance(log_text, str):
@@ -168,10 +177,10 @@ CONTEXT = None  # SchedulerContext
 @contextmanager
 def request_context(
     method,
-    query= "",
-    headers= None,
-    body= b"",
-    handler= None,
+    query="",
+    headers=None,
+    body=b"",
+    handler=None,
 ):
     """Push per-request context so helpers (json_response, request_body, ...)
     can find the active handler without threading globals."""
@@ -234,7 +243,7 @@ def normalize_status(status):
     return 200, "200 OK"
 
 
-def json_response(payload, status= "200 OK"):
+def json_response(payload, status: str | int | HTTPStatus = "200 OK"):
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
         "utf-8"
     )
@@ -523,9 +532,7 @@ def prepare_task_account_context(
     return (_changer, pw_record.pw_dir)
 
 
-def build_task_environment(
-    task, trigger_reason, home_dir= None
-):
+def build_task_environment(task, trigger_reason, home_dir=None):
     env = os.environ.copy()
     if home_dir:
         env["HOME"] = home_dir
@@ -657,9 +664,7 @@ class CronExpression:
 
 
 class Database:
-    def __init__(
-        self, path, result_retention_per_task= RESULT_RETENTION_PER_TASK
-    ):
+    def __init__(self, path, result_retention_per_task=RESULT_RETENTION_PER_TASK):
         self.path = path
         self.result_retention_per_task = result_retention_per_task
         db_dir = os.path.dirname(path)
@@ -902,8 +907,7 @@ class Database:
                 raise ValueError("database integrity error") from exc
         return self.get_template(tid)  # type: ignore
 
-    def update_template(
-        self, template_id, payload):
+    def update_template(self, template_id, payload):
         existing = self.get_template(template_id)
         if not existing:
             return None
@@ -1034,8 +1038,7 @@ class Database:
                 raise ValueError("database integrity error") from exc
         return self.get_task(task_id)  # type: ignore
 
-    def update_task(
-        self, task_id, payload):
+    def update_task(self, task_id, payload):
         existing = self.get_task(task_id)
         if not existing:
             return None
@@ -1204,8 +1207,7 @@ class Database:
             (status, trigger_reason, started_at, finished_at, task_id),
         )
 
-    def _should_keep_result_record_locked(
-        self, task_id, status):
+    def _should_keep_result_record_locked(self, task_id, status):
         if task_id is None:
             return True
         cur = self._conn.execute(
@@ -1224,19 +1226,20 @@ class Database:
         task_id: Optional[int] = None
         with self._lock:
             cur = self._conn.execute(
-                "SELECT task_id, trigger_reason, started_at FROM task_results WHERE id=?",
+                "SELECT task_id, trigger_reason, started_at, status FROM task_results WHERE id=?",
                 (result_id,),
             )
             row = cur.fetchone()
-            if row:
-                task_id = int(row["task_id"])
-                self._update_task_latest_result_locked(
-                    task_id,
-                    status,
-                    row["trigger_reason"],
-                    row["started_at"],
-                    now,
-                )
+            if not row or row["status"] != "running":
+                return
+            task_id = int(row["task_id"])
+            self._update_task_latest_result_locked(
+                task_id,
+                status,
+                row["trigger_reason"],
+                row["started_at"],
+                now,
+            )
             if self._should_keep_result_record_locked(task_id, status):
                 self._conn.execute(
                     "UPDATE task_results SET status=?, finished_at=?, log=? WHERE id=?",
@@ -1248,15 +1251,12 @@ class Database:
         if task_id is not None:
             self.prune_finished_results(task_id)
 
-    def record_finished_result(
-        self, task_id, trigger_reason, status, log_text):
+    def record_finished_result(self, task_id, trigger_reason, status, log_text):
         result_id = self.record_result_start(task_id, trigger_reason)
         self.finalize_result(result_id, status, log_text)
         return result_id
 
-    def fetch_results(
-        self, task_id, limit= 50, offset= 0
-    ):
+    def fetch_results(self, task_id, limit=50, offset=0):
         with self._lock:
             cur = self._conn.execute(
                 "SELECT * FROM task_results WHERE task_id=? ORDER BY started_at DESC LIMIT ? OFFSET ?",
@@ -1274,7 +1274,7 @@ class Database:
             row = cur.fetchone()
         return dict(row) if row else None
 
-    def delete_results(self, task_id, result_id= None):
+    def delete_results(self, task_id, result_id=None):
         with self._lock:
             if result_id is None:
                 cur = self._conn.execute(
@@ -1337,9 +1337,7 @@ class Database:
             )
             return [dict(row) for row in cur.fetchall()]
 
-    def finalize_stale_running_instances(
-        self, task_id, reason= "stopped by user"
-    ):
+    def finalize_stale_running_instances(self, task_id, reason="stopped by user"):
         now = isoformat(time_now())
         with self._lock:
             cur = self._conn.execute(
@@ -1401,9 +1399,7 @@ class Database:
             )
             self._conn.commit()
 
-    def schedule_next_run(
-        self, task_id, expression, base= None
-    ):
+    def schedule_next_run(self, task_id, expression, base=None):
         if not expression:
             return None
         cron = CronExpression(expression)
@@ -1438,9 +1434,7 @@ class Database:
             rows = [self._row_to_dict(row) for row in cur.fetchall()]
         return rows
 
-    def fetch_event_tasks(
-        self, event_type= None
-    ):
+    def fetch_event_tasks(self, event_type=None):
         query = "SELECT * FROM tasks WHERE trigger_type='event' AND is_active=1"
         params: List[Any] = []
         if event_type:
@@ -1453,8 +1447,7 @@ class Database:
         return rows
 
     # Payload utilities ---------------------------------------------------
-    def _prepare_task_payload(
-        self, payload, is_update):
+    def _prepare_task_payload(self, payload, is_update):
         trigger_type = payload.get("trigger_type", "schedule")
         if trigger_type not in {"schedule", "event"}:
             raise ValueError("trigger_type must be 'schedule' or 'event'")
@@ -1670,9 +1663,7 @@ class TaskRunner(threading.Thread):
                 cls._running_processes.pop(task_id, None)
 
     @classmethod
-    def terminate_task_processes(
-        cls, task_id, grace_seconds= 3.0
-    ):
+    def terminate_task_processes(cls, task_id, grace_seconds=3.0):
         with cls._running_lock:
             processes = list(cls._running_processes.get(task_id, set()))
 
@@ -1728,7 +1719,7 @@ class TaskRunner(threading.Thread):
         return sorted(found)
 
     @staticmethod
-    def _terminate_pids(pids, grace_seconds= 3.0):
+    def _terminate_pids(pids, grace_seconds=3.0):
         terminated = 0
         killed = 0
         already_exited = 0
@@ -1808,11 +1799,30 @@ class SchedulerEngine:
     def start(self):
         # 标记启动时刻，之后复核过期任务时会基于此时间跳过历史遗留的执行
         self.started_at = time_now()
+        recovered = 0
+        for running in self.db.fetch_running_instances():
+            recovered += self.db.finalize_stale_running_instances(
+                int(running["task_id"]),
+                reason="interrupted by scheduler restart",
+            )
+        if recovered:
+            logger.warning(
+                "Recovered %s stale running task result(s) after scheduler restart",
+                recovered,
+            )
         self.thread.start()
         self._trigger_system_event(EVENT_TYPE_BOOT)
 
     def stop(self):
         self.stop_event.set()
+        for running in self.db.fetch_running_instances():
+            task_id = int(running["task_id"])
+            TaskRunner.terminate_task_processes(task_id, grace_seconds=1.0)
+            if self.db.has_running_instance(task_id):
+                self.db.finalize_stale_running_instances(
+                    task_id,
+                    reason="interrupted by scheduler shutdown",
+                )
         self._trigger_system_event(EVENT_TYPE_SHUTDOWN)
         self.thread.join(timeout=5)
 
@@ -2025,6 +2035,8 @@ class SchedulerEngine:
             runner = TaskRunner(self.db, task, trigger_reason, self.settings)
             runner.start()
             runners.append(runner)
+        if event_type == EVENT_TYPE_BOOT:
+            return
         for runner in runners:
             runner.join()
 
@@ -2051,17 +2063,39 @@ class SchedulerEngine:
         return True, ""
 
 
+def acquire_instance_lock(socket_path):
+    if fcntl is None:
+        return None
+    lock_path = Path(f"{socket_path}.lock")
+    lock_file = open(lock_path, "a+")
+    try:
+        fcntl.flock(  # pyright: ignore[reportAttributeAccessIssue]
+            lock_file.fileno(),
+            fcntl.LOCK_EX  # pyright: ignore[reportAttributeAccessIssue]
+            | fcntl.LOCK_NB,  # pyright: ignore[reportAttributeAccessIssue]
+        )
+    except (BlockingIOError, OSError):
+        lock_file.close()
+        raise RuntimeError("another scheduler instance is already running")
+    return lock_file
+
+
 ###############################################################################
 # HTTP layer
 ###############################################################################
 
 
 class SchedulerContext:
-    def __init__(
-        self, db, engine, settings):
+    def __init__(self, db, engine, settings):
         self.db = db
         self.engine = engine
         self.settings = settings
+
+
+def get_context() -> SchedulerContext:
+    if CONTEXT is None:
+        raise RuntimeError("scheduler context is not initialized")
+    return CONTEXT
 
 
 class ThreadingUnixHTTPServer(
@@ -2077,12 +2111,14 @@ class ThreadingUnixHTTPServer(
         socket_path,
         handler_class,
         *,
-        base_path= "/",
-        www_root= None,
+        base_path="/",
+        www_root=None,
     ):
         self.server_name = APP_NAME
         self.server_port = 0
         self.base_path = normalize_base_path(base_path)
+        if www_root is None:
+            raise ValueError("www_root is required")
         self.www_root = Path(www_root)
         socket_path = Path(socket_path)
         if socket_path.exists():
@@ -2187,14 +2223,14 @@ class Handler(BaseHTTPRequestHandler):
         if not parsed.path.startswith(base_path):
             self.send_error(HTTPStatus.NOT_FOUND, "Base path mismatch")
             return False
-        stripped_path = parsed.path[len(base_path):] or "/"
+        stripped_path = parsed.path[len(base_path) :] or "/"
         if not stripped_path.startswith("/"):
             stripped_path = f"/{stripped_path}"
         rebuilt = parsed._replace(path=stripped_path)
         self.path = urlunsplit(rebuilt)
         return True
 
-    def _serve_static(self, head_only= False):
+    def _serve_static(self, head_only=False):
         www_root = Path(self.server.www_root)  # type: ignore[attr-defined]
         parsed = urlsplit(self.path)
         request_path = unquote(parsed.path or "/")
@@ -2228,7 +2264,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(file_size))
             static_name = target_path.name
-            if static_name == "index.html" or str(target_path).endswith((".js", ".css")):
+            if static_name == "index.html" or str(target_path).endswith(
+                (".js", ".css")
+            ):
                 cache_control = "no-store"
             else:
                 cache_control = "public, max-age=3600"
@@ -2259,12 +2297,12 @@ def list_accounts():
 
 
 def get_settings():
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     json_response({"data": ctx.settings.to_dict()})
 
 
 def update_settings(payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     updated = ctx.settings.update(payload)
     ctx.db.result_retention_per_task = updated["result_retention_per_task"]
     pruned = ctx.db.prune_all_finished_results()
@@ -2272,7 +2310,7 @@ def update_settings(payload):
 
 
 def list_tasks():
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     tasks = ctx.db.list_tasks()
     for task in tasks:
         task["latest_result"] = ctx.db.get_latest_result(task["id"])
@@ -2280,7 +2318,7 @@ def list_tasks():
 
 
 def get_task(task_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     task = ctx.db.get_task(task_id)
     if not task:
         _send_error(HTTPStatus.NOT_FOUND, "Task not found")
@@ -2290,7 +2328,7 @@ def get_task(task_id):
 
 
 def create_task(payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     try:
         task = ctx.db.create_task(payload)
     except sqlite3.IntegrityError as exc:
@@ -2302,7 +2340,7 @@ def create_task(payload):
 
 
 def update_task(task_id, payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     try:
         task = ctx.db.update_task(task_id, payload)
     except sqlite3.IntegrityError as exc:
@@ -2316,7 +2354,7 @@ def update_task(task_id, payload):
 
 
 def delete_task(task_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     deleted = ctx.db.delete_task(task_id)
     if not deleted:
         _send_error(HTTPStatus.NOT_FOUND)
@@ -2325,25 +2363,25 @@ def delete_task(task_id):
 
 
 def delete_results(task_id, result_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     deleted = ctx.db.delete_results(task_id, result_id)
     json_response({"deleted": deleted})
 
 
 def list_templates():
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     json_response({"data": ctx.db.list_templates()})
 
 
 def export_templates():
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     mapping = ctx.db.export_templates()
     # 返回为原生对象，保持与 templates.json 兼容
     json_response(mapping)
 
 
 def import_templates(payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     mapping = payload.get("mapping")
     if not isinstance(mapping, dict):
         json_response(
@@ -2370,13 +2408,13 @@ def import_templates(payload):
 
 
 def create_template(payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     tpl = ctx.db.create_template(payload)
     json_response(tpl, status=HTTPStatus.CREATED)
 
 
 def get_template(tpl_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     tpl = ctx.db.get_template(tpl_id)
     if not tpl:
         _send_error(HTTPStatus.NOT_FOUND, "Template not found")
@@ -2385,7 +2423,7 @@ def get_template(tpl_id):
 
 
 def update_template(tpl_id, payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     tpl = ctx.db.update_template(tpl_id, payload)
     if not tpl:
         _send_error(HTTPStatus.NOT_FOUND)
@@ -2394,7 +2432,7 @@ def update_template(tpl_id, payload):
 
 
 def delete_template(tpl_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     tpl = ctx.db.delete_template(tpl_id)
     if not tpl:
         _send_error(HTTPStatus.NOT_FOUND)
@@ -2403,7 +2441,7 @@ def delete_template(tpl_id):
 
 
 def batch_tasks(payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     action = (payload.get("batch_action") or "").strip().lower()
     task_ids_payload = payload.get("task_ids")
     if not isinstance(task_ids_payload, list) or not task_ids_payload:
@@ -2498,15 +2536,13 @@ def batch_tasks(payload):
 
 
 def run_task(task_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     task = ctx.db.get_task(task_id)
     if not task:
         _send_error(HTTPStatus.NOT_FOUND)
         return
     if ctx.db.has_running_instance(task_id):
-        json_response(
-            {"error": "task is running"}, status=HTTPStatus.CONFLICT
-        )
+        json_response({"error": "task is running"}, status=HTTPStatus.CONFLICT)
         return
     allowed, reason = ctx.engine.check_manual_run_allowed(task)
     if not allowed:
@@ -2522,14 +2558,12 @@ def run_task(task_id):
         try:
             ctx.db.schedule_next_run(task_id, task["schedule_expression"])
         except Exception:
-            logger.exception(
-                "Failed to reschedule task %s after manual run", task_id
-            )
+            logger.exception("Failed to reschedule task %s after manual run", task_id)
     json_response({"queued": True})
 
 
 def stop_task(task_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     task = ctx.db.get_task(task_id)
     if not task:
         _send_error(HTTPStatus.NOT_FOUND)
@@ -2554,7 +2588,7 @@ def stop_task(task_id):
 
 
 def toggle_task(task_id, payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     task = ctx.db.get_task(task_id)
     if not task:
         _send_error(HTTPStatus.NOT_FOUND)
@@ -2567,7 +2601,7 @@ def toggle_task(task_id, payload):
 
 
 def list_results(task_id, payload):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     limit = _as_int(payload.get("limit", 50))
     offset = _as_int(payload.get("offset", 0))
     summary_mode = str(payload.get("summary", "0")).lower() in {
@@ -2576,9 +2610,7 @@ def list_results(task_id, payload):
         "yes",
         "on",
     }
-    log_limit = _as_int(
-        payload.get("log_limit", ctx.settings.result_log_preview_limit)
-    )
+    log_limit = _as_int(payload.get("log_limit", ctx.settings.result_log_preview_limit))
     results = ctx.db.fetch_results(task_id, limit=limit, offset=offset)
     payload_list = [
         serialize_result_row(
@@ -2592,7 +2624,7 @@ def list_results(task_id, payload):
 
 
 def get_result(task_id, result_id):
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     result = ctx.db.fetch_result(task_id, result_id)
     if not result:
         _send_error(HTTPStatus.NOT_FOUND)
@@ -2657,9 +2689,7 @@ def write_fs(target, payload):
     # 将 body 中提供的 {"content": "..."} 写入 target 路径
     try:
         if not isinstance(payload, dict) or "content" not in payload:
-            json_response(
-                {"error": "missing content"}, status=HTTPStatus.BAD_REQUEST
-            )
+            json_response({"error": "missing content"}, status=HTTPStatus.BAD_REQUEST)
             return
         content = payload.get("content", "")
         if not isinstance(content, str):
@@ -2684,9 +2714,7 @@ def write_fs(target, payload):
                 fh.write(content.encode("utf-8"))
             json_response({"written": True, "path": target})
         except PermissionError:
-            json_response(
-                {"error": "permission denied"}, status=HTTPStatus.FORBIDDEN
-            )
+            json_response({"error": "permission denied"}, status=HTTPStatus.FORBIDDEN)
         except Exception as exc:
             logger.exception("write_fs error: %s", exc)
             json_response(
@@ -2700,7 +2728,7 @@ def write_fs(target, payload):
 
 
 def health():
-    ctx: SchedulerContext = CONTEXT
+    ctx = get_context()
     tasks = ctx.db.list_tasks()
     payload = {
         "time": isoformat(time_now()),
@@ -2751,13 +2779,12 @@ def dispatch():
         elif action == "list-results":
             list_results(_as_int(payload.get("id")), payload)
         elif action == "get-result":
-            get_result(
-                _as_int(payload.get("id")), _as_int(payload.get("result_id"))
-            )
+            get_result(_as_int(payload.get("id")), _as_int(payload.get("result_id")))
         elif action == "delete-results":
             result_id = payload.get("result_id")
             delete_results(
-                _as_int(payload.get("id")), _as_int(result_id) if result_id not in (None, "") else None
+                _as_int(payload.get("id")),
+                _as_int(result_id) if result_id not in (None, "") else None,
             )
         elif action == "clear-results":
             delete_results(_as_int(payload.get("id")), None)
@@ -2820,6 +2847,7 @@ def main():
     www_root = str(Path(strip_wrapping_quotes(args.www_root)))
     normalized_base = normalize_base_path(args.base_path)
     socket_path = Path(strip_wrapping_quotes(args.unix_socket))
+    instance_lock = acquire_instance_lock(socket_path)
 
     settings = SchedulerSettings(settings_path)
     database = Database(
@@ -2839,15 +2867,7 @@ def main():
 
     def _shutdown(_signum, _frame):
         logger.info("Received signal %s, shutting down scheduler...", _signum)
-        engine.stop()
-        if os.path.exists(socket_path):
-            try:
-                socket_path.unlink()
-            except OSError:
-                pass
-        httpd.shutdown()
-        httpd.server_close()
-        sys.exit(0)
+        threading.Thread(target=httpd.shutdown, daemon=True).start()
 
     for sig_name in ("SIGINT", "SIGTERM"):
         if hasattr(signal, sig_name):
@@ -2860,20 +2880,22 @@ def main():
         db_path,
         www_root,
     )
-    engine.start()
     try:
+        engine.start()
         httpd.serve_forever()
     except KeyboardInterrupt:
         logger.info("Shutting down scheduler...")
     finally:
+        httpd.server_close()
         engine.stop()
         database.close()
-        httpd.server_close()
         if socket_path.exists():
             try:
                 socket_path.unlink()
             except OSError:
                 pass
+        if instance_lock is not None:
+            instance_lock.close()
 
 
 if __name__ == "__main__":
