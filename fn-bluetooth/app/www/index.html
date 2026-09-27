@@ -62,8 +62,13 @@
         <section class="panel">
           <div class="section-head">
             <h2 data-i18n="availableDevices">可用设备</h2>
-            <span id="scanStatus"></span>
-            <button id="scanBtn" class="primary-btn" type="button" disabled data-i18n="scan">扫描设备</button>
+            <div class="head-actions">
+              <span class="label" data-i18n="hideUnnamed">隐藏无名设备</span>
+              <div id="hideUnnamedToggle" class="toggle-switch active" role="switch" aria-checked="true" tabindex="0"
+                title="隐藏无名设备" data-i18n-title="hideUnnamed"></div>
+              <span id="scanStatus"></span>
+              <button id="scanBtn" class="primary-btn" type="button" disabled data-i18n="scan">扫描设备</button>
+            </div>
           </div>
           <div id="availableDevices" class="device-list"></div>
         </section>

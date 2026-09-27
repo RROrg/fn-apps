@@ -675,15 +675,15 @@ def classify_device_type(device):
 
 def get_audio_env():
     env = os.environ.copy()
-    if "PULSE_SERVER" in env and "pipewire" in env["PULSE_SERVER"].lower():
-        del env["PULSE_SERVER"]
     if "PULSE_SERVER" not in env:
-        system_socket = "/var/run/pulse/native"
+        # pipewire-pulse 与用户模式的 PulseAudio 都在 XDG_RUNTIME_DIR/pulse/native；
+        # /var/run/pulse/native 仅用于旧的 PulseAudio system 模式。
         user_socket = f"/run/user/{os.getuid()}/pulse/native"  # pyright: ignore[reportAttributeAccessIssue]
-        if os.path.exists(system_socket):
-            env["PULSE_SERVER"] = system_socket
-        elif os.path.exists(user_socket):
+        system_socket = "/var/run/pulse/native"
+        if os.path.exists(user_socket):
             env["PULSE_SERVER"] = user_socket
+        elif os.path.exists(system_socket):
+            env["PULSE_SERVER"] = system_socket
     if "XDG_RUNTIME_DIR" not in env:
         for d in [
             f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
@@ -704,10 +704,39 @@ def _pactl_available(audio_env=None):
     return ok
 
 
+def _is_pipewire(audio_env=None):
+    """pactl 连接的是 pipewire-pulse（而非 PulseAudio）时返回 True。"""
+    ok, out, _ = run_ok(
+        ["pactl", "info"], timeout=5, env_override=audio_env or get_audio_env()
+    )
+    return ok and "pipewire" in (out or "").lower()
+
+
+def _wait_pactl(tries=20):
+    for _ in range(tries):
+        if _pactl_available(get_audio_env()):
+            return True
+        time.sleep(0.25)
+    return False
+
+
 def ensure_audio_service():
     audio_env = get_audio_env()
     if _pactl_available(audio_env):
         return True
+    # 优先 PipeWire（v1.1.0 起的默认音频服务）；PulseAudio 仅用于迁移失败的旧系统。
+    if command_exists("pipewire") and command_exists("systemctl"):
+        run_ok(
+            [
+                "systemctl", "--user", "start",
+                "pipewire.socket", "pipewire-pulse.socket",
+                "pipewire.service", "wireplumber.service", "pipewire-pulse.service",
+            ],
+            timeout=10,
+            env_override=audio_env,
+        )
+        if _wait_pactl():
+            return True
     if command_exists("pulseaudio"):
         run_ok(
             ["pulseaudio", "--start", "--log-target=stderr"],
@@ -1620,9 +1649,10 @@ def btctl_pair_fallback(addr, timeout=30):
 
 
 def _ensure_audio_discovery():
+    # 仅 PulseAudio 需要加载蓝牙模块；PipeWire 的蓝牙由 WirePlumber 负责。
     if command_exists("pactl"):
         audio_env = get_audio_env()
-        if _pactl_available(audio_env):
+        if _pactl_available(audio_env) and not _is_pipewire(audio_env):
             _load_pulse_module("module-bluetooth-policy", audio_env)
             _load_pulse_module("module-bluetooth-discover", audio_env)
             _load_pulse_module("module-bluez5-discover", audio_env)
@@ -1642,8 +1672,8 @@ def _wait_for_audio_sink(addr, seconds=18):
         for s in sinks:
             name = s.get("name") or ""
             disp = (s.get("displayName") or "").lower()
-            if addr_norm in name or addr.lower() in disp:
-                return name or ""
+            if addr_norm in name.lower() or addr.lower() in disp:
+                return name
         time.sleep(0.5)
     return ""
 
@@ -1676,7 +1706,7 @@ def _cleanup_bluetooth_audio(addr):
     # 1) 默认输出若为该蓝牙音箱，回退默认输出
     _, out, _ = run_ok(["pactl", "get-default-sink"], timeout=5, env_override=audio_env)
     default_sink = (out or "").strip()
-    if default_sink and addr_norm in default_sink:
+    if default_sink and addr_norm in default_sink.lower():
         fallback = None
         sinks, _ = get_audio_devices()
         for s in sinks:
@@ -1699,7 +1729,7 @@ def _cleanup_bluetooth_audio(addr):
     if rc:
         for line in (out2 or "").splitlines():
             parts = line.split()
-            if len(parts) >= 2 and "bluez_card." in parts[1] and addr_norm in parts[1]:
+            if len(parts) >= 2 and "bluez_card." in parts[1] and addr_norm in parts[1].lower():
                 run_ok(
                     ["pactl", "set-card-profile", parts[1], "off"],
                     timeout=5,

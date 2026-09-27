@@ -4,3 +4,10 @@ desc="Bluetooth device management tool that supports pairing, connecting audio d
 
 [entry]
 title="Bluetooth"
+
+[wizard]
+uninstall_stepTitle="Uninstall Bluetooth"
+uninstall_item1_helpText="The app and its settings will be removed. Paired devices are stored by the system (BlueZ) and are not affected."
+uninstall_item1_label="System components (BlueZ, PipeWire, etc.)"
+uninstall_item1_options1="Keep (recommended)"
+uninstall_item1_options2="Remove as well (not recommended: other apps may use them)"

@@ -45,16 +45,19 @@ if command -v iptables >/dev/null 2>&1; then
   iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
 fi
 
-[ "${wizard_data_action:-}" == "delete" ] && {
+. "$(dirname "$0")/audio"
+remove_wireplumber_config
+
+# 卸载向导：默认保留系统组件。bluez / PipeWire 等为系统共享组件，其他应用
+# （如 fn-audioplayer）也可能在使用，仅在用户明确选择时移除。
+[ "${wizard_packages:-keep}" == "remove" ] && {
   REMOVE_PKGS=""
-  for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils pulseaudio-module-bluetooth obexftp python3-dbus python3-gi; do
+  for pkg in bluez bluez-obexd bluez-tools obexftp python3-dbus python3-gi ${AUDIO_PKGS} pulseaudio pulseaudio-module-bluetooth; do
     if dpkg -s "$pkg" >/dev/null 2>&1; then
       REMOVE_PKGS="$REMOVE_PKGS $pkg"
     fi
   done
-
   [ -n "$REMOVE_PKGS" ] && apt-get remove -y -qq $REMOVE_PKGS 2>/dev/null || true
   apt-get autoremove -y -qq 2>/dev/null || true
 }
-
 exit 0

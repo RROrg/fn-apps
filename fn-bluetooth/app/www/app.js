@@ -71,6 +71,8 @@ const I18N = {
     scanning: "扫描中",
     noPairedDevices: "暂无已配对设备",
     noAvailableDevices: "暂无可用设备",
+    hideUnnamed: "隐藏无名设备",
+    hiddenUnnamed: "已隐藏 {n} 个无名设备",
     confirm: "确定",
     cancel: "取消",
     confirmPair: "确认配对",
@@ -206,6 +208,8 @@ const I18N = {
     scanning: "Scanning",
     noPairedDevices: "No paired devices",
     noAvailableDevices: "No available devices",
+    hideUnnamed: "Hide unnamed devices",
+    hiddenUnnamed: "{n} unnamed device(s) hidden",
     confirm: "OK",
     cancel: "Cancel",
     confirmPair: "Confirm Pair",
@@ -335,6 +339,7 @@ const els = {
   pairedDevices: document.getElementById("pairedDevices"),
   pairedCount: document.getElementById("pairedCount"),
   availableDevices: document.getElementById("availableDevices"),
+  hideUnnamedToggle: document.getElementById("hideUnnamedToggle"),
   scanStatus: document.getElementById("scanStatus"),
   sinkSelect: document.getElementById("sinkSelect"),
   sourceSelect: document.getElementById("sourceSelect"),
@@ -556,6 +561,41 @@ function renderDeviceRow(dev, isPaired) {
   </div>`;
 }
 
+// 扫描结果中没有名字的设备（BlueZ 以地址作为名字，如 AA-BB-CC-DD-EE-FF）
+// 通常是附近的手机、手环、BLE 广播等，默认隐藏；开关状态保存在本机浏览器。
+const HIDE_UNNAMED_KEY = "fn-bluetooth.hideUnnamed";
+state.hideUnnamed = (() => {
+  try {
+    return localStorage.getItem(HIDE_UNNAMED_KEY) !== "0";
+  } catch (e) {
+    return true;
+  }
+})();
+
+function isUnnamed(dev) {
+  const name = String(dev.alias || dev.name || "").trim();
+  if (!name) return true;
+  const hex = name.replace(/[-:_]/g, "").toUpperCase();
+  const addr = String(dev.address || "").replace(/:/g, "").toUpperCase();
+  return /^[0-9A-F]{12}$/.test(hex) && hex === addr;
+}
+
+function renderHideUnnamed() {
+  els.hideUnnamedToggle.classList.toggle("active", state.hideUnnamed);
+  els.hideUnnamedToggle.setAttribute("aria-checked", String(state.hideUnnamed));
+}
+
+function toggleHideUnnamed() {
+  state.hideUnnamed = !state.hideUnnamed;
+  try {
+    localStorage.setItem(HIDE_UNNAMED_KEY, state.hideUnnamed ? "1" : "0");
+  } catch (e) {
+    // 无法保存时仅在本次会话生效
+  }
+  renderHideUnnamed();
+  renderDevices();
+}
+
 function renderDevices() {
   els.pairedCount.textContent = String(state.paired.length);
   if (!state.paired.length) {
@@ -566,12 +606,19 @@ function renderDevices() {
       .join("");
   }
 
-  if (!state.available.length) {
-    els.availableDevices.innerHTML = `<div class="empty">${t("noAvailableDevices")}</div>`;
+  const shown = state.hideUnnamed
+    ? state.available.filter((dev) => !isUnnamed(dev))
+    : state.available;
+  const hidden = state.available.length - shown.length;
+  const hiddenNote = hidden
+    ? `<div class="empty">${t("hiddenUnnamed", { n: hidden })}</div>`
+    : "";
+  if (!shown.length) {
+    els.availableDevices.innerHTML = `<div class="empty">${t("noAvailableDevices")}</div>` + hiddenNote;
   } else {
-    els.availableDevices.innerHTML = state.available
+    els.availableDevices.innerHTML = shown
       .map((dev) => renderDeviceRow(dev, false))
-      .join("");
+      .join("") + hiddenNote;
   }
 
   const sendTargets = state.paired.map((dev) => [
@@ -1553,6 +1600,8 @@ els.scan.addEventListener("click", () =>
   toggleScan().catch((error) => showToast(error.message, true)),
 );
 els.powerToggle.addEventListener("click", () => togglePower());
+els.hideUnnamedToggle.addEventListener("click", () => toggleHideUnnamed());
+renderHideUnnamed();
 els.discoverableToggle.addEventListener("click", () => toggleDiscoverable());
 els.pairableToggle.addEventListener("click", () => togglePairable());
 els.sendFileBtn.addEventListener("click", () => sendFile());

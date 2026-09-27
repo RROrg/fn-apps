@@ -737,6 +737,15 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.head-actions .label,
 .adapter-row .label {
   color: var(--muted);
   font-size: 12px;

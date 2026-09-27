@@ -35,15 +35,15 @@ SUPPORTED_FORMATS = {"mp3", "wav", "ogg", "flac", "m4a", "aac", "wma", "ape"}
 
 def get_audio_env():
     env = os.environ.copy()
-    if "PULSE_SERVER" in env and "pipewire" in env["PULSE_SERVER"].lower():
-        del env["PULSE_SERVER"]
     if "PULSE_SERVER" not in env:
-        system_socket = "/var/run/pulse/native"
+        # pipewire-pulse 与用户模式的 PulseAudio 都在 XDG_RUNTIME_DIR/pulse/native；
+        # /var/run/pulse/native 仅用于旧的 PulseAudio system 模式。
         user_socket = f"/run/user/{os.getuid()}/pulse/native"  # pyright: ignore[reportAttributeAccessIssue]
-        if os.path.exists(system_socket):
-            env["PULSE_SERVER"] = system_socket
-        elif os.path.exists(user_socket):
+        system_socket = "/var/run/pulse/native"
+        if os.path.exists(user_socket):
             env["PULSE_SERVER"] = user_socket
+        elif os.path.exists(system_socket):
+            env["PULSE_SERVER"] = system_socket
     if "XDG_RUNTIME_DIR" not in env:
         for d in [
             f"/run/user/{os.getuid()}",  # pyright: ignore[reportAttributeAccessIssue]
@@ -87,6 +87,21 @@ def ensure_audio_service():
     audio_env = get_audio_env()
     if _pactl_available(audio_env):
         return True
+    # 优先 PipeWire（与 fn-bluetooth v1.1.0 一致）；PulseAudio 仅作兼容。
+    if command_exists("pipewire") and command_exists("systemctl"):
+        run_ok(
+            [
+                "systemctl", "--user", "start",
+                "pipewire.socket", "pipewire-pulse.socket",
+                "pipewire.service", "wireplumber.service", "pipewire-pulse.service",
+            ],
+            timeout=10,
+            env=audio_env,
+        )
+        for _ in range(20):
+            if _pactl_available(get_audio_env()):
+                return True
+            time.sleep(0.25)
     if command_exists("pulseaudio"):
         run_ok(
             ["pulseaudio", "--start", "--fail=false", "--log-target=stderr"],

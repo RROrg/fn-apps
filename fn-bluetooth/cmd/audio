@@ -1,0 +1,144 @@
+#!/bin/bash
+# 音频相关的公共函数（由 install/upgrade/uninstall_callback 与 main source，不单独执行）。
+#
+# 本应用的蓝牙音频使用 PipeWire（替代已停止维护的 PulseAudio 系统方案）：
+#   - pipewire + wireplumber 负责设备与蓝牙 A2DP/HFP（libspa-0.2-bluetooth）；
+#   - pipewire-pulse 提供 PulseAudio 协议，应用内的 pactl 调用无需改动；
+#   - pulseaudio-utils 只提供 pactl 命令行，与 pipewire-pulse 不冲突。
+# 若系统中已有可用的音频服务（pactl info 成功，例如其他应用启动的 PipeWire），
+# 直接复用，不再额外启动，避免两个音频服务争抢声卡与蓝牙。
+
+# main 已定义 LOG_FILE；install/upgrade/uninstall_callback 中默认写入同一日志。
+if [ -z "${LOG_FILE:-}" ] && [ -n "${TRIM_PKGVAR:-}" ]; then
+  mkdir -p "${TRIM_PKGVAR}" 2>/dev/null && LOG_FILE="${TRIM_PKGVAR}/info.log"
+fi
+
+AUDIO_PKGS="pipewire pipewire-pulse wireplumber libspa-0.2-bluetooth pulseaudio-utils"
+AUDIO_ENV="XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/0}"
+ROOT_HOME="$(getent passwd root | cut -d: -f6)"
+ROOT_HOME="${ROOT_HOME:-/root}"
+# WirePlumber 默认只在“当前登录座位”上启用蓝牙（seat-monitoring）；本应用以 root
+# 在无登录会话的环境运行，需关闭该限制，否则蓝牙音箱连接后不会出现 sink。
+WP_CONF_DIR="${ROOT_HOME}/.config/wireplumber/wireplumber.conf.d"
+WP_CONF="${WP_CONF_DIR}/50-fn-bluetooth.conf"
+
+audio_log() {
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>"${LOG_FILE:-/dev/null}"
+}
+
+audio_pkg_installed() {
+  dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q 'install ok installed'
+}
+
+# 选择 PipeWire 的软件源：pipewire 与 libpipewire-0.3-0 版本必须一致。
+# 已装 backports 版 libpipewire（如 weston 带入）时必须跟随 backports；
+# 未安装时优先使用 backports（新版蓝牙编解码更完善），没有 backports 源则用发行版自带版本。
+audio_apt_target() {
+  local codename libver
+  codename="$(. /etc/os-release 2>/dev/null && echo "${VERSION_CODENAME}")"
+  [ -n "${codename}" ] || return 0
+  apt-cache madison pipewire 2>/dev/null | grep -q "${codename}-backports" || return 0
+  libver="$(dpkg-query -W -f='${Version}' libpipewire-0.3-0 2>/dev/null)"
+  if [ -z "${libver}" ] || echo "${libver}" | grep -q '~bpo'; then
+    echo "-t ${codename}-backports"
+  fi
+}
+
+# 安装 PipeWire 音频组件。注意 Debian 的 pipewire-pulse 与 pulseaudio 并不互斥，
+# 旧的 pulseaudio 需由 migrate_from_pulseaudio 显式移除。
+install_audio_packages() {
+  local target
+  target="$(audio_apt_target)"
+  audio_log "Installing audio packages ${target}: ${AUDIO_PKGS}"
+  # shellcheck disable=SC2086
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+    -o DPkg::Lock::Timeout=120 ${target} ${AUDIO_PKGS} >>"${LOG_FILE:-/dev/null}" 2>&1
+}
+
+# 从 PulseAudio 迁移到 PipeWire（旧版本安装过 pulseaudio 时调用）。
+# 先装好 PipeWire，成功后才停止并移除 pulseaudio（保留 pulseaudio-utils 提供的 pactl）；
+# PipeWire 安装失败（例如无网络）时保留 PulseAudio：应用通过 pactl 工作，两种音频服务均可用。
+migrate_from_pulseaudio() {
+  audio_pkg_installed pulseaudio || return 0
+  audio_log "Migrating audio from PulseAudio to PipeWire ..."
+  if ! install_audio_packages || ! audio_pkg_installed pipewire-pulse; then
+    audio_log "Installing PipeWire failed; keeping PulseAudio."
+    return 1
+  fi
+  env ${AUDIO_ENV} systemctl --user stop pulseaudio.socket pulseaudio.service >/dev/null 2>&1 || true
+  env ${AUDIO_ENV} pulseaudio --kill >/dev/null 2>&1 || true
+  DEBIAN_FRONTEND=noninteractive apt-get remove -y -qq -o DPkg::Lock::Timeout=120 \
+    pulseaudio pulseaudio-module-bluetooth >>"${LOG_FILE:-/dev/null}" 2>&1 || true
+  if audio_pkg_installed pulseaudio; then
+    audio_log "PipeWire installed but pulseaudio could not be removed."
+    return 1
+  fi
+  audio_log "Migrated to PipeWire."
+}
+
+write_wireplumber_config() {
+  mkdir -p "${WP_CONF_DIR}"
+  cat >"${WP_CONF}" <<'EOF'
+# 由 fn-bluetooth 写入（卸载时删除）：root 在无登录会话环境下运行，
+# 关闭依赖用户会话的功能，让蓝牙音频在无人登录时也可用。
+wireplumber.profiles = {
+  main = {
+    monitor.bluez.seat-monitoring = disabled
+    support.logind = disabled
+  }
+}
+EOF
+}
+
+remove_wireplumber_config() {
+  rm -f "${WP_CONF}" 2>/dev/null || true
+  rmdir "${WP_CONF_DIR}" "$(dirname "${WP_CONF_DIR}")" 2>/dev/null || true
+}
+
+audio_server_ready() {
+  env ${AUDIO_ENV} pactl info >/dev/null 2>&1
+}
+
+wait_audio_server() {
+  local i
+  for i in $(seq 1 20); do
+    audio_server_ready && return 0
+    sleep 0.25
+  done
+  return 1
+}
+
+# 启动时确保有可用的音频服务：
+#   1) 已有音频服务（包括其他应用启动的 PipeWire）→ 直接复用；
+#   2) root 的 systemd --user 服务（PipeWire socket 激活）；
+#   3) 以上不可用（例如 user 服务被屏蔽）→ 直接启动 pipewire / wireplumber / pipewire-pulse；
+#   4) 迁移失败仍保留 PulseAudio 的系统 → 启动 PulseAudio。
+ensure_audio_server() {
+  audio_server_ready && return 0
+  if command -v pipewire >/dev/null 2>&1; then
+    if command -v systemctl >/dev/null 2>&1; then
+      audio_log "Starting user PipeWire services ..."
+      env ${AUDIO_ENV} systemctl --user start pipewire.socket pipewire-pulse.socket \
+        pipewire.service wireplumber.service pipewire-pulse.service >>"${LOG_FILE:-/dev/null}" 2>&1 || true
+      wait_audio_server && return 0
+    fi
+    # 同一 XDG_RUNTIME_DIR 下已有 pipewire 在运行时不再重复启动。
+    if [ ! -S "${XDG_RUNTIME_DIR:-/run/user/0}/pipewire-0" ]; then
+      audio_log "Starting pipewire / wireplumber / pipewire-pulse ..."
+      env ${AUDIO_ENV} setsid pipewire >>"${LOG_FILE:-/dev/null}" 2>&1 &
+      sleep 1
+      env ${AUDIO_ENV} setsid wireplumber >>"${LOG_FILE:-/dev/null}" 2>&1 &
+      env ${AUDIO_ENV} setsid pipewire-pulse >>"${LOG_FILE:-/dev/null}" 2>&1 &
+    fi
+    wait_audio_server && return 0
+  fi
+  if command -v pulseaudio >/dev/null 2>&1; then
+    audio_log "Starting pulseaudio in user mode ..."
+    [ -f /etc/pulse/default.pa ] || cp /etc/pulse/default.pa.dpkg-new /etc/pulse/default.pa 2>/dev/null || true
+    [ -f /etc/pulse/daemon.conf ] || cp /etc/pulse/daemon.conf.dpkg-new /etc/pulse/daemon.conf 2>/dev/null || true
+    env ${AUDIO_ENV} pulseaudio --start --fail=false >>"${LOG_FILE:-/dev/null}" 2>&1 || true
+    wait_audio_server && return 0
+  fi
+  audio_log "No audio server available."
+  return 1
+}
