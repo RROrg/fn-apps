@@ -31,9 +31,9 @@
           "changelog": "Initial release of fn-advancedsettings package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-advancedsettings_all_v1.1.1.fpk",
-              "sha256": "2df11cb52472adb9e123465bab5236c086391fc37ba85c084bb08d0f3f1ea31c",
-              "size": 361490
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-advancedsettings_all_v1.1.1.fpk",
+              "sha256": "717f89d7a39945cb8dabe204c2b03daa11ebf0528691d777c1edb1102c636b48",
+              "size": 361498
             }
           }
         }
@@ -63,9 +63,9 @@
           "changelog": "Initial release of fn-appdownload package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-appdownload_all_v1.1.5.fpk",
-              "sha256": "31d79de1ff085dfea9e3b509be3311a7d311aed8fb87392a0adde433a89d090a",
-              "size": 340192
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-appdownload_all_v1.1.5.fpk",
+              "sha256": "c294579f910df96967de0ce70ca61afd7866a8b22749177943459bb81fedea35",
+              "size": 340199
             }
           }
         }
@@ -95,9 +95,9 @@
           "changelog": "Initial release of fn-appsettings package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-appsettings_all_v1.0.8.fpk",
-              "sha256": "768f15a54e083f3fc56c2c0fbd030bd037189d4da3c5aca4776aa2931a0f813a",
-              "size": 143224
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-appsettings_all_v1.0.8.fpk",
+              "sha256": "5af4e59316464c7a34c26e436cb710ebe6125b6d36aff765924d171ccfdf0473",
+              "size": 143227
             }
           }
         }
@@ -123,13 +123,13 @@
       "is_docker": false,
       "service_port": "",
       "releases": {
-        "1.0.5": {
+        "1.1.0": {
           "changelog": "Initial release of fn-audioplayer package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-audioplayer_all_v1.0.5.fpk",
-              "sha256": "fd85d7200fea231e838cbff284576ca49e9c82103bbbd0f549860da585e4c9b7",
-              "size": 115834
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-audioplayer_all_v1.1.0.fpk",
+              "sha256": "0b15f7c35d091ba84f00a0bb70ed1a832c4ff5a3a90b58bbb90b567d897f9ad0",
+              "size": 116225
             }
           }
         }
@@ -155,13 +155,13 @@
       "is_docker": false,
       "service_port": "",
       "releases": {
-        "1.0.3": {
+        "1.1.0": {
           "changelog": "Initial release of fn-bluetooth package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-bluetooth_all_v1.0.3.fpk",
-              "sha256": "1662a9a9f767080da6a97fded796be8782c56971d96beac51fe15627107ab339",
-              "size": 104284
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-bluetooth_all_v1.1.0.fpk",
+              "sha256": "b18446fe0cc3fa48805377afe7cc946e69fbaca1cd3b60a4fa0e02c016cfa791",
+              "size": 108678
             }
           }
         }
@@ -191,8 +191,8 @@
           "changelog": "Initial release of fn-chromium package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-chromium_all_v1.0.4.fpk",
-              "sha256": "7266d53412b66138f13ac420f35f693d2b67aea880a76de41e07f86c7fed0406",
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-chromium_all_v1.0.4.fpk",
+              "sha256": "03ec238c143fb84cfdff60a429bcbb5ab6cfed34dcbc774f2bccc6a131f76dc4",
               "size": 48717
             }
           }
@@ -223,9 +223,9 @@
           "changelog": "Initial release of fn-chromium-desktop package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-chromium-desktop_all_v1.0.4.fpk",
-              "sha256": "badc6b74c34c7fdb73ac249cbf1334b69f7215dd26d112697a4b535776d475d0",
-              "size": 49335
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-chromium-desktop_all_v1.0.4.fpk",
+              "sha256": "8345edc8e5bdf4f6d23a8719eac3a598c437afd2a1d91a702e5d2ab104206222",
+              "size": 49334
             }
           }
         }
@@ -255,9 +255,9 @@
           "changelog": "Initial release of fn-codeserver package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-codeserver_all_v1.1.1.fpk",
-              "sha256": "b2b8fcca38de3a826919be0ea8c291d1bd92bd31b6861cf0945036dbfaa11858",
-              "size": 17471
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-codeserver_all_v1.1.1.fpk",
+              "sha256": "959ddd0208c7267fb8e8e0a624e15bdd816ce1559c65757000945592528b7bdd",
+              "size": 17473
             }
           }
         }
@@ -287,9 +287,9 @@
           "changelog": "Initial release of fn-execute package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-execute_all_v1.0.4.fpk",
-              "sha256": "2cb91f9a29bc898a3ae4535e5a5e52f6a3f7ba689cdeac6576637e4fffef8206",
-              "size": 31596
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-execute_all_v1.0.4.fpk",
+              "sha256": "417ff9cc5dd7d42cac86a9552d161245b61da671f247c4bced7e4e2c01130a7d",
+              "size": 31597
             }
           }
         }
@@ -319,9 +319,9 @@
           "changelog": "Initial release of fn-fail2ban package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-fail2ban_all_v1.0.6.fpk",
-              "sha256": "ac26408005a6b806ee497cda558fc7f57c539dfe538c83c334581cfabb4e068a",
-              "size": 199787
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-fail2ban_all_v1.0.6.fpk",
+              "sha256": "f15428077e21be40822f603e3370c613c3e38170e680e035d97ad15426869bdb",
+              "size": 199780
             }
           }
         }
@@ -347,13 +347,13 @@
       "is_docker": false,
       "service_port": "",
       "releases": {
-        "1.19.2": {
+        "1.20.1": {
           "changelog": "Initial release of fn-grafana-alloy package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-grafana-alloy_all_v1.19.2.fpk",
-              "sha256": "65d487a327d98de3dd39eca6ebfc94ae3a2f22d9035ed877d02abd3d12efd093",
-              "size": 299730839
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-grafana-alloy_all_v1.20.1.fpk",
+              "sha256": "5f4608d91a021f5dfdd2dbb339230ef69b0a95fb677f20c505edfb9c6808a347",
+              "size": 309903420
             }
           }
         }
@@ -383,9 +383,9 @@
           "changelog": "Initial release of fn-guacamole package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-guacamole_all_v1.6.0-1.fpk",
-              "sha256": "c302a2109542789f601076ac8061ef9bf8789cd2aed2fa7708c9b181bb254b79",
-              "size": 59266
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-guacamole_all_v1.6.0-1.fpk",
+              "sha256": "15870f207d31c832c747673ed255f0bf0ccb2c5cfa28f77f865518836553e42d",
+              "size": 59265
             }
           }
         }
@@ -415,9 +415,9 @@
           "changelog": "Initial release of fn-influxdb package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-influxdb_all_v2.9.1.fpk",
-              "sha256": "d8c1cbbc93c42b3e247ab2c81364ff329ba67dfb81a4f0504acacd870618cf87",
-              "size": 18056
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-influxdb_all_v2.9.1.fpk",
+              "sha256": "f8940ba351f781c68b1b5a9430eca7b64e3b951e531aa81d59c587bfd56ac393",
+              "size": 18063
             }
           }
         }
@@ -447,9 +447,9 @@
           "changelog": "Initial release of fn-installer package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-installer_all_v1.0.6.fpk",
-              "sha256": "00f1174852ca084e04f5cbc5ba0356441cfd18b2c9d390693bb1cf1835407a2d",
-              "size": 49901
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-installer_all_v1.0.6.fpk",
+              "sha256": "008be29ee19fffe6c15c48befe7b6463d0dd622fd772e3f5b43a9550104c32de",
+              "size": 49895
             }
           }
         }
@@ -475,13 +475,13 @@
       "is_docker": false,
       "service_port": "",
       "releases": {
-        "1.0.39-1": {
+        "1.0.44": {
           "changelog": "Initial release of fn-iVentoy package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-iVentoy_all_v1.0.39-1.fpk",
-              "sha256": "76e492bc30661e56f972601b98a48c9ba1b4d5adb9f33475420769f104dbb88e",
-              "size": 44684842
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-iVentoy_all_v1.0.44.fpk",
+              "sha256": "45cc71c8703bf088da95c242d960a63d285f63418d382e4059dd4cf911bff1b4",
+              "size": 48417157
             }
           }
         }
@@ -511,9 +511,9 @@
           "changelog": "Initial release of fn-kodi package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-kodi_all_v1.0.8.fpk",
-              "sha256": "00b6e46b0a1f89c475c2e67b95a7fb9b45247b66b99a5a260b743ba3de185132",
-              "size": 51480
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-kodi_all_v1.0.8.fpk",
+              "sha256": "2aaed47d4cab180f7eeaffc6212061376ea5b32a467bc48c0c8026f66189e796",
+              "size": 51470
             }
           }
         }
@@ -543,9 +543,9 @@
           "changelog": "Initial release of fn-linux-station package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-linux-station_all_v1.0.2.fpk",
-              "sha256": "dc9cfe9197c8e68c6ac36ef4064d3b23a4f5fabd8ee5be3bbb6b4a4a86f82364",
-              "size": 216369
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-linux-station_all_v1.0.2.fpk",
+              "sha256": "29018dcfd7db4bb193893f21e91cbbe1f6ba170c5e43c48905afc1f7be8fe09f",
+              "size": 216368
             }
           }
         }
@@ -575,9 +575,9 @@
           "changelog": "Initial release of fn-open-vm-tools package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-open-vm-tools_all_v1.1.1.fpk",
-              "sha256": "ab8ee20f49f934c9bae27a237fcadbd58be6e18917724454ebdef84cd274c467",
-              "size": 60688
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-open-vm-tools_all_v1.1.1.fpk",
+              "sha256": "13a95db0090951f36d252d328ae41328689ea873cc8791abaa40c8e1a60c172a",
+              "size": 60682
             }
           }
         }
@@ -607,9 +607,9 @@
           "changelog": "Initial release of fn-p2s package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-p2s_all_v1.0.5.fpk",
-              "sha256": "2e2bf381b73d8cca1b3aa07f97e9015623c435a6893a6194581c8998aeee060f",
-              "size": 84715
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-p2s_all_v1.0.5.fpk",
+              "sha256": "f586a550671129be3d695d5c07509eb814ff9c9d13ba68183b652369b639485f",
+              "size": 84723
             }
           }
         }
@@ -639,9 +639,9 @@
           "changelog": "Initial release of fn-qemu-ga package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-qemu-ga_all_v1.1.1.fpk",
-              "sha256": "587e75e10b75562d4372e9e4c4947187e46a9dd81a8e524f509b7eb57cc9ee41",
-              "size": 57698
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-qemu-ga_all_v1.1.1.fpk",
+              "sha256": "8e7153aa1eb2fc3108726645eb331bb15b355808e64f877b135a61a4626c5bd4",
+              "size": 57692
             }
           }
         }
@@ -671,9 +671,9 @@
           "changelog": "Initial release of fn-scheduler package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-scheduler_all_v1.3.3.fpk",
-              "sha256": "c9317aeb03e675c43a2b0875f77b5bef58d497b34da87e7aa276983ae4cbf81f",
-              "size": 225813
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-scheduler_all_v1.3.3.fpk",
+              "sha256": "3547f8858ef55e68b24c83157b160468988069e15de931dedd56d5bfa9110e03",
+              "size": 225825
             }
           }
         }
@@ -699,13 +699,13 @@
       "is_docker": false,
       "service_port": "",
       "releases": {
-        "1.75.0": {
+        "1.76.4": {
           "changelog": "Initial release of fn-scrutiny package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-scrutiny_all_v1.75.0.fpk",
-              "sha256": "c5ee94af180772fab8db0798dcda240b6e79cff76a5c95e82145c1d3fc04d6ff",
-              "size": 80373815
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-scrutiny_all_v1.76.4.fpk",
+              "sha256": "31c3c12c6b41901b15f2dd3ff7b1d082aa57426c8cbd520da7f4ce74c8041f65",
+              "size": 88457402
             }
           }
         }
@@ -735,9 +735,9 @@
           "changelog": "Initial release of fn-speedtest package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-speedtest_all_v1.0.1.fpk",
-              "sha256": "da9712522838835a7fd7155b28068b2b1aa95a2003b323b29749c72b5900796d",
-              "size": 48451
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-speedtest_all_v1.0.1.fpk",
+              "sha256": "e5c7ad6685a80a2b38ef173d477465d5363412eb20ffdb1981f6edab7b4a9079",
+              "size": 48429
             }
           }
         }
@@ -767,9 +767,9 @@
           "changelog": "Initial release of fn-terminal package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-terminal_all_v1.1.2.fpk",
-              "sha256": "41a7d248816957b43a0684ba109aca1ecfc3c10c78cb2d605fec8ac62b81265c",
-              "size": 7105558
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-terminal_all_v1.1.2.fpk",
+              "sha256": "570ea66f32cbcbf735c53f10746687f322b4f8fdecd8e166c6e1f6a2b1b6a66a",
+              "size": 7105548
             }
           }
         }
@@ -799,9 +799,9 @@
           "changelog": "Initial release of fn-vfnOS package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-vfnOS_all_v1.0.4.fpk",
-              "sha256": "a53726812462ef5658107863f9bd3c5980a1ea347bc9be875add1e69e1e97576",
-              "size": 42030
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-vfnOS_all_v1.0.4.fpk",
+              "sha256": "c58880cc6f73cfc192d8024888124e71796c16269f6186df46083bd89da9261c",
+              "size": 42035
             }
           }
         }
@@ -831,9 +831,9 @@
           "changelog": "Initial release of fn-vFygoOS package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-vFygoOS_all_v1.0.4.fpk",
-              "sha256": "6ad5e4dc7bed472c02390ca8a02dec87f2bb7604d91bdfb9d74af9220406b9e5",
-              "size": 12801
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-vFygoOS_all_v1.0.4.fpk",
+              "sha256": "d2fcbcc324756c7a455680ad1177a63d27dfb67c712b7503ee11d3c1f1638c46",
+              "size": 12804
             }
           }
         }
@@ -863,9 +863,9 @@
           "changelog": "Initial release of fn-vgmng package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-vgmng_all_v1.0.5.fpk",
-              "sha256": "c724bf04a9bdf040e9fff97d3a9aed5169396b183cd863e2309434208eed4b9e",
-              "size": 290135
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-vgmng_all_v1.0.5.fpk",
+              "sha256": "64bbb4e0dc80e8b4ae59b2ace17da0765e5af1d62f8179ea4237babaa5c1373c",
+              "size": 290109
             }
           }
         }
@@ -895,8 +895,8 @@
           "changelog": "Initial release of fn-VirtualHereServer package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-VirtualHereServer_all_v4.8.8-1.fpk",
-              "sha256": "163f89653b84bd9c0a2af6bcb2f815658dd0ea0f5a038ef88da5d7fc13ce9f9c",
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-VirtualHereServer_all_v4.8.8-1.fpk",
+              "sha256": "4976db881f93e5467828e4da9d50a4a47746ebb2e6e99a1c2841de78d684e9ef",
               "size": 3306626
             }
           }
@@ -927,9 +927,9 @@
           "changelog": "Initial release of fn-wifi-hotspot package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-wifi-hotspot_all_v1.1.9.fpk",
-              "sha256": "724011fcf731f630791d7f6be05edd21c3be68c8cb94461ceaaf3911cd391c3a",
-              "size": 124755
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-wifi-hotspot_all_v1.1.9.fpk",
+              "sha256": "786ab7770395ef3292de0f0be6c9852c040e690c54fdc0cd588a075b3ff59b04",
+              "size": 124754
             }
           }
         }
@@ -959,9 +959,9 @@
           "changelog": "Initial release of fn-WParted package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-WParted_all_v1.0.2.fpk",
-              "sha256": "ee6dc0263b2dd65a5b419c555aee80eb776ba523ce6e5f56711466e1b98d8708",
-              "size": 89744
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-WParted_all_v1.0.2.fpk",
+              "sha256": "15e31824825a977cf9945323604c2bc3d10961834794977f12b7414394945999",
+              "size": 89733
             }
           }
         }
@@ -991,9 +991,9 @@
           "changelog": "Initial release of fn-zerotier package.",
           "packages": {
             "all": {
-              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.09.21-1639/fn-zerotier_all_v1.0.9.fpk",
-              "sha256": "a3c9aa4c28404981e72edc7440f653958aeed5082b7f3f1c875d59b9adc5c27f",
-              "size": 79498
+              "download_url": "https://github.com/RROrg/fn-apps/releases/download/2026.10.09-1908/fn-zerotier_all_v1.0.9.fpk",
+              "sha256": "89613867f017fbcad326a15f492e642682d61e28864b185c43f3aa3f17f45c95",
+              "size": 79490
             }
           }
         }
