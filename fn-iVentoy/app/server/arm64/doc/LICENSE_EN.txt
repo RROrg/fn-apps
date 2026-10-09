@@ -6,7 +6,7 @@ iVentoy software consists of two parts, server part and client part.
 1.1 Server Part
 Server part is all newly developed by the author, this part of the code is not open source, and the copyright belongs to the author.
 
-Server part uses the following library:
+Server part uses the following libraries whose licenses are business-friendly :
 
 +-----------+-------------------+
 |   LIB     |  License	        |
@@ -17,13 +17,15 @@ Server part uses the following library:
 +-----------+-------------------+
 | libwim    |  LGPL	            |
 +-----------+-------------------+
+| libhivex  |  LGPL	            |
++-----------+-------------------+
 | libevent  |  BSD-3            |
 +-----------+-------------------+
 | PCRE	    |  BSD              |
 +-----------+-------------------+
-| tomcrypt  | Public Domain     |
+| tomcrypt  |  Public Domain    |
 +-----------+-------------------+
-| tommath   | Public Domain     |
+| tommath   |  Public Domain    |
 +-----------+-------------------+
 
 

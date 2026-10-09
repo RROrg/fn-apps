@@ -1,5 +1,14 @@
 #! /bin/bash
 
+#switch work directory
+SCRIPT_PATH=$(readlink -f "${BASH_SOURCE[0]}")
+SCRIPT_DIR=${SCRIPT_PATH%/*}
+if [ -z "$SCRIPT_DIR" ]; then
+    SCRIPT_DIR="/"
+fi
+cd "${SCRIPT_DIR}"
+
+
 PROC_ENV="env IVENTOY_API_ALL=1"
 PROJ_DIR=$PWD
 PROJ_EXEC=$PROJ_DIR/lib/iventoy
