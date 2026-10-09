@@ -4,3 +4,10 @@ desc="蓝牙设备管理工具，支持配对连接音频设备、键鼠、文�
 
 [entry]
 title="蓝牙"
+
+[wizard]
+uninstall_stepTitle="卸载蓝牙"
+uninstall_item1_helpText="应用及其设置将被移除。已配对的蓝牙设备记录由系统（BlueZ）保存，不受影响。"
+uninstall_item1_label="系统组件（BlueZ、PipeWire 等）"
+uninstall_item1_options1="保留（推荐）"
+uninstall_item1_options2="一并移除（不推荐：其他应用可能也在使用这些组件）"

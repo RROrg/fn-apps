@@ -1238,7 +1238,10 @@ claimPrimary();
   }
 })();
 
-window.addEventListener("beforeunload", function () {
+// pagehide, not beforeunload: fnOS closes an app window by removing its iframe,
+// which fires pagehide/unload but never beforeunload (so playback on the
+// server kept going). pagehide also fires when a browser tab is closed.
+window.addEventListener("pagehide", function () {
   if (outputMode === "server") {
     fetch(API_ENDPOINT + "/output/stop", {
       method: "POST",

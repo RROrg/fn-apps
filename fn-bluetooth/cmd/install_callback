@@ -2,15 +2,25 @@
 
 ### This script is called after the user installs the application.
 
+. "$(dirname "$0")/audio"
+
 apt-get update -qq
 
 PKGS=""
-for pkg in bluez bluez-obexd bluez-tools pulseaudio pulseaudio-utils pulseaudio-module-bluetooth obexftp python3-dbus python3-gi; do
+for pkg in bluez bluez-obexd bluez-tools obexftp python3-dbus python3-gi; do
   if apt-cache show "$pkg" >/dev/null 2>&1 && ! apt list --installed "$pkg" 2>/dev/null | grep -qw 'installed'; then
     PKGS="$PKGS $pkg"
   fi
 done
 
 [ -n "$PKGS" ] && apt-get install -y -qq $PKGS 2>/dev/null || true
+
+# 音频：PipeWire。系统中残留的 pulseaudio（旧版本本应用安装）一并迁移。
+if audio_pkg_installed pulseaudio; then
+  migrate_from_pulseaudio || true
+else
+  install_audio_packages || true
+fi
+write_wireplumber_config
 
 exit 0

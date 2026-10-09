@@ -2,4 +2,17 @@
 
 ### This script is called after the user upgrades the application.
 
+. "$(dirname "$0")/audio"
+
+# v1.1.0 起音频由 PulseAudio 改为 PipeWire：旧版本安装的 pulseaudio 在此迁移。
+# 迁移失败（例如无网络）时保留 PulseAudio，应用仍可正常使用。
+if audio_pkg_installed pulseaudio; then
+  apt-get update -qq 2>/dev/null || true
+  migrate_from_pulseaudio
+elif ! audio_pkg_installed pipewire-pulse; then
+  apt-get update -qq 2>/dev/null || true
+  install_audio_packages || true
+fi
+write_wireplumber_config
+
 exit 0

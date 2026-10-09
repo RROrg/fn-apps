@@ -33,39 +33,11 @@ ensure_user_session() {
   fi
 }
 
+# 音频服务的检测与启动见 cmd/audio（优先复用已运行的音频服务）。
+. "$(dirname "$0")/audio"
+
 ensure_audio_services() {
-  if command -v systemctl >/dev/null 2>&1; then
-    for svc in pipewire.service pipewire-pulse.service wireplumber.service pulseaudio.service pulseaudio.socket; do
-      if systemctl --user list-unit-files "${svc}" >/dev/null 2>&1; then
-        if ! systemctl --user is-active --quiet "${svc}" 2>/dev/null; then
-          log_msg "Starting user ${svc} ..."
-          systemctl --user start "${svc}" >>${LOG_FILE} 2>&1 || true
-        fi
-      fi
-    done
-  fi
-  local audio_env="XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}"
-  if ! env ${audio_env} pactl info >/dev/null 2>&1; then
-    if command -v pulseaudio >/dev/null 2>&1; then
-      log_msg "Starting pulseaudio in user mode ..."
-      if [ ! -f /etc/pulse/default.pa ]; then
-        cp /etc/pulse/default.pa.dpkg-new /etc/pulse/default.pa 2>/dev/null || true
-      fi
-      if [ ! -f /etc/pulse/daemon.conf ]; then
-        cp /etc/pulse/daemon.conf.dpkg-new /etc/pulse/daemon.conf 2>/dev/null || true
-      fi
-      env ${audio_env} pulseaudio --start --fail=false >>${LOG_FILE} 2>&1 || true
-      sleep 1
-    elif command -v pipewire >/dev/null 2>&1; then
-      log_msg "Starting pipewire daemon ..."
-      env ${audio_env} pipewire >>${LOG_FILE} 2>&1 &
-      sleep 1
-      if command -v pipewire-pulse >/dev/null 2>&1; then
-        log_msg "Starting pipewire-pulse daemon ..."
-        env ${audio_env} pipewire-pulse >>${LOG_FILE} 2>&1 &
-      fi
-    fi
-  fi
+  ensure_audio_server || true
 }
 
 start_services() {
