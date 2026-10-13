@@ -15,6 +15,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "3af626ddfc8c675366c6ed44655a8747",
+    "name": "Boca TCN100",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/boca-tcn100/fnos_Mainland-PE_arm_1.2.0701_boca-tcn100_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "fbf9d61af433b1b598c42da47704ff6c",
     "name": "CMCC TCN200",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/cmcc-tcn200/fnos_Mainland-PE_arm_1.1.31_cmcc-tcn200_1353.img.gz",
@@ -26,6 +33,13 @@
     "name": "CMCC TCN200",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/cmcc-tcn200/fnos_Mainland-PE_arm_1.2.0302_cmcc-tcn200_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "1556da3bc8f5b25176a6a89ee63c2ae9",
+    "name": "CMCC TCN200",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/cmcc-tcn200/fnos_Mainland-PE_arm_1.2.0701_cmcc-tcn200_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -43,10 +57,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "15f3d33b24104e8928242c8ee74a6a89",
+    "name": "Hinlink HNAS",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/hinlink-hnas/fnos_Mainland-PE_arm_1.2.0701_hinlink-hnas_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "3239f3e608380f7290cf9420ff58f714",
     "name": "Toybrick TB-RK3588X0",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/toybrick-x0/fnos_Mainland-PE_arm_1.2.0302_toybrick-x0_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "1a9a9fa961916ffb5a96f8f797602ac7",
+    "name": "Toybrick TB-RK3588X0",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/toybrick-x0/fnos_Mainland-PE_arm_1.2.0701_toybrick-x0_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -92,6 +120,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "9bd114d0b1f921749dd58b8b49e3df23",
+    "name": "WXY Onethingcloud OES",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/onethingcloud-oes/fnos_Mainland-PE_arm_1.2.0701_onethingcloud-oes_2884.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "41bb8c0dbcb3abf8f90979bf4a56e478",
     "name": "WXY Onethingcloud OES Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/onethingcloud-oes-plus/fnos_Mainland-PE_arm_1.1.19_onethingcloud-oes-plus_580.img.gz",
@@ -110,6 +145,13 @@
     "name": "WXY Onethingcloud OES Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/onethingcloud-oes-plus/fnos_Mainland-PE_arm_1.2.0302_onethingcloud-oes-plus_2284.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "d37203e8bbee64569091fdd31e7db1b6",
+    "name": "WXY Onethingcloud OES Plus",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/onethingcloud-oes-plus/fnos_Mainland-PE_arm_1.2.0701_onethingcloud-oes-plus_2884.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -134,6 +176,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "5f7e5ca0e6ff036796924c9f4c98ac24",
+    "name": "东山派 Dshanpi A1",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/dshanpi-a1/fnos_Mainland-PE_arm_1.2.0701_dshanpi-a1_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "c1ebf84a117bf1ab37558155836243ac",
     "name": "友善 FriendlyELEC CM3588 NAS",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/cm3588-nas/fnos_Mainland-PE_arm_1.1.19_cm3588-nas_583.img.gz",
@@ -155,10 +204,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "667627bf00460273a8b199ad43740e10",
+    "name": "友善 FriendlyELEC CM3588 NAS",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/cm3588-nas/fnos_Mainland-PE_arm_1.2.0701_cm3588-nas_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "72e958294e186325ec19d22e4e272f44",
     "name": "友善 NanoPC T4",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopc-t4/fnos_Mainland-PE_arm_1.2.0302_nanopc-t4_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "1fc042aadf92aaa6b264d6a6ff14c52c",
+    "name": "友善 NanoPC T4",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopc-t4/fnos_Mainland-PE_arm_1.2.0701_nanopc-t4_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -169,6 +232,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "402788b6dad39f2c7afe5c18f3fee893",
+    "name": "友善 NanoPC T6",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopc-t6/fnos_Mainland-PE_arm_1.2.0701_nanopc-t6_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "8978bfc6373110dd72b60a2d98de57dc",
     "name": "友善 NanoPi M4",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-m4/fnos_Mainland-PE_arm_1.2.0302_nanopi-m4_2288.img.gz",
@@ -176,10 +246,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "f11fd8c7fa50feaa7adb1a1c551646bc",
+    "name": "友善 NanoPi M4",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-m4/fnos_Mainland-PE_arm_1.2.0701_nanopi-m4_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "b74d1ee5578986520e50249ea62661e3",
     "name": "友善 NanoPi M5",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-m5/fnos_Mainland-PE_arm_1.2.0302_nanopi-m5_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "5294461cebf487886bca0729b4b5c7cb",
+    "name": "友善 NanoPi M5",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-m5/fnos_Mainland-PE_arm_1.2.0701_nanopi-m5_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -194,6 +278,13 @@
     "name": "友善 NanoPi M5 UFS",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-m5-ufs/fnos_Mainland-PE_arm_1.2.0302_nanopi-m5-ufs_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "0e5b74bf085c17080e6bfc9994b8996b",
+    "name": "友善 NanoPi M5 UFS",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-m5-ufs/fnos_Mainland-PE_arm_1.2.0701_nanopi-m5-ufs_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -218,10 +309,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "3f55dbf19e62b611fd756c666bff1533",
+    "name": "友善 NanoPi M6",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-m6/fnos_Mainland-PE_arm_1.2.0701_nanopi-m6_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "f2581c84f79471b78eebabcb1f826545",
     "name": "友善 NanoPi R2S",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-r2s/fnos_Mainland-PE_arm_1.2.0302_nanopi-r2s_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "ef3b2049ec01a70632badc607998d6cc",
+    "name": "友善 NanoPi R2S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r2s/fnos_Mainland-PE_arm_1.2.0701_nanopi-r2s_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -246,10 +351,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "999f24836f418b6263d946581daedf53",
+    "name": "友善 NanoPi R3S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r3s/fnos_Mainland-PE_arm_1.2.0701_nanopi-r3s_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "9bffc9eb3b481654376fc62e191c313c",
     "name": "友善 NanoPi R3S LTS",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-r3s-lts/fnos_Mainland-PE_arm_1.2.0302_nanopi-r3s-lts_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "f529a4b95193a1484c1ca3e49645d693",
+    "name": "友善 NanoPi R3S LTS",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r3s-lts/fnos_Mainland-PE_arm_1.2.0701_nanopi-r3s-lts_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -260,10 +379,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "72f1af0335fbd9e622f5da493f1aa56a",
+    "name": "友善 NanoPi R4S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r4s/fnos_Mainland-PE_arm_1.2.0701_nanopi-r4s_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "1010e9db166873b3000042b30a4674c8",
     "name": "友善 NanoPi R4SE",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-r4se/fnos_Mainland-PE_arm_1.2.0302_nanopi-r4se_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "8962cae287033c750720d96240aebec4",
+    "name": "友善 NanoPi R4SE",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r4se/fnos_Mainland-PE_arm_1.2.0701_nanopi-r4se_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -274,10 +407,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "7ef4852b3dff8058e4d484051a6452e1",
+    "name": "友善 NanoPi R5C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r5c/fnos_Mainland-PE_arm_1.2.0701_nanopi-r5c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "a80a1575229985eb0ffcbea9e230ef11",
     "name": "友善 NanoPi R5S",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-r5s/fnos_Mainland-PE_arm_1.2.0302_nanopi-r5s_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "1c94fab745066724e6cd5c500aba5c18",
+    "name": "友善 NanoPi R5S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r5s/fnos_Mainland-PE_arm_1.2.0701_nanopi-r5s_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -288,6 +435,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "809eccf50f3c228f7f5fb89b327a6bbc",
+    "name": "友善 NanoPi R6C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r6c/fnos_Mainland-PE_arm_1.2.0701_nanopi-r6c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "d7d78127a3fa2f829d0e716f424c95f0",
     "name": "友善 NanoPi R6S",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-r6s/fnos_Mainland-PE_arm_1.2.0302_nanopi-r6s_2288.img.gz",
@@ -295,10 +449,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "1bc9018b53815fa880fd1abb53a04268",
+    "name": "友善 NanoPi R6S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r6s/fnos_Mainland-PE_arm_1.2.0701_nanopi-r6s_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "d057fea779fadc2627a169846dc34f99",
     "name": "友善 NanoPi R76S",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-r76s/fnos_Mainland-PE_arm_1.2.0302_nanopi-r76s_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "ec085e7764468d13788ea6d97728c201",
+    "name": "友善 NanoPi R76S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-r76s/fnos_Mainland-PE_arm_1.2.0701_nanopi-r76s_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -313,6 +481,13 @@
     "name": "友善 NanoPi Zero2",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/nanopi-zero2/fnos_Mainland-PE_arm_1.2.0302_nanopi-zero2_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "8ca8caaae23fccb1d20eaf7a97dad114",
+    "name": "友善 NanoPi Zero2",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/nanopi-zero2/fnos_Mainland-PE_arm_1.2.0701_nanopi-zero2_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -547,6 +722,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "ba6ae2f47f7726f62c8df9fbd59250f2",
+    "name": "小马 Mrkaio M68S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/mrkaio-m68s/fnos_Mainland-PE_arm_1.2.0701_mrkaio-m68s_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "51111f8b8312239f3b503542f018d309",
     "name": "小马 Mrkaio M68S Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/mrkaio-m68s-plus/fnos_Mainland-PE_arm_1.1.19_mrkaio-m68s-plus_593.img.gz",
@@ -565,6 +747,13 @@
     "name": "小马 Mrkaio M68S Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/mrkaio-m68s-plus/fnos_Mainland-PE_arm_1.2.0302_mrkaio-m68s-plus_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "98db756c28cc270af287a7e371996123",
+    "name": "小马 Mrkaio M68S Plus",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/mrkaio-m68s-plus/fnos_Mainland-PE_arm_1.2.0701_mrkaio-m68s-plus_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -589,10 +778,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "ee83ea2ef9f24040a2f319ec649aad47",
+    "name": "斐讯 Phicomm N1",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/phicomm-n1/fnos_Mainland-PE_arm_1.2.0701_phicomm-n1_2884.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "b77b81697ae33e94aa79902b62641c7c",
     "name": "易有 EasePi R1",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/easepi-r1/fnos_Mainland-PE_arm_1.2.0302_easepi-r1_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "0e575ee007263484a67c13207d63f664",
+    "name": "易有 EasePi R1",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/easepi-r1/fnos_Mainland-PE_arm_1.2.0701_easepi-r1_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -624,6 +827,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "dac5ae94e06ea1d9b1a3b8ae760ee73b",
+    "name": "树莓派 3/4/5",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/bcm27xx/fnos_Mainland-PE_arm_1.2.0701_bcm27xx_2885.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "d3b734505445db9a1b807d73c2394105",
     "name": "瑞莎  Cubie A5E",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/cubie-a5e/fnos_Mainland-PE_arm_1.1.31_cubie-a5e_1351.img.gz",
@@ -635,6 +845,13 @@
     "name": "瑞莎 Cubie A5E",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/cubie-a5e/fnos_Mainland-PE_arm_1.2.0302_cubie-a5e_2283.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "948da3d44b31c38fef8a7541f990f212",
+    "name": "瑞莎 Cubie A5E",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/cubie-a5e/fnos_Mainland-PE_arm_1.2.0701_cubie-a5e_2883.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -659,6 +876,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "8499f815dfafb74762847080dcb5f5c9",
+    "name": "瑞莎 Radxa E20C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/radxa-e20c/fnos_Mainland-PE_arm_1.2.0701_radxa-e20c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "1dc0876113275273e9ddbf93990f1642",
     "name": "瑞莎 Radxa E24C",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/radxa-e24c/fnos_Mainland-PE_arm_1.1.31_radxa-e24c_1353.img.gz",
@@ -673,6 +897,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "425df4ef469f43201b6be80c16a96799",
+    "name": "瑞莎 Radxa E24C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/radxa-e24c/fnos_Mainland-PE_arm_1.2.0701_radxa-e24c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "f6e1fdda5c7426d2ea7c48c5467c779a",
     "name": "瑞莎 Radxa E25",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/radxa-e25/fnos_Mainland-PE_arm_1.1.31_radxa-e25_1353.img.gz",
@@ -684,6 +915,13 @@
     "name": "瑞莎 Radxa E25",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/radxa-e25/fnos_Mainland-PE_arm_1.2.0302_radxa-e25_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "dec3bdd865940eb3642428943aa18721",
+    "name": "瑞莎 Radxa E25",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/radxa-e25/fnos_Mainland-PE_arm_1.2.0701_radxa-e25_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -708,6 +946,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "4e61d32af9f5f0a3c774c90aa20f9dba",
+    "name": "瑞莎 Radxa E52C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/radxa-e52c/fnos_Mainland-PE_arm_1.2.0701_radxa-e52c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "72636b9a9cf24066b26e1e92f03bc096",
     "name": "瑞莎 Radxa E54C",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/radxa-e54c/fnos_Mainland-PE_arm_1.1.31_radxa-e54c_1353.img.gz",
@@ -722,6 +967,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "9f8cb0766a8b7c0063c443fdca8bd888",
+    "name": "瑞莎 Radxa E54C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/radxa-e54c/fnos_Mainland-PE_arm_1.2.0701_radxa-e54c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "965eb5604ac070d0006af704cd598f0f",
     "name": "瑞莎 Radxa ROCK 2A / 2F",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/rock-2a-2f/fnos_Mainland-PE_arm_1.1.31_rock-2a-2f_1353.img.gz",
@@ -733,6 +985,13 @@
     "name": "瑞莎 Radxa ROCK 2A / 2F",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/rock-2a-2f/fnos_Mainland-PE_arm_1.2.0302_rock-2a-2f_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "fcd9227e650c7b7ad73260e4dd4f09f8",
+    "name": "瑞莎 Radxa ROCK 2A / 2F",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-2a-2f/fnos_Mainland-PE_arm_1.2.0701_rock-2a-2f_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -771,6 +1030,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "1e034c432f935266a42f60cd26dffd5b",
+    "name": "瑞莎 Radxa ROCK 4D",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-4d/fnos_Mainland-PE_arm_1.2.0701_rock-4d_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "044c0f08cea623ea0935af3da42ed139",
     "name": "瑞莎 Radxa ROCK 4D UFS",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/rock-4d-ufs/fnos_Mainland-PE_arm_1.1.31_rock-4d-ufs_1353.img.gz",
@@ -782,6 +1048,13 @@
     "name": "瑞莎 Radxa ROCK 4D UFS",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/rock-4d-ufs/fnos_Mainland-PE_arm_1.2.0302_rock-4d-ufs_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "2a3fb86f76e50f250e39cce0b0410202",
+    "name": "瑞莎 Radxa ROCK 4D UFS",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-4d-ufs/fnos_Mainland-PE_arm_1.2.0701_rock-4d-ufs_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -806,6 +1079,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "2a15c9fbf3c3ab54f4745f962db81255",
+    "name": "瑞莎 Radxa ROCK 5 ITX",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5-itx/fnos_Mainland-PE_arm_1.2.0701_rock-5-itx_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "edc25d6c7a2b4d25b9261a638bab2749",
     "name": "瑞莎 Radxa ROCK 5A",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/rock-5a/fnos_Mainland-PE_arm_1.1.19_rock-5a_609.img.gz",
@@ -824,6 +1104,13 @@
     "name": "瑞莎 Radxa ROCK 5A",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/rock-5a/fnos_Mainland-PE_arm_1.2.0302_rock-5a_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "c7a3ba85e46c617f67de3abcce055dee",
+    "name": "瑞莎 Radxa ROCK 5A",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5a/fnos_Mainland-PE_arm_1.2.0701_rock-5a_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -848,6 +1135,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "fb60f783fc8ea137057a31841174e2f8",
+    "name": "瑞莎 Radxa ROCK 5B",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5b/fnos_Mainland-PE_arm_1.2.0701_rock-5b_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "147534d8e4cb2884905352c0869823bd",
     "name": "瑞莎 Radxa ROCK 5B / 5B Plus / 5T",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/rock-5b-5bp-5t/fnos_Mainland-PE_arm_1.1.31_rock-5b-5bp-5t_1353.img.gz",
@@ -859,6 +1153,13 @@
     "name": "瑞莎 Radxa ROCK 5B / 5B Plus / 5T",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/rock-5b-5bp-5t/fnos_Mainland-PE_arm_1.2.0302_rock-5b-5bp-5t_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "2be70d05f08057aee29aefe88a71e492",
+    "name": "瑞莎 Radxa ROCK 5B / 5B Plus / 5T",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5b-5bp-5t/fnos_Mainland-PE_arm_1.2.0701_rock-5b-5bp-5t_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -883,6 +1184,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "3311ba81100806dd4d987bb53e4676b0",
+    "name": "瑞莎 Radxa ROCK 5B Plus",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5b-plus/fnos_Mainland-PE_arm_1.2.0701_rock-5b-plus_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "1aefbaf85e2b62eae0bbf12ba984bde9",
     "name": "瑞莎 Radxa ROCK 5C / 5C Lite",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/rock-5c/fnos_Mainland-PE_arm_1.1.19_rock-5c_611.img.gz",
@@ -901,6 +1209,13 @@
     "name": "瑞莎 Radxa ROCK 5C / 5C Lite",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/rock-5c/fnos_Mainland-PE_arm_1.2.0302_rock-5c_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "abbeaa68381e0e099dd5d97a683db99b",
+    "name": "瑞莎 Radxa ROCK 5C / 5C Lite",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5c/fnos_Mainland-PE_arm_1.2.0701_rock-5c_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -925,10 +1240,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "7e8f092d69ab95d26c52f612336d2b9c",
+    "name": "瑞莎 Radxa ROCK 5T",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-5t/fnos_Mainland-PE_arm_1.2.0701_rock-5t_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "2a1115319e8efbf8336d0856ec437a5c",
     "name": "瑞莎 Rock PI E",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/rock-pi-e/fnos_Mainland-PE_arm_1.2.0302_rock-pi-e_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "63633421d5a250c7e6a59eab8879323e",
+    "name": "瑞莎 Rock PI E",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/rock-pi-e/fnos_Mainland-PE_arm_1.2.0701_rock-pi-e_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -953,6 +1282,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "8b1028b756f3250e6465454e8be01d64",
+    "name": "电犀牛 Fastrhino R66S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/fastrhino-r66s/fnos_Mainland-PE_arm_1.2.0701_fastrhino-r66s_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "7b07514ea7b6e118029aeb7b915c5c86",
     "name": "电犀牛 Fastrhino R68S",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/fastrhino-r68s/fnos_Mainland-PE_arm_1.1.19_fastrhino-r68s_614.img.gz",
@@ -971,6 +1307,13 @@
     "name": "电犀牛 Fastrhino R68S",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/fastrhino-r68s/fnos_Mainland-PE_arm_1.2.0302_fastrhino-r68s_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "97eea80baa4201c170b78df4420cbcca",
+    "name": "电犀牛 Fastrhino R68S",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/fastrhino-r68s/fnos_Mainland-PE_arm_1.2.0701_fastrhino-r68s_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -995,6 +1338,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "27d7e90065f55a27cf65e5115c571d47",
+    "name": "索仕图 Sostu N990 Plus",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/sostu-n990-plus/fnos_Mainland-PE_arm_1.2.0701_sostu-n990-plus_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "2d8e87a9b8ffea4073196200991a3f9f",
     "name": "索仕图 Sostu N990 Pro Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/sostu-n990-pro-plus/fnos_Mainland-PE_arm_1.1.31_sostu-n990-pro-plus_1353.img.gz",
@@ -1006,6 +1356,13 @@
     "name": "索仕图 Sostu N990 Pro Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/sostu-n990-pro-plus/fnos_Mainland-PE_arm_1.2.0302_sostu-n990-pro-plus_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "5598327a1cef039d302e86c46da26f16",
+    "name": "索仕图 Sostu N990 Pro Plus",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/sostu-n990-pro-plus/fnos_Mainland-PE_arm_1.2.0701_sostu-n990-pro-plus_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -1030,6 +1387,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "b17bd2461aca03ab13c3b4cdd5a825b4",
+    "name": "芒果派 MangoPi M28C",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/mangopi-m28c/fnos_Mainland-PE_arm_1.2.0701_mangopi-m28c_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "798b6c8456d90c06b2104335e7973e5e",
     "name": "芒果派 MangoPi M28K",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/mangopi-m28k/fnos_Mainland-PE_arm_1.1.19_mangopi-m28k_591.img.gz",
@@ -1051,6 +1415,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "3f7da5b1901453e3856f8c56b808fad5",
+    "name": "芒果派 MangoPi M28K",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/mangopi-m28k/fnos_Mainland-PE_arm_1.2.0701_mangopi-m28k_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "f07f937124979c586b7dddcafece25f7",
     "name": "萤火虫 Firefly ROC-RK3328-CC",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/roc-rk3328-cc/fnos_Mainland-PE_arm_1.2.0302_roc-rk3328-cc_2288.img.gz",
@@ -1058,10 +1429,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "48e9b6d367ef7af684a9a91eeed4820f",
+    "name": "萤火虫 Firefly ROC-RK3328-CC",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/roc-rk3328-cc/fnos_Mainland-PE_arm_1.2.0701_roc-rk3328-cc_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "af0bd82dd9c3766d6856b04c0af6f127",
     "name": "萤火虫 Firefly ROC-RK3566-PC (Station M2)",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/roc-rk3566-pc/fnos_Mainland-PE_arm_1.2.0302_roc-rk3566-pc_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "8fbb321bd4b96197b186717fc4664351",
+    "name": "萤火虫 Firefly ROC-RK3566-PC (Station M2)",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/roc-rk3566-pc/fnos_Mainland-PE_arm_1.2.0701_roc-rk3566-pc_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -1086,6 +1471,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "16f3f125260834847933bd1053f52bca",
+    "name": "萤火虫 Firefly ROC-RK3568-PC (Station P2)",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/roc-rk3568-pc/fnos_Mainland-PE_arm_1.2.0701_roc-rk3568-pc_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "06e295ef50aa1b40d92685ab10903c08",
     "name": "萤火虫 Firefly ROC-RK3588S-PC (Station M3)",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/roc-rk3588s-pc/fnos_Mainland-PE_arm_1.1.19_roc-rk3588s-pc_622.img.gz",
@@ -1107,10 +1499,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "68528e98f9879772e6d1f1b2e49808d2",
+    "name": "萤火虫 Firefly ROC-RK3588S-PC (Station M3)",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/roc-rk3588s-pc/fnos_Mainland-PE_arm_1.2.0701_roc-rk3588s-pc_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "d0607788a061032dd646169d177a08b6",
     "name": "萤火虫 Firefly rk3399",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/firefly-rk3399/fnos_Mainland-PE_arm_1.2.0302_firefly-rk3399_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "6541f2a99e5ae4084377b52abd4ea4d4",
+    "name": "萤火虫 Firefly rk3399",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/firefly-rk3399/fnos_Mainland-PE_arm_1.2.0701_firefly-rk3399_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -1132,6 +1538,13 @@
     "name": "遇见 Cyber3588 AIB",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/cyber3588-aib/fnos_Mainland-PE_arm_1.2.0302_cyber3588-aib_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "3089bd476622ebd86b2721392c89838b",
+    "name": "遇见 Cyber3588 AIB",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/cyber3588-aib/fnos_Mainland-PE_arm_1.2.0701_cyber3588-aib_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -1163,6 +1576,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "06e11dd7368e06c70a021076a2e9b2a0",
+    "name": "零刻 IPC-R (RK3588)",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/ipc-r/fnos_Mainland-PE_arm_1.2.0701_ipc-r_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "84377111cd69f54381647e01759b9da9",
     "name": "领雾科技 Linkfog ALA1",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.19/linkfog-ala1/fnos_Mainland-PE_arm_1.1.19_linkfog-ala1_615.img.gz",
@@ -1184,6 +1604,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "866de2927ceb36afe74ba7f25737f565",
+    "name": "领雾科技 Linkfog ALA1",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/linkfog-ala1/fnos_Mainland-PE_arm_1.2.0701_linkfog-ala1_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "081586b72933d0ebb7f180279ecc2193",
     "name": "香橙派 Orangepi 3B",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/trim/1.1.31/orangepi-3b/fnos_Mainland-PE_arm_1.1.31_orangepi-3b_1353.img.gz",
@@ -1198,6 +1625,13 @@
   },
   {
     "arch": "aarch64",
+    "hash": "ce70297c892da18841f0e9a7af3921df",
+    "name": "香橙派 Orangepi 3B",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/orangepi-3b/fnos_Mainland-PE_arm_1.2.0701_orangepi-3b_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "9127d3601dc2b24d505077e1a6a6a65b",
     "name": "香橙派 Orangepi 5",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/orangepi-5/fnos_Mainland-PE_arm_1.2.0302_orangepi-5_2288.img.gz",
@@ -1205,10 +1639,24 @@
   },
   {
     "arch": "aarch64",
+    "hash": "59a7b3c6e43ea2c7e0ab868673b3f9fb",
+    "name": "香橙派 Orangepi 5",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/orangepi-5/fnos_Mainland-PE_arm_1.2.0701_orangepi-5_2882.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
     "hash": "0e2695384781af6acbc323e0963a2e7c",
     "name": "香橙派 Orangepi 5 Plus",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/orangepi-5-plus/fnos_Mainland-PE_arm_1.2.0302_orangepi-5-plus_2288.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "a04d984b2de8e3422ceada273b236468",
+    "name": "香橙派 Orangepi 5 Plus",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/orangepi-5-plus/fnos_Mainland-PE_arm_1.2.0701_orangepi-5-plus_2882.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "aarch64",
@@ -1230,6 +1678,27 @@
     "name": "香橙派 Orangepi Zero 3",
     "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0302/orangepi-zero3/fnos_Mainland-PE_arm_1.2.0302_orangepi-zero3_2283.img.gz",
     "version": "1.2.0302"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "476bcf6a7524121d83529130ee582f3f",
+    "name": "香橙派 Orangepi Zero 3",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/orangepi-zero3/fnos_Mainland-PE_arm_1.2.0701_orangepi-zero3_2883.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "04bed9f247cf81ed4d1327eebdc66b27",
+    "name": "香橙派 zero2",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/orangepi-zero2/fnos_Mainland-PE_arm_1.2.0701_orangepi-zero2_2891.img.gz",
+    "version": "1.2.0701"
+  },
+  {
+    "arch": "aarch64",
+    "hash": "ae0a74f0523442b8973b96e923495047",
+    "name": "香橙派 zero2w",
+    "url": "http://thunder.liveupdate.fnnas.com:8080/arm/image/1.2.0701/orangepi-zero2w/fnos_Mainland-PE_arm_1.2.0701_orangepi-zero2w_2891.img.gz",
+    "version": "1.2.0701"
   },
   {
     "arch": "x86_64",
