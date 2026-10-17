@@ -155,11 +155,6 @@
     "enabled": false
   },
   {
-    "name": "kitblue/fantune",
-    "url": "https://raw.githubusercontent.com/kitblue/fantune/refs/heads/main/fnpack.json",
-    "enabled": false
-  },
-  {
     "name": "luodaoyi/FnDepot",
     "url": "https://raw.githubusercontent.com/luodaoyi/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
