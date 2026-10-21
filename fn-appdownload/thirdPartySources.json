@@ -155,6 +155,11 @@
     "enabled": false
   },
   {
+    "name": "latte03/fnos-apps",
+    "url": "https://raw.githubusercontent.com/latte03/fnos-apps/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
     "name": "luodaoyi/FnDepot",
     "url": "https://raw.githubusercontent.com/luodaoyi/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
