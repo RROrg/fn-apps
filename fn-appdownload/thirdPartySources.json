@@ -65,6 +65,11 @@
     "enabled": false
   },
   {
+    "name": "LC044/TrailSnap",
+    "url": "https://raw.githubusercontent.com/LC044/TrailSnap/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
     "name": "Mike-hd123/FnDepot",
     "url": "https://raw.githubusercontent.com/Mike-hd123/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
@@ -135,6 +140,11 @@
     "enabled": false
   },
   {
+    "name": "hardwin2023/TrailSnap",
+    "url": "https://raw.githubusercontent.com/hardwin2023/TrailSnap/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
     "name": "hbestm/FnDepot",
     "url": "https://raw.githubusercontent.com/hbestm/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
@@ -147,6 +157,11 @@
   {
     "name": "iqiuzixuan/fnmonitor",
     "url": "https://raw.githubusercontent.com/iqiuzixuan/fnmonitor/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "jia070310/lemon-muisc",
+    "url": "https://raw.githubusercontent.com/jia070310/lemon-muisc/refs/heads/main/fnpack.json",
     "enabled": false
   },
   {
@@ -195,6 +210,11 @@
     "enabled": false
   },
   {
+    "name": "moyilong/ofterm",
+    "url": "https://raw.githubusercontent.com/moyilong/ofterm/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
     "name": "mp176135255/fn-apps",
     "url": "https://raw.githubusercontent.com/mp176135255/fn-apps/refs/heads/main/fnpack.json",
     "enabled": false
@@ -240,8 +260,8 @@
     "enabled": false
   },
   {
-    "name": "tianjian518/casgen",
-    "url": "https://raw.githubusercontent.com/tianjian518/casgen/refs/heads/main/fnpack.json",
+    "name": "tingwensuojian/FnDepot",
+    "url": "https://raw.githubusercontent.com/tingwensuojian/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
   },
   {
@@ -292,6 +312,11 @@
   {
     "name": "yukyox/fntermx",
     "url": "https://raw.githubusercontent.com/yukyox/fntermx/refs/heads/main/fnpack.json",
+    "enabled": false
+  },
+  {
+    "name": "zunney/FnDepot",
+    "url": "https://raw.githubusercontent.com/zunney/FnDepot/refs/heads/main/fnpack.json",
     "enabled": false
   },
   {
