@@ -810,5 +810,12 @@
     "name": "FygoOS-x86_64",
     "url": "https://download.liveupdate.fygonas.com/x86_64/trim/fygoos_PE_x86_1.2.0701_2731.iso",
     "version": "1.2.0701"
+  },
+  {
+    "arch": "x86_64",
+    "hash": "58d0ecb1d1671776c98b45831fa653e8",
+    "name": "FygoOS-x86_64",
+    "url": "https://download.liveupdate.fygonas.com/x86_64/trim/fygoos_PE_x86_1.2.1010_3064.iso",
+    "version": "1.2.1010"
   }
 ]
